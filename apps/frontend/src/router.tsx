@@ -1,0 +1,93 @@
+import {
+  createRoute,
+  createRootRoute,
+  createRouter,
+  RouterProvider,
+  Outlet,
+} from '@tanstack/react-router';
+import { TanStackRouterDevtools } from '@tanstack/router-devtools';
+import GameView from './pages/game/GameView/GameView';
+import StoriesView from './pages/game/StoriesView/StoriesView';
+import LoginView from './pages/auth/LoginView';
+import RegisterView from './pages/auth/RegisterView';
+import ForgotPasswordView from './pages/auth/ForgotPasswordView';
+import { IntroductionWrapper } from './components/IntroductionWrapper';
+
+// Define a root route with layout
+const rootRoute = createRootRoute({
+  component: () => (
+    <>
+      <Outlet />
+      {process.env.NODE_ENV === 'development' && <TanStackRouterDevtools />}
+    </>
+  ),
+});
+
+// Introduction route
+const introductionRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/',
+  component: IntroductionWrapper,
+});
+
+// Game route
+const gameRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/game',
+  component: GameView,
+});
+
+// Stories route
+const storiesRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/stories',
+  component: StoriesView,
+});
+
+
+// Login route
+const loginRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/login',
+  component: LoginView,
+});
+
+// Register route
+const registerRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/register',
+  component: RegisterView,
+});
+
+// Forgot password route
+const forgotPasswordRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/forgot-password',
+  component: ForgotPasswordView,
+});
+
+// Create the route tree
+const routeTree = rootRoute.addChildren([
+  introductionRoute,
+  gameRoute,
+  storiesRoute,
+  loginRoute,
+  registerRoute,
+  forgotPasswordRoute,
+]);
+
+// Create the router using the route tree
+export const router = createRouter({
+  routeTree,
+  defaultPreload: 'intent',
+});
+
+// Register your router for maximum type safety
+declare module '@tanstack/react-router' {
+  interface Register {
+    router: typeof router;
+  }
+}
+
+// Re-export the RouterProvider
+export { RouterProvider };
