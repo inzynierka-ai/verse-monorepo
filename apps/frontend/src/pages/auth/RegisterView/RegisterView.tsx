@@ -4,12 +4,10 @@ import { AuthCard, AuthForm } from '../components';
 import { useRegister, RegisterCredentials } from '@/services/api';
 import Button from '@/common/components/Button';
 import Input from '@/common/components/Input';
+import { useNavigate } from '@tanstack/react-router';
 
-interface RegisterViewProps {
-  onRegisterSuccess?: () => void;
-}
 
-const RegisterView = ({ onRegisterSuccess }: RegisterViewProps) => {
+const RegisterView = () => {
   const [formData, setFormData] = useState<RegisterCredentials>({
     username: '',
     email: '',
@@ -17,6 +15,8 @@ const RegisterView = ({ onRegisterSuccess }: RegisterViewProps) => {
   });
 
   const [confirmPassword, setConfirmPassword] = useState('');
+  const navigate = useNavigate()
+
   const [errors, setErrors] = useState<Partial<RegisterCredentials & { confirmPassword: string }>>(
     {},
   );
@@ -91,10 +91,7 @@ const RegisterView = ({ onRegisterSuccess }: RegisterViewProps) => {
 
     register(formData, {
       onSuccess: () => {
-        if (onRegisterSuccess) {
-          onRegisterSuccess();
-        }
-        // Redirect to login or handle success in your app
+        navigate({ to: '/login' });
       },
       onError: (error) => {
         setRegisterError(

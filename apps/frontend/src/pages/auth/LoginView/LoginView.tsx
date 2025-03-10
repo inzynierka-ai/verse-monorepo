@@ -7,11 +7,7 @@ import Button from '@/common/components/Button';
 import Input from '@/common/components/Input';
 import styles from './LoginView.module.scss';
 
-interface LoginViewProps {
-  onLoginSuccess?: () => void;
-}
-
-const LoginView = ({ onLoginSuccess }: LoginViewProps) => {
+const LoginView = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState<LoginCredentials>({
     username: '',
@@ -70,9 +66,6 @@ const LoginView = ({ onLoginSuccess }: LoginViewProps) => {
   
     login(formData, {
       onSuccess: () => {
-        if (onLoginSuccess) {
-          onLoginSuccess();
-        }
         navigate({ to: '/stories' });
       },
       onError: (error) => {
