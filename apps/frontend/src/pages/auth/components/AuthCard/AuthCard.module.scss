@@ -1,0 +1,73 @@
+@use "@/common/styles/variables" as *;
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba($accent-color, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba($accent-color, 0); }
+  100% { box-shadow: 0 0 0 0 rgba($accent-color, 0); }
+}
+
+.title {
+  font-size: 2.2rem;
+  text-align: center;
+  margin-bottom: 1.5rem;
+  color: $accent-color;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-shadow: 0 2px 10px rgba($accent-color, 0.3);
+  position: relative;
+  
+  &::after {
+    content: '';
+    display: block;
+    width: 50px;
+    height: 3px;
+    background: linear-gradient(to right, $accent-color, $secondary-accent);
+    margin: 8px auto 0;
+    border-radius: 2px;
+    box-shadow: 0 0 8px rgba($accent-color, 0.6);
+  }
+}
+
+.subtitle {
+  text-align: center;
+  margin-bottom: 2.2rem;
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.5;
+  letter-spacing: 0.5px;
+}
+
+.error {
+  color: $error-color;
+  font-size: 0.85rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  
+  &::before {
+    content: '!';
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    background: rgba($error-color, 0.2);
+    border-radius: 50%;
+    margin-right: 8px;
+    font-size: 11px;
+    font-weight: bold;
+  }
+}
+
+.linkContainer {
+  text-align: center;
+  margin-top: 2rem;
+  font-size: 0.9rem;
+  animation: fadeIn 0.8s ease-out 0.2s forwards;
+  opacity: 0.9;
+}

@@ -1,0 +1,130 @@
+@use 'variables' as *;
+
+
+@font-face {
+  font-family: 'Industry';
+  src: url('/fonts/Industry-Bold.woff2') format('woff2'),
+       url('/fonts/Industry-Bold.woff') format('woff');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Industry';
+  src: url('/fonts/Industry-Medium.woff2') format('woff2'),
+       url('/fonts/Industry-Medium.woff') format('woff');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Industry';
+  src: url('/fonts/Industry-Regular.woff2') format('woff2'),
+       url('/fonts/Industry-Regular.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* CSS Reset */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* Document setup */
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: $game-font;
+  line-height: 1.5;
+  color: $light-text;
+  background-color: $dark-bg;
+  min-height: 100vh;
+  transition: color 0.3s, background-color 0.3s;
+  padding: 0;
+  margin: 0;
+}
+
+/* Accessible line-height for text elements */
+p, h1, h2, h3, h4, h5, h6 {
+  overflow-wrap: break-word;
+  margin-bottom: 1rem;
+}
+
+/* Reset heading font sizes for better control */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+/* Reset links */
+a {
+  color: $accent-color;
+  text-decoration: none;
+  transition: color 0.3s;
+  
+  &:hover {
+    color: $secondary-accent;
+  }
+}
+
+/* Image defaults */
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Form elements reset */
+input, button, textarea, select {
+  font: inherit;
+  color: inherit;
+}
+
+/* Button reset */
+button {
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+/* List reset */
+ul, ol {
+  list-style: none;
+}
+
+/* Table reset */
+table {
+  border-collapse: collapse;
+  border-spacing: 0;
+  width: 100%;
+}
+
+/* Focus states for accessibility */
+:focus-visible {
+  outline: 2px solid $accent-color;
+  outline-offset: 2px;
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+* {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
