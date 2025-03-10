@@ -1,7 +1,7 @@
 import { Box, Button } from '@mui/material';
 import { useState } from 'react';
-import { useLocation } from '@/hooks/useLocation';
-import { useCharacter } from '@/hooks/useCharacter';
+import { useLocation } from '@/services/api/hooks/useLocation';
+import { useCharacter } from '@/services/api/hooks/useCharacter';
 import IntroductionCard from './components/IntroductionCard';
 import { useWebSocket } from '@/hooks/webSockets/useWebSocket';
 

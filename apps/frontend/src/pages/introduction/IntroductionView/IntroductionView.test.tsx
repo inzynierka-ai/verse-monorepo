@@ -1,7 +1,7 @@
 import { render, screen } from '@/testUtils';
 import IntroductionView from './IntroductionView';
-import { useCharacter } from '@/hooks/useCharacter';
-import { useLocation } from '@/hooks/useLocation';
+import { useCharacter } from '@/services/api/hooks/useCharacter';
+import { useLocation } from '@/services/api/hooks/useLocation';
 import { vi, type Mock } from 'vitest';
 import { waitFor } from '@testing-library/react';
 

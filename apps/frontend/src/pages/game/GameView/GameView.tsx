@@ -1,14 +1,16 @@
 import { Box, Container, Paper, Typography, CircularProgress } from '@mui/material';
-import { useCharacter } from '@/hooks/useCharacter';
-import { useLocation } from '@/hooks/useLocation';
+import { useCharacter } from '@/services/api/hooks/useCharacter';
+import { useLocation } from '@/services/api/hooks/useLocation';
 import Chat from '../Chat/Chat';
+import { gameRoute } from '@/router';
+import { useScene } from '@/services/api/hooks/useScene';
 
 const GameView = () => {
-  const characterId = '1'; // This should come from routing or props
-  const locationId = '3'; // This should come from routing or props
-
-  const { data: character, isLoading: isLoadingCharacter } = useCharacter(characterId);
-  const { data: location, isLoading: isLoadingLocation } = useLocation(locationId);
+  const { storyId, chapterId, sceneId } = gameRoute.useParams();
+  
+  const { data: scene, isLoading: isLoadingScene } = useScene(sceneId);
+  const { data: character, isLoading: isLoadingCharacter } = useCharacter('1');
+  const { data: location, isLoading: isLoadingLocation } = useLocation(scene?.location_id);
 
   if (isLoadingCharacter || isLoadingLocation) {
     return (
@@ -43,7 +45,7 @@ const GameView = () => {
             </Typography>
           </Paper>
           <Box flex={1}>
-            <Chat uuid={'0'} />
+            <Chat uuid={sceneId} />
           </Box>
         </Box>
       </Container>

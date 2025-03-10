@@ -8,6 +8,8 @@ import {
 import { TanStackRouterDevtools } from '@tanstack/router-devtools';
 import GameView from './pages/game/GameView/GameView';
 import StoriesView from './pages/game/StoriesView/StoriesView';
+import ChaptersView from './pages/game/ChaptersView';
+import ChapterView from './pages/game/ChapterView';
 import LoginView from './pages/auth/LoginView';
 import RegisterView from './pages/auth/RegisterView';
 import ForgotPasswordView from './pages/auth/ForgotPasswordView';
@@ -31,9 +33,9 @@ const introductionRoute = createRoute({
 });
 
 // Game route
-const gameRoute = createRoute({
+export const gameRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/game',
+  path: '/stories/$storyId/chapter/$chapterId/scene/$sceneId',
   component: GameView,
 });
 
@@ -44,6 +46,19 @@ const storiesRoute = createRoute({
   component: StoriesView,
 });
 
+// Create story chapters route
+export const storyChaptersRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: 'stories/$storyId/chapters',
+  component: ChaptersView,
+});
+
+// Create chapter detail route
+export const chapterDetailRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: 'stories/$storyId/chapter/$chapterId',
+  component: ChapterView,
+});
 
 // Login route
 const loginRoute = createRoute({
@@ -66,11 +81,13 @@ const forgotPasswordRoute = createRoute({
   component: ForgotPasswordView,
 });
 
-// Create the route tree
+// Register all routes
 const routeTree = rootRoute.addChildren([
   introductionRoute,
   gameRoute,
   storiesRoute,
+  storyChaptersRoute,
+  chapterDetailRoute,
   loginRoute,
   registerRoute,
   forgotPasswordRoute,
