@@ -1,7 +1,10 @@
 import { useState, FormEvent } from 'react';
-import { Link } from '@tanstack/react-router';
-import styles from '../styles/auth.module.scss';
-import { useForgotPassword, ForgotPasswordRequest } from '../../../services/api';
+import { Link } from '@/common/components/Link';
+import { useForgotPassword, ForgotPasswordRequest } from '@/services/api';
+import Button from '@/common/components/Button';
+import Input from '@/common/components/Input';
+import { AuthCard, AuthForm } from '../components';
+import styles from './ForgotPasswordView.module.scss';
 
 const ForgotPasswordView = () => {
   const [formData, setFormData] = useState<ForgotPasswordRequest>({
@@ -71,60 +74,50 @@ const ForgotPasswordView = () => {
     });
   };
 
+  const subtitle = isSubmitted
+    ? 'Check your email for password reset instructions'
+    : 'Enter your email to receive password reset instructions';
+
+  const footerContent = (
+    <>
+      Remember your password?
+      <Link to="/login">Login</Link>
+    </>
+  );
+
   return (
-    <div className={styles.authContainer}>
-      <div className={styles.authCard}>
-        <div className={styles.logoContainer}>
-          <h1>VERSE</h1>
+    <AuthCard 
+      title="Reset Password"
+      subtitle={subtitle}
+      errorMessage={requestError}
+      footer={footerContent}
+    >
+      {isSubmitted ? (
+        <div className={styles.successMessage}>
+          Password reset instructions have been sent to your email. Please check your inbox and
+          follow the instructions to reset your password.
         </div>
+      ) : (
+        <AuthForm onSubmit={handleSubmit}>
+          <Input
+            type="email"
+            id="email"
+            name="email"
+            value={formData.email}
+            onChange={handleChange}
+            placeholder="Enter your email"
+            disabled={isLoading}
+            label="Email"
+            error={errors.email}
+            fullWidth
+          />
 
-        <h2 className={styles.title}>Reset Password</h2>
-        <p className={styles.subtitle}>
-          {isSubmitted
-            ? 'Check your email for password reset instructions'
-            : 'Enter your email to receive password reset instructions'}
-        </p>
-
-        {requestError && <div className={styles.error}>{requestError}</div>}
-
-        {isSubmitted ? (
-          <div className={styles.successMessage}>
-            Password reset instructions have been sent to your email. Please check your inbox and
-            follow the instructions to reset your password.
-          </div>
-        ) : (
-          <form className={styles.form} onSubmit={handleSubmit}>
-            <div className={styles.formGroup}>
-              <label htmlFor="email" className={styles.label}>
-                Email
-              </label>
-              <input
-                type="email"
-                id="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                className={styles.input}
-                placeholder="Enter your email"
-                disabled={isLoading}
-              />
-              {errors.email && <div className={styles.error}>{errors.email}</div>}
-            </div>
-
-            <button type="submit" className={styles.button} disabled={isLoading}>
-              {isLoading ? 'Sending Request...' : 'Send Reset Link'}
-            </button>
-          </form>
-        )}
-
-        <div className={styles.linkContainer}>
-          Remember your password?
-          <Link to="/login" className={styles.link}>
-            Login
-          </Link>
-        </div>
-      </div>
-    </div>
+          <Button type="submit" disabled={isLoading} fullWidth>
+            {isLoading ? 'Sending Request...' : 'Send Reset Link'}
+          </Button>
+        </AuthForm>
+      )}
+    </AuthCard>
   );
 };
 

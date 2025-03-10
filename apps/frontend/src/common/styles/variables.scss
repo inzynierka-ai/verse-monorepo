@@ -1,0 +1,31 @@
+/* Design System Variables */
+
+// Color variables
+$primary-color: #4158D0;
+$accent-color: #00c6ff;
+$secondary-accent: #76f7bf;
+$dark-bg: #0d1117;
+$light-text: #ecf0f1;
+$error-color: #ff5252;
+$success-color: #0be881;
+$input-bg: rgba(255, 255, 255, 0.06);
+$card-bg: rgba(13, 17, 23, 0.85);
+$game-font: 'Industry', 'Exo 2', sans-serif;
+
+// Animations
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba($accent-color, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba($accent-color, 0); }
+  100% { box-shadow: 0 0 0 0 rgba($accent-color, 0); }
+}
+
+@keyframes gradientBg {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}

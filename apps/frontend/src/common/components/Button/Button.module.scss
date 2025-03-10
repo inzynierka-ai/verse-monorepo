@@ -1,0 +1,100 @@
+@use "sass:color";
+@use '@/common/styles/variables' as *;
+
+.button {
+  padding: 0.9rem;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 0.8rem;
+  position: relative;
+  overflow: hidden;
+  letter-spacing: 0.5px;
+  
+  &::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(transparent, rgba(255, 255, 255, 0.2), transparent);
+    transform: rotate(30deg);
+    transition: 0.6s;
+  }
+  
+  &:hover::after {
+    left: 100%;
+  }
+  
+  &:disabled {
+    cursor: not-allowed;
+  }
+}
+
+.primary {
+  background: linear-gradient(90deg, $primary-color, $accent-color);
+  color: white;
+  
+  &:hover {
+    background: linear-gradient(90deg, color.adjust($primary-color, $lightness: 3%), color.adjust($accent-color, $lightness: 3%));
+    transform: translateY(-2px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2), 0 0 12px rgba($accent-color, 0.2);
+  }
+  
+  &:active {
+    transform: translateY(0);
+  }
+  
+  &:disabled {
+    background: linear-gradient(90deg, rgba($primary-color, 0.6), rgba($accent-color, 0.6));
+  }
+}
+
+.secondary {
+  background: transparent;
+  color: $accent-color;
+  border: 1px solid $accent-color;
+  box-shadow: 0 0 10px rgba($accent-color, 0.1);
+  
+  &:hover {
+    background: rgba($accent-color, 0.08);
+    transform: translateY(-2px);
+    box-shadow: 0 0 15px rgba($accent-color, 0.2);
+  }
+  
+  &:active {
+    transform: translateY(0);
+  }
+  
+  &:disabled {
+    color: rgba($accent-color, 0.6);
+    border-color: rgba($accent-color, 0.6);
+  }
+}
+
+.text {
+  background: transparent;
+  color: $accent-color;
+  padding: 0.6rem;
+  
+  &:hover {
+    color:  color.adjust($accent-color, $lightness: 10%);
+    text-shadow: 0 0 8px rgba($accent-color, 0.4);
+    transform: translateY(-1px);
+  }
+  
+  &:active {
+    transform: translateY(0);
+  }
+  
+  &:disabled {
+    color: rgba($accent-color, 0.6);
+  }
+}
+
+.fullWidth {
+  width: 100%;
+}

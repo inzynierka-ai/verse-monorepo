@@ -1,8 +1,12 @@
 import { useState, FormEvent } from 'react';
-import { Link } from '@tanstack/react-router';
-import styles from '../styles/auth.module.scss';
-import { useLogin, LoginCredentials } from '../../../services/api';
+import { Link } from '@/common/components/Link';
+import { AuthCard, AuthForm } from '../components';
+import { useLogin, LoginCredentials } from '@/services/api';
 import { useNavigate } from '@tanstack/react-router';
+import Button from '@/common/components/Button';
+import Input from '@/common/components/Input';
+import styles from './LoginView.module.scss';
+
 interface LoginViewProps {
   onLoginSuccess?: () => void;
 }
@@ -80,71 +84,54 @@ const LoginView = ({ onLoginSuccess }: LoginViewProps) => {
   };
 
   return (
-    <div className={styles.authContainer}>
-      <div className={styles.authCard}>
-        <div className={styles.logoContainer}>
-          <h1>VERSE</h1>
-        </div>
-
-        <h2 className={styles.title}>Welcome Back</h2>
-        <p className={styles.subtitle}>Enter your credentials to continue your journey</p>
-
-        {loginError && <div className={styles.error}>{loginError}</div>}
-
-        <form className={styles.form} onSubmit={handleSubmit}>
-          <div className={styles.formGroup}>
-            <label htmlFor="username" className={styles.label}>
-              Username
-            </label>
-            <input
-              type="text"
-              id="username"
-              name="username"
-              value={formData.username}
-              onChange={handleChange}
-              className={styles.input}
-              placeholder="Enter your username"
-              disabled={isLoading}
-            />
-            {errors.username && <div className={styles.error}>{errors.username}</div>}
-          </div>
-
-          <div className={styles.formGroup}>
-            <label htmlFor="password" className={styles.label}>
-              Password
-            </label>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              className={styles.input}
-              placeholder="Enter your password"
-              disabled={isLoading}
-            />
-            {errors.password && <div className={styles.error}>{errors.password}</div>}
-          </div>
-
-          <div className={styles.forgotPassword}>
-            <Link to="/forgot-password" className={styles.link}>
-              Forgot password?
-            </Link>
-          </div>
-
-          <button type="submit" className={styles.button} disabled={isLoading}>
-            {isLoading ? 'Logging in...' : 'Login'}
-          </button>
-        </form>
-
-        <div className={styles.linkContainer}>
+    <AuthCard 
+      title="Login" 
+      subtitle="Welcome back! Please enter your credentials to access your account."
+      errorMessage={loginError}
+      footer={
+        <span>
           Don't have an account?
-          <Link to="/register" className={styles.link}>
-            Register
+          <Link to="/register">Register</Link>
+        </span>
+      }
+    >
+      <AuthForm onSubmit={handleSubmit}>
+        <Input
+          id="username"
+          name="username"
+          value={formData.username}
+          onChange={handleChange}
+          placeholder="Enter your username"
+          disabled={isLoading}
+          label="Username"
+          error={errors.username}
+          fullWidth
+        />
+
+        <Input
+          type="password"
+          id="password"
+          name="password"
+          value={formData.password}
+          onChange={handleChange}
+          placeholder="Enter your password"
+          disabled={isLoading}
+          label="Password"
+          error={errors.password}
+          fullWidth
+        />
+
+        <div className={styles.forgotPassword}>
+          <Link to="/forgot-password">
+            Forgot password?
           </Link>
         </div>
-      </div>
-    </div>
+
+        <Button type="submit" disabled={isLoading} fullWidth>
+          {isLoading ? 'Logging in...' : 'Login'}
+        </Button>
+      </AuthForm>
+    </AuthCard>
   );
 };
 
