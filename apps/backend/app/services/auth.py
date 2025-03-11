@@ -10,7 +10,7 @@ from app.schemas.auth import TokenData
 
 SECRET_KEY = "your_secret_key"  # Change this in production!
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+ACCESS_TOKEN_EXPIRE_MINUTES = 1440  # Changed from 30 to 1440 (24 hours)
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/token")
