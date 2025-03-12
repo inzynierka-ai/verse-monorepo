@@ -7,8 +7,7 @@ import { Card } from '@/common/components/Card/Card';
 import Input from '@/common/components/Input/Input';
 import Button from '@/common/components/Button/Button';
 import { useScene } from '@/common/hooks/useScene';
-import { useMessages } from '@/common/hooks/useMessages';
-import { Message } from '@/types/chat';
+
 import styles from './GameView.module.scss';
 
 // Type definitions based on API returns
@@ -61,7 +60,10 @@ const GameView = () => {
   if (isLoadingScene) {
     return (
       <Container>
-        <div className={styles.loading}>Loading scene...</div>
+        <div className={styles.loading}>
+          <div className={styles.loadingSpinner}></div>
+          <p>Loading your adventure...</p>
+        </div>
       </Container>
     );
   }
@@ -120,7 +122,7 @@ const GameView = () => {
           <div className={styles.messagesContainer}>
             {scene.messages && scene.messages.length > 0 ? (
               <div className={styles.messages}>
-                {scene.messages.map((msg: Message, index: number) => (
+                {scene.messages.map((msg, index) => (
                   <div 
                     key={index} 
                     className={`${styles.message} ${msg.role === 'user' ? styles.userMessage : styles.assistantMessage}`}
@@ -131,7 +133,7 @@ const GameView = () => {
               </div>
             ) : (
               <div className={styles.emptyMessages}>
-                <p>Begin your adventure by sending a message...</p>
+                <p>Your adventure awaits. Send a message to begin...</p>
               </div>
             )}
           </div>
