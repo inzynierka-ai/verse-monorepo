@@ -5,6 +5,7 @@ from app.services.llm import LLMService
 from app.crud.characters import get_character
 from app.crud.locations import get_location
 from contextlib import asynccontextmanager
+from sqlalchemy.orm import Session
 
 class SceneService:
     def __init__(self):
@@ -23,25 +24,21 @@ class SceneService:
                 # Ignore "Cannot call close once a close message has been sent" error
                 pass
 
-    async def load_character_prompt(self, character_id: int, location_id: int) -> str:
+    async def load_character_prompt(self, db: Session, character_id: int, location_id: int) -> str:
         """Load character's system prompt from db and enhance it with location context"""
-        character = get_character(character_id)
-        location = get_location(location_id)
+        character = get_character(db=db, character_id=character_id)
+        location = get_location(db=db, location_id=location_id)
         
         if not character:
             raise ValueError(f"Character {character_id} not found")
         if not location:
             raise ValueError(f"Location {location_id} not found")
         
-        try:
-            with open(character.prompt, 'r') as f:
-                base_prompt = f.read()
+        base_prompt = character.prompt
                 
-            location_context = f"\nLocation Context:\nYou are in the {location.name}. {location.description}"
-            return base_prompt + location_context
+        location_context = f"\nLocation Context:\nYou are in the {location.name}. {location.description}"
+        return base_prompt + location_context
                 
-        except Exception as e:
-            raise ValueError(f"Failed to load prompt for character {character_id}: {str(e)}")
 
     async def process_message(self, message: SceneMessage, system_prompt: str) -> AsyncGenerator[str, None]:
         messages = [
@@ -54,8 +51,8 @@ class SceneService:
             stream=True
         )
 
-    def get_character_analysis(self, character_id: int) -> dict:
-        character = get_character(character_id)
+    def get_character_analysis(self, db: Session, character_id: int) -> dict:
+        character = get_character(db=db, character_id=character_id)
         return {
             "relationshipLevel": character.relationship_level,
             "availableActions": [

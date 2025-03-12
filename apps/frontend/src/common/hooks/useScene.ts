@@ -75,18 +75,22 @@ export const useScene = ({ sceneId, onConnectionChange }: UseSceneProps): UseSce
   const handleClose = useCallback(() => {
     onConnectionChange?.(false);
   }, [onConnectionChange]);
-
-  // Initialize WebSocket connection
+  
+  // Initialize WebSocket connection with enabled flag based on sceneId
   const { socket, isConnected, reconnect } = useWebSocket({
     url: `${import.meta.env.VITE_BACKEND_URL}/api/scenes/${sceneId}`,
     onMessage: handleMessage,
     onOpen: handleOpen,
     onClose: handleClose,
+    enabled: !!sceneId
   });
 
   // Send message handler
   const sendMessage = useCallback(
     (content: string) => {
+      // Don't send if no valid sceneId or socket
+      if (!sceneId || !socket) return false;
+      
       // Optimistically update messages cache
       queryClient.setQueryData(messagesQueryKey(sceneId), (old: Message[] = []) => [
         ...old,

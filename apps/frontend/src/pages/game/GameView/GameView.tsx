@@ -39,7 +39,6 @@ const GameView = () => {
   const selectedCharacter = scene?.characters?.[0];
   
   // Setup scene and messages
-  const { data: messages = [] } = useMessages(scene?.id?.toString() || '');
   const { sendMessage, isConnected: wsConnected } = useScene({
     sceneId: scene?.id?.toString() || '',
     onConnectionChange: setIsConnected
