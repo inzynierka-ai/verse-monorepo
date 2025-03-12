@@ -3,7 +3,7 @@ from jose import JWTError, jwt
 from datetime import datetime, timedelta
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from app.db.session import get_db
 from app.models.user import User
 from app.schemas.auth import TokenData
@@ -89,7 +89,14 @@ class ResourcePermission:
         
         elif self.resource_type == "scene":
             from app.models.scene import Scene
-            resource = db.query(Scene).filter(Scene.id == resource_id).first()
+            
+            # Query scene with all relationships loaded for SceneDetail
+            resource = db.query(Scene).options(
+                joinedload(Scene.location),
+                joinedload(Scene.characters),
+                joinedload(Scene.messages)
+            ).filter(Scene.id == resource_id).first()
+            
             if not resource:
                 raise HTTPException(status_code=404, detail=f"Scene not found")
                 

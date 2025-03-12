@@ -1,18 +1,15 @@
-import { useState, useEffect } from 'react';
-import { Box, Container, Paper, Typography, CircularProgress, Button } from '@mui/material';
-import { useCharacter } from '@/services/api/hooks/useCharacter';
-import { useLocation } from '@/services/api/hooks/useLocation';
-import Chat from '../Chat/Chat';
 import { gameRoute } from '@/router';
-import { useScene } from '@/services/api/hooks/useScene';
 import { useNavigate } from '@tanstack/react-router';
-
-// Simple state management for the game
-interface GameState {
-  chapterId: string | null;
-  sceneId: string | null;
-  characterId: string | null;
-}
+import { useLatestScene } from '@/services/api/hooks/useLatestScene';
+import { useState } from 'react';
+import { Container } from '@/common/components/Container/Container';
+import { Card } from '@/common/components/Card/Card';
+import Input from '@/common/components/Input/Input';
+import Button from '@/common/components/Button/Button';
+import { useScene } from '@/common/hooks/useScene';
+import { useMessages } from '@/common/hooks/useMessages';
+import { Message } from '@/types/chat';
+import styles from './GameView.module.scss';
 
 // Type definitions based on API returns
 interface Character {
@@ -29,116 +26,144 @@ interface Location {
   description?: string;
 }
 
-interface Scene {
-  id: string;
-  location_id: string;
-  prompt?: string;
-}
-
 const GameView = () => {
   const { storyId } = gameRoute.useParams();
   const navigate = useNavigate();
+  const [message, setMessage] = useState('');
+  const [isConnected, setIsConnected] = useState(false);
   
-  // State to track current game progress
-  const [gameState, setGameState] = useState<GameState>({
-    chapterId: null,
-    sceneId: null,
-    characterId: null,
+  // Fetch the latest scene for this story
+  const { data: scene, isLoading: isLoadingScene, error } = useLatestScene(storyId);
+  
+  // Select the first character from the scene for now (in a real app, you might let the user choose)
+  const selectedCharacter = scene?.characters?.[0];
+  
+  // Setup scene and messages
+  const { data: messages = [] } = useMessages(scene?.id?.toString() || '');
+  const { sendMessage, isConnected: wsConnected } = useScene({
+    sceneId: scene?.id?.toString() || '',
+    onConnectionChange: setIsConnected
   });
   
-  // For demo purposes, we'll use a default scene and character
-  const [loading, setLoading] = useState(true);
+  const handleSendMessage = () => {
+    if (message.trim() && scene?.id) {
+      sendMessage(message);
+      setMessage('');
+    }
+  };
   
-  useEffect(() => {
-    // In a real implementation, you would fetch the player's current progress
-    // for this story from an API
-    const fetchGameState = async () => {
-      try {
-        // Simulate API call to get current game state
-        setTimeout(() => {
-          setGameState({
-            chapterId: '1', // Default to first chapter
-            sceneId: '1',   // Default to first scene
-            characterId: '1' // Default character
-          });
-          setLoading(false);
-        }, 1000);
-      } catch (error) {
-        console.error('Failed to load game state:', error);
-        setLoading(false);
-      }
-    };
-    
-    fetchGameState();
-  }, [storyId]);
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
   
-  const { data: scene, isLoading: isLoadingScene } = useScene(gameState.sceneId || '1');
-  const { data: character, isLoading: isLoadingCharacter } = useCharacter(gameState.characterId || '1');
-  const { data: location, isLoading: isLoadingLocation } = useLocation(
-    scene?.location_id ? String(scene.location_id) : '1'
-  );
-
-
-  if (loading || isLoadingCharacter || isLoadingLocation) {
+  if (isLoadingScene) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" height="100vh">
-        <CircularProgress />
-      </Box>
+      <Container>
+        <div className={styles.loading}>Loading scene...</div>
+      </Container>
+    );
+  }
+  
+  if (error || !scene) {
+    return (
+      <Container>
+        <div className={styles.error}>
+          <h2>Error loading scene</h2>
+          <p>{error?.message || 'Unknown error'}</p>
+          <Button onClick={() => navigate({ to: '/' })}>Return to Home</Button>
+        </div>
+      </Container>
     );
   }
 
-  // Provide default values if data is missing
-  const characterData = character as Character || { 
-    id: '1', 
-    name: 'Unknown Character', 
-    avatar: 'https://via.placeholder.com/150' 
-  };
-  
-  const locationData = location as Location || { 
-    id: '1', 
-    name: 'Unknown Location', 
-    background: 'https://via.placeholder.com/1200x800' 
-  };
-
   return (
-    <Box
-      sx={{
-        height: '100vh',
-        backgroundImage: `url(${locationData.background})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-      }}
+    <div 
+      className={styles.gameView}
+      style={scene.location?.background ? { 
+        backgroundImage: `url(${scene.location.background})` 
+      } : undefined}
     >
-      <Container maxWidth="lg" sx={{ height: '100%', py: 2 }}>
-        <Box display="flex" flexDirection="column" height="100%">
-          <Box display="flex" justifyContent="space-between" mb={2}>
-            <Typography variant="h4">Story: {storyId}</Typography>
-          </Box>
+      <Container>
+        <div className={styles.gameContainer}>
+          {/* Location information */}
+          <div className={styles.locationInfo}>
+            <Card>
+              <h2>{scene.location?.name || 'Unknown Location'}</h2>
+              <p>{scene.location?.description || 'No description available'}</p>
+            </Card>
+          </div>
           
-          <Box display="flex" gap={2} height="100%">
-            <Paper elevation={3} sx={{ p: 2, minWidth: 200 }}>
-              <Box
-                component="img"
-                src={characterData.avatar}
-                alt={characterData.name}
-                sx={{ width: '100%', borderRadius: 1 }}
-              />
-              <Typography variant="h6" mt={2}>
-                {characterData.name}
-              </Typography>
-              <Typography variant="body2" mt={1}>
-                Location: {locationData.name}
-              </Typography>
-            </Paper>
-            <Box flex={1}>
-              {gameState.sceneId && (
-                <Chat uuid={gameState.sceneId} />
+          {/* Character information */}
+          <div className={styles.characterInfo}>
+            <Card>
+              {selectedCharacter ? (
+                <>
+                  <div className={styles.characterHeader}>
+                    <img 
+                      src={selectedCharacter.avatar} 
+                      alt={selectedCharacter.name} 
+                      className={styles.avatar}
+                    />
+                    <h2>{selectedCharacter.name}</h2>
+                  </div>
+                  <p>{selectedCharacter.description || 'No description available'}</p>
+                </>
+              ) : (
+                <p>No character information available</p>
               )}
-            </Box>
-          </Box>
-        </Box>
+            </Card>
+          </div>
+          
+          {/* Message display area */}
+          <div className={styles.messagesContainer}>
+            {scene.messages && scene.messages.length > 0 ? (
+              <div className={styles.messages}>
+                {scene.messages.map((msg: Message, index: number) => (
+                  <div 
+                    key={index} 
+                    className={`${styles.message} ${msg.role === 'user' ? styles.userMessage : styles.assistantMessage}`}
+                  >
+                    <div className={styles.messageContent}>{msg.content}</div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className={styles.emptyMessages}>
+                <p>Begin your adventure by sending a message...</p>
+              </div>
+            )}
+          </div>
+          
+          {/* Message input area */}
+          <div className={styles.inputContainer}>
+            <div className={styles.connectionStatus}>
+              {isConnected ? 
+                <span className={styles.connected}>Connected</span> : 
+                <span className={styles.disconnected}>Disconnected</span>
+              }
+            </div>
+            <div className={styles.inputWrapper}>
+              <Input
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Type your message..."
+                fullWidth
+              />
+              <Button 
+                onClick={handleSendMessage} 
+                disabled={!isConnected || !message.trim()}
+              >
+                Send
+              </Button>
+            </div>
+          </div>
+        </div>
       </Container>
-    </Box>
+    </div>
   );
 };
 

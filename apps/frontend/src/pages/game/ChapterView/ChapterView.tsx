@@ -61,7 +61,14 @@ const ChapterView = () => {
                 {scene.prompt}
               </div>
               <div className={styles.sceneDetails}>
-                Location ID: {scene.location_id}
+                {scene.location ? (
+                  <span>Location: {scene.location.name}</span>
+                ) : (
+                  <span>Location ID: {scene.location_id}</span>
+                )}
+                {scene.characters && (
+                  <span> | Characters: {scene.characters.length}</span>
+                )}
               </div>
             </div>
           ))
