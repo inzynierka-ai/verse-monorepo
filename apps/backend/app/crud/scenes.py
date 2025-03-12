@@ -1,10 +1,14 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from app.models.scene import Scene
 from app.schemas import scene as scene_schema
 
 def get_scene(db: Session, scene_id: int):
-    """Get a scene by its ID"""
-    return db.query(Scene).filter(Scene.id == scene_id).first()
+    """Get a scene by its ID with all relationships loaded"""
+    return db.query(Scene).options(
+        joinedload(Scene.location),
+        joinedload(Scene.characters),
+        joinedload(Scene.messages)
+    ).filter(Scene.id == scene_id).first()
 
 def create_scene(db: Session, scene: scene_schema.SceneCreate):
     """Create a new scene"""

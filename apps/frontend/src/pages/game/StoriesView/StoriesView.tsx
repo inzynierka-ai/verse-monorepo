@@ -35,7 +35,7 @@ const StoriesView = () => {
   }, []);
 
   const handleStoryClick = (storyId: string) => {
-    navigate({ to: `/game/${storyId}` });
+    navigate({ to: `/play/${storyId}` });
   };
 
   if (isLoading) {

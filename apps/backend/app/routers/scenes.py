@@ -26,9 +26,9 @@ router = APIRouter(
     tags=["scenes"]
 )
 
-@router.get("/{scene_id}", response_model=scene_schema.Scene)
+@router.get("/{scene_id}", response_model=scene_schema.SceneDetail)
 async def get_scene_id(scene = Depends(scene_permission), current_user: User = Depends(get_current_user)):
-    """Get a specific scene that belongs to the current user"""
+    """Get a specific scene that belongs to the current user with its location, characters, and messages"""
     return scene
 
 
@@ -64,7 +64,7 @@ async def scene_websocket(websocket: WebSocket, scene_id: str, db: Session = Dep
         raise HTTPException(status_code=404, detail="Character or location not found")
     
     try:
-        system_prompt = await scene_service.load_character_prompt(character.id, location.id)
+        system_prompt = await scene_service.load_character_prompt(db, character.id, location.id)
     except ValueError as e:
         print(f"Error loading character prompt: {str(e)}")
         await websocket.close()
@@ -96,7 +96,7 @@ async def scene_websocket(websocket: WebSocket, scene_id: str, db: Session = Dep
                 complete_message = SceneChatComplete(type="chat_complete")
                 await websocket.send_text(complete_message.model_dump_json())
 
-                analysis = scene_service.get_character_analysis(character.id)
+                analysis = scene_service.get_character_analysis(db, character.id)
                 analysis_message = SceneAnalysisUpdate(
                     type="analysis",
                     analysis=analysis

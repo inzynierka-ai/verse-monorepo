@@ -10,8 +10,8 @@ services:
     volumes:
       - ./apps/frontend:/app
       - /app/node_modules
-    environment:
-      - VITE_API_URL=http://backend:8000
+    env_file:
+      - ./apps/frontend/.env
     depends_on:
       - backend
 
@@ -23,8 +23,8 @@ services:
       - "8000:8000"
     volumes:
       - ./apps/backend:/app
-    environment:
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/verse
+    env_file:
+      - ./apps/backend/.env
     depends_on:
       - db
 

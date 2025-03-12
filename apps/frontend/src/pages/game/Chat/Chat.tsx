@@ -1,9 +1,9 @@
 import { Box, Container, Alert } from '@mui/material';
 import Messages from './components/Messages/Messages';
 import ChatInput from './components/ChatInput/ChatInput';
-import { useMessages } from '@/hooks/useMessages';
-import { useAnalysis } from '@/hooks/useAnalysis';
-import { useScene } from '@/hooks/useScene';
+import { useMessages } from '@/common/hooks/useMessages';
+import { useAnalysis } from '@/common/hooks/useAnalysis';
+import { useScene } from '@/common/hooks/useScene';
 
 interface ChatViewProps {
   uuid: string;

@@ -3,6 +3,9 @@ from pydantic import BaseModel
 from app.schemas.websocket import BaseClientMessage, BaseServerMessage
 
 from pydantic import BaseModel
+from app.schemas.message import Message
+from app.schemas.character import Character
+from app.schemas.location import Location
 
 class SceneBase(BaseModel):
     prompt: str
@@ -14,6 +17,14 @@ class SceneCreate(SceneBase):
 
 class Scene(SceneBase):
     id: int
+
+    class Config:
+        from_attributes = True
+
+class SceneDetail(Scene):
+    location: Location
+    characters: List[Character]
+    messages: List[Message]
 
     class Config:
         from_attributes = True

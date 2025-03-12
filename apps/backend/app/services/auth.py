@@ -3,14 +3,14 @@ from jose import JWTError, jwt
 from datetime import datetime, timedelta
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from app.db.session import get_db
 from app.models.user import User
 from app.schemas.auth import TokenData
 
 SECRET_KEY = "your_secret_key"  # Change this in production!
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+ACCESS_TOKEN_EXPIRE_MINUTES = 1440  # Changed from 30 to 1440 (24 hours)
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/token")
@@ -46,15 +46,6 @@ def authenticate_user(db: Session, username: str, password: str):
         return False
     return user
 
-# Kept for backwards compatibility
-def authenticate_user_with_email(db: Session, email: str, password: str):
-    """Legacy function that authenticates with email"""
-    user = get_user_by_email(db, email)
-    if not user:
-        return False
-    if not verify_password(password, user.hashed_password):
-        return False
-    return user
 
 def get_current_user(db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)):
     credentials_exception = HTTPException(
@@ -98,7 +89,14 @@ class ResourcePermission:
         
         elif self.resource_type == "scene":
             from app.models.scene import Scene
-            resource = db.query(Scene).filter(Scene.id == resource_id).first()
+            
+            # Query scene with all relationships loaded for SceneDetail
+            resource = db.query(Scene).options(
+                joinedload(Scene.location),
+                joinedload(Scene.characters),
+                joinedload(Scene.messages)
+            ).filter(Scene.id == resource_id).first()
+            
             if not resource:
                 raise HTTPException(status_code=404, detail=f"Scene not found")
                 

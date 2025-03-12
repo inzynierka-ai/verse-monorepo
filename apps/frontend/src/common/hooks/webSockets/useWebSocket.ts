@@ -8,6 +8,7 @@ interface WebSocketConfig {
   reconnectAttempts?: number;
   initialDelay?: number;
   maxDelay?: number;
+  enabled?: boolean;
 }
 
 interface WebSocketHookReturn {
@@ -24,6 +25,7 @@ export const useWebSocket = ({
   reconnectAttempts = 5,
   initialDelay = 1000,
   maxDelay = 30000,
+  enabled = true,
 }: WebSocketConfig): WebSocketHookReturn => {
   const socket = useRef<WebSocket | null>(null);
   const attempts = useRef(0);
@@ -56,10 +58,20 @@ export const useWebSocket = ({
   );
 
   const connect = useCallback(() => {
+    // Don't connect if not enabled
+    if (!enabled || !url) {
+      if (socket.current) {
+        socket.current.close();
+        socket.current = null;
+        setIsConnected(false);
+      }
+      return;
+    }
+
     // if (socket.current) {
     //   socket.current.close();
     // }
-
+    console.log(url)
     socket.current = new WebSocket(url);
 
     socket.current.onopen = () => {
@@ -72,7 +84,7 @@ export const useWebSocket = ({
       setIsConnected(false);
       onCloseRef.current?.();
 
-      if (attempts.current < reconnectAttempts) {
+      if (enabled && attempts.current < reconnectAttempts) {
         const delay = getBackoffDelay(attempts.current);
 
         attempts.current++;
@@ -87,21 +99,30 @@ export const useWebSocket = ({
     socket.current.onerror = (error) => {
       console.error('WebSocket error:', error);
     };
-  }, [url, reconnectAttempts, getBackoffDelay]);
+  }, [url, reconnectAttempts, getBackoffDelay, enabled]);
 
   const reconnect = useCallback(() => {
-    attempts.current = 0;
-    connect();
-  }, [connect]);
+    if (enabled) {
+      attempts.current = 0;
+      connect();
+    }
+  }, [connect, enabled]);
 
   useEffect(() => {
-    connect();
+    if (enabled) {
+      connect();
+    } else if (socket.current) {
+      socket.current.close();
+      socket.current = null;
+      setIsConnected(false);
+    }
+    
     return () => {
       if (socket.current) {
         socket.current.close();
       }
     };
-  }, [connect]);
+  }, [connect, enabled]);
 
   return {
     socket: socket.current,

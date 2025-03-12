@@ -1,0 +1,307 @@
+@use '@/common/styles/variables.scss' as *;
+@use '@/common/styles/mixins.scss' as *;
+
+.gameView {
+  min-height: 100vh;
+  background-size: cover;
+  background-position: center;
+  position: relative;
+  font-family: $game-font;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba($dark-bg, 0.8);
+    z-index: 1;
+  }
+}
+
+.gameContainer {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-areas:
+    "location character"
+    "messages messages"
+    "input input";
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto 1fr auto;
+  gap: 24px;
+  padding: 32px 0;
+  min-height: 100vh;
+}
+
+.locationInfo, .characterInfo {
+  padding: 0;
+  
+  h2 {
+    margin-bottom: 12px;
+    color: $primary-color;
+    font-weight: 600;
+    font-size: 1.4rem;
+  }
+  
+  p {
+    color: $light-text;
+    line-height: 1.6;
+  }
+}
+
+.locationInfo {
+  grid-area: location;
+}
+
+.characterInfo {
+  grid-area: character;
+}
+
+.characterHeader {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid $primary-color;
+  box-shadow: 0 0 15px rgba($accent-color, 0.5);
+}
+
+.messagesContainer {
+  grid-area: messages;
+  background-color: rgba($card-bg, 0.8);
+  border-radius: 12px;
+  padding: 24px;
+  max-height: 50vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba($primary-color, 0.1);
+}
+
+.messages {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.message {
+  padding: 12px 18px;
+  border-radius: 16px;
+  max-width: 80%;
+  animation: fadeIn 0.3s ease-in-out;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.userMessage {
+  align-self: flex-end;
+  background: linear-gradient(135deg, darken($primary-color, 10%), darken($accent-color, 5%));
+  color: white;
+  border-bottom-right-radius: 2px;
+  font-weight: 500;
+  box-shadow: 0 4px 12px rgba(darken($accent-color, 20%), 0.3);
+}
+
+.assistantMessage {
+  align-self: flex-start;
+  background-color: rgba($dark-bg, 0.9);
+  color: $light-text;
+  border-bottom-left-radius: 2px;
+  border-left: 3px solid $accent-color;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.messageContent {
+  word-break: break-word;
+  line-height: 1.5;
+}
+
+.emptyMessages {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
+  color: rgba($light-text, 0.7);
+  font-style: italic;
+}
+
+.inputContainer {
+  grid-area: input;
+  background-color: $card-bg;
+  border-radius: 12px;
+  padding: 18px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba($primary-color, 0.2);
+}
+
+.inputWrapper {
+  display: flex;
+  gap: 12px;
+  
+  input {
+    background-color: $input-bg;
+    border: 1px solid rgba($primary-color, 0.3);
+    color: $light-text;
+    transition: all 0.2s ease;
+    
+    &:focus {
+      border-color: $accent-color;
+      box-shadow: 0 0 0 2px rgba($accent-color, 0.2);
+    }
+    
+    &::placeholder {
+      color: rgba($light-text, 0.5);
+    }
+  }
+  
+  button {
+    background: linear-gradient(135deg, $primary-color, $accent-color);
+    border: none;
+    color: white;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    min-width: 80px;
+    
+    &:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba($accent-color, 0.4);
+    }
+    
+    &:disabled {
+      opacity: 0.6;
+      background: linear-gradient(135deg, desaturate($primary-color, 40%), desaturate($accent-color, 40%));
+    }
+  }
+}
+
+.connectionStatus {
+  margin-bottom: 12px;
+  font-size: 0.9rem;
+}
+
+.connected {
+  color: $success-color;
+  display: flex;
+  align-items: center;
+  
+  &::before {
+    content: '';
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    margin-right: 8px;
+    background-color: $success-color;
+    border-radius: 50%;
+    animation: pulse 1.5s infinite;
+  }
+}
+
+.disconnected {
+  color: $error-color;
+  display: flex;
+  align-items: center;
+  
+  &::before {
+    content: '';
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    margin-right: 8px;
+    background-color: $error-color;
+    border-radius: 50%;
+  }
+}
+
+.loading, .error {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  gap: 24px;
+  text-align: center;
+  color: $light-text;
+  
+  p {
+    font-size: 1.2rem;
+    margin-top: 16px;
+  }
+}
+
+.loadingSpinner {
+  width: 60px;
+  height: 60px;
+  border: 4px solid rgba($primary-color, 0.3);
+  border-radius: 50%;
+  border-top-color: $primary-color;
+  animation: spin 1s ease-in-out infinite;
+}
+
+.error {
+  color: $error-color;
+  
+  h2 {
+    color: $error-color;
+    font-size: 1.8rem;
+    margin-bottom: 8px;
+  }
+  
+  button {
+    margin-top: 16px;
+    background: linear-gradient(135deg, $primary-color, $accent-color);
+    border: none;
+    color: white;
+    padding: 10px 24px;
+    border-radius: 6px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba($accent-color, 0.4);
+    }
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+} 
