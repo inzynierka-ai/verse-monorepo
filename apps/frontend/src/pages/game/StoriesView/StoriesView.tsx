@@ -35,7 +35,7 @@ const StoriesView = () => {
   }, []);
 
   const handleStoryClick = (storyId: string) => {
-    navigate({ to: `/stories/${storyId}/chapters` });
+    navigate({ to: `/play/${storyId}` });
   };
 
   if (isLoading) {

@@ -46,15 +46,6 @@ def authenticate_user(db: Session, username: str, password: str):
         return False
     return user
 
-# Kept for backwards compatibility
-def authenticate_user_with_email(db: Session, email: str, password: str):
-    """Legacy function that authenticates with email"""
-    user = get_user_by_email(db, email)
-    if not user:
-        return False
-    if not verify_password(password, user.hashed_password):
-        return False
-    return user
 
 def get_current_user(db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)):
     credentials_exception = HTTPException(

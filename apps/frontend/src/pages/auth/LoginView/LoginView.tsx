@@ -6,9 +6,11 @@ import { useNavigate } from '@tanstack/react-router';
 import Button from '@/common/components/Button';
 import Input from '@/common/components/Input';
 import styles from './LoginView.module.scss';
+import { useAuth } from '@/common/hooks';
 
 const LoginView = () => {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [formData, setFormData] = useState<LoginCredentials>({
     username: '',
     password: '',
@@ -17,7 +19,7 @@ const LoginView = () => {
   const [errors, setErrors] = useState<Partial<LoginCredentials>>({});
   const [loginError, setLoginError] = useState<string | null>(null);
 
-  const { mutate: login, isPending: isLoading } = useLogin();
+  const { mutate: loginMutation, isPending: isLoading } = useLogin();
 
   const validateForm = (): boolean => {
     const newErrors: Partial<LoginCredentials> = {};
@@ -64,8 +66,9 @@ const LoginView = () => {
   
     setLoginError(null);
   
-    login(formData, {
-      onSuccess: () => {
+    loginMutation(formData, {
+      onSuccess: (data) => {
+        login(data.token);
         navigate({ to: '/stories' });
       },
       onError: (error) => {
