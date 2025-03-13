@@ -1,0 +1,20 @@
+---
+description: for styling using scss
+globs: *.scss
+alwaysApply: false
+---
+- Prefer @use over @import for module imports
+- Use namespaces with imports (e.g., `@use "variables" as *`)
+- use [variables.scss](mdc:apps/frontend/src/common/styles/variables.scss) and [mixins.scss](mdc:apps/frontend/src/common/styles/mixins.scss) when possible
+- Use classes for each element, don't nest html selectors
+- Use SCSS variables for colors, spacing, and other repeated values
+- keep consistent styling across the app
+- Apply consistent spacing between rule blocks
+- Leverage pseudo-elements (::before, ::after) for decorative elements
+- Use rem units for typography and spacing for better accessibility
+- Implement responsive design with relative units (rem, vh, %)
+- Structure complex layouts with flexbox
+- Leverage nested & operator for hover and active states
+- Implement performant animations (transform, opacity)
+- Use z-index strategically for layering elements
+- Apply consistent naming patterns for module files
