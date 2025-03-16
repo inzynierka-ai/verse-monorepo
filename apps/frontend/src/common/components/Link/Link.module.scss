@@ -17,13 +17,13 @@
     height: 1px;
     bottom: -2px;
     left: 0;
-    background: linear-gradient(to right, $accent-color, $secondary-accent);
+    background: linear-gradient(to right, var(--accent-color), var(--secondary-accent));
     transition: width 0.3s ease;
   }
   
   &:hover {
-    color: color.adjust($accent-color, $lightness: 10%);
-    text-shadow: 0 0 8px rgba($accent-color, 0.4);
+    color: var(--accent-lighter);
+    text-shadow: 0 0 8px hsla(var(--accent-h), var(--accent-s), var(--accent-l), 0.4);
     
     &::after {
       width: 100%;

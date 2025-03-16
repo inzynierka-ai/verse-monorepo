@@ -5,6 +5,7 @@ export interface Character {
   relationshipLevel: number;
   threadId: string;
   description: string;
+  health: number;
 }
 
 export interface Location {
@@ -12,4 +13,5 @@ export interface Location {
   name: string;
   description: string;
   background: string;
+  themeType?: 'library' | 'forest' | 'castle' | 'cave' | 'beach' | 'space';
 }

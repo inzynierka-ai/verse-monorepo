@@ -1,6 +1,45 @@
 @use '@/common/styles/mixins' as *;
 @use '@/common/styles/variables' as *;
 
+.homepage {
+  min-height: 100vh;
+  font-family: $game-font;
+  overflow-x: hidden;
+  position: relative;
+}
+
+.heroSection {
+  height: 100vh;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 0 2rem;
+  background: linear-gradient(135deg, var(--dark-bg), var(--dark-bg-darker));
+  color: $light-text;
+  overflow: hidden;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: 
+      radial-gradient(circle at 20% 20%, hsla(var(--primary-h), var(--primary-s), var(--primary-l), 0.1), transparent 40%),
+      radial-gradient(circle at 80% 80%, hsla(var(--accent-h), var(--accent-s), var(--accent-l), 0.1), transparent 40%);
+    z-index: 1;
+  }
+  
+  * {
+    position: relative;
+    z-index: 2;
+  }
+}
+
 .container {
   width: 100%;
   height: 100vh;
@@ -9,7 +48,7 @@
   align-items: center;
   position: relative;
   overflow: hidden;
-  background: linear-gradient(135deg, $dark-bg, darken($dark-bg, 5%));
+  background: linear-gradient(135deg, var(--dark-bg), var(--dark-bg-darker));
   color: $light-text;
 }
 
@@ -34,7 +73,7 @@
   font-size: 2.5rem;
   font-weight: 700;
   margin-bottom: 1.5rem;
-  background: linear-gradient(90deg, $accent-color, $secondary-accent);
+  background: linear-gradient(90deg, var(--accent-color), var(--secondary-accent));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   animation: gradientBg 8s ease infinite;
@@ -82,7 +121,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: radial-gradient(circle at center, transparent 0%, $dark-bg 70%);
+  background: radial-gradient(circle at center, transparent 0%, var(--dark-bg) 70%);
   
   &::after {
     content: '';
@@ -92,8 +131,8 @@
     right: -50%;
     bottom: -50%;
     background: 
-      radial-gradient(circle at 80% 10%, rgba($primary-color, 0.1) 0%, transparent 25%),
-      radial-gradient(circle at 20% 80%, rgba($accent-color, 0.1) 0%, transparent 25%);
+      radial-gradient(circle at 80% 10%, hsla(var(--primary-h), var(--primary-s), var(--primary-l), 0.1) 0%, transparent 25%),
+      radial-gradient(circle at 20% 80%, hsla(var(--accent-h), var(--accent-s), var(--accent-l), 0.1) 0%, transparent 25%);
     z-index: 1;
     animation: gradientBg 15s ease infinite;
     background-size: 200% 200%;

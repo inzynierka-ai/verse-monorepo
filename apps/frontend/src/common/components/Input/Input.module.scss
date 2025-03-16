@@ -1,84 +1,55 @@
-@use '@/common/styles/variables' as *;
+@use '@/common/styles/variables.scss' as *;
+@use '@/common/styles/mixins.scss' as *;
 
 .formGroup {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  transition: all 0.3s ease;
-  
-  &:focus-within {
-    transform: translateY(-2px);
-  }
+  margin-bottom: 1rem;
+  position: relative;
+  width: 100%;
 }
 
 .label {
   font-size: 0.9rem;
-  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: 0.5rem;
+  color: var(--light-text);
   font-weight: 500;
-  letter-spacing: 0.5px;
-  display: flex;
-  align-items: center;
-  
-  &::before {
-    content: '';
-    display: inline-block;
-    width: 4px;
-    height: 4px;
-    background: $accent-color;
-    margin-right: 8px;
-    border-radius: 50%;
-  }
 }
 
 .input {
-  padding: 0.9rem 1.2rem;
-  border-radius: 6px;
-  background: $input-bg;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  color: $light-text;
+  background-color: var(--input-bg);
+  color: var(--light-text);
+  border: 1px solid hsla(var(--light-text-h), var(--light-text-s), var(--light-text-l), 0.2);
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
   font-size: 1rem;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
+  width: 100%;
   
   &:focus {
     outline: none;
-    border-color: $accent-color;
-    box-shadow: 0 0 0 3px rgba($accent-color, 0.15), 0 4px 12px rgba(0, 0, 0, 0.1);
-    background: rgba(255, 255, 255, 0.08);
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px hsla(var(--primary-h), var(--primary-s), var(--primary-l), 0.2);
   }
   
   &::placeholder {
-    color: rgba(255, 255, 255, 0.4);
+    color: hsla(var(--light-text-h), var(--light-text-s), var(--light-text-l), 0.5);
   }
 }
 
 .error {
-  color: $error-color;
-  font-size: 0.85rem;
-  margin-top: 0.3rem;
-  display: flex;
-  align-items: center;
-  
-  &::before {
-    content: '!';
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 16px;
-    height: 16px;
-    background: rgba($error-color, 0.2);
-    border-radius: 50%;
-    margin-right: 8px;
-    font-size: 11px;
-    font-weight: bold;
-  }
+  color: var(--error-color);
+  font-size: 0.8rem;
+  margin-top: 0.5rem;
+  font-weight: 500;
 }
 
 .hasError {
-  border-color: rgba($error-color, 0.5);
+  border-color: var(--error-color);
   
   &:focus {
-    border-color: $error-color;
-    box-shadow: 0 0 0 3px rgba($error-color, 0.15), 0 4px 12px rgba(0, 0, 0, 0.1);
+    border-color: var(--error-color);
+    box-shadow: 0 0 0 2px hsla(var(--error-h), var(--error-s), var(--error-l), 0.2);
   }
 }
 

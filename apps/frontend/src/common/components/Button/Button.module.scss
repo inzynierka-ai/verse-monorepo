@@ -1,96 +1,72 @@
-@use "sass:color";
-@use '@/common/styles/variables' as *;
+@use 'sass:color';
+@use '@/common/styles/variables.scss' as *;
+@use '@/common/styles/mixins.scss' as *;
 
 .button {
-  padding: 0.9rem;
-  border: none;
-  border-radius: 6px;
-  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  font-weight: 500;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
+  border: none;
+  outline: none;
   position: relative;
   overflow: hidden;
-  letter-spacing: 0.5px;
-  
-  &::after {
-    content: '';
-    position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: linear-gradient(transparent, rgba(255, 255, 255, 0.2), transparent);
-    transform: rotate(30deg);
-    transition: 0.6s;
-  }
-  
-  &:hover::after {
-    left: 100%;
-  }
   
   &:disabled {
+    opacity: 0.6;
     cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(1px);
   }
 }
 
 .primary {
-  background: linear-gradient(90deg, $primary-color, $accent-color);
-  color: white;
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-color-light));
+  color: var(--light-text);
   
-  &:hover {
-    background: linear-gradient(90deg, color.adjust($primary-color, $lightness: 3%), color.adjust($accent-color, $lightness: 3%));
-    transform: translateY(-2px);
-    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2), 0 0 12px rgba($accent-color, 0.2);
+  &:hover:not(:disabled) {
+    background: linear-gradient(135deg, var(--primary-color-dark), var(--primary-color));
+    box-shadow: 0 4px 12px hsla(var(--primary-h), var(--primary-s), var(--primary-l), 0.3);
   }
   
-  &:active {
-    transform: translateY(0);
-  }
-  
-  &:disabled {
-    background: linear-gradient(90deg, rgba($primary-color, 0.6), rgba($accent-color, 0.6));
+  &:focus-visible {
+    box-shadow: 0 0 0 2px hsla(var(--primary-h), var(--primary-s), var(--primary-l), 0.4);
   }
 }
 
 .secondary {
-  background: transparent;
-  color: $accent-color;
-  border: 1px solid $accent-color;
-  box-shadow: 0 0 10px rgba($accent-color, 0.1);
+  background: linear-gradient(135deg, var(--secondary-color), var(--secondary-color-light));
+  color: var(--light-text);
   
-  &:hover {
-    background: rgba($accent-color, 0.08);
-    transform: translateY(-2px);
-    box-shadow: 0 0 15px rgba($accent-color, 0.2);
+  &:hover:not(:disabled) {
+    background: linear-gradient(135deg, var(--secondary-color-dark), var(--secondary-color));
+    box-shadow: 0 4px 12px hsla(var(--secondary-h), var(--secondary-s), var(--secondary-l), 0.3);
   }
   
-  &:active {
-    transform: translateY(0);
-  }
-  
-  &:disabled {
-    color: rgba($accent-color, 0.6);
-    border-color: rgba($accent-color, 0.6);
+  &:focus-visible {
+    box-shadow: 0 0 0 2px hsla(var(--secondary-h), var(--secondary-s), var(--secondary-l), 0.4);
   }
 }
 
 .text {
   background: transparent;
-  color: $accent-color;
-  padding: 0.6rem;
+  color: var(--primary-color);
+  padding: 0.5rem 1rem;
   
-  &:hover {
-    color:  color.adjust($accent-color, $lightness: 10%);
-    text-shadow: 0 0 8px rgba($accent-color, 0.4);
-    transform: translateY(-1px);
+  &:hover:not(:disabled) {
+    background-color: hsla(var(--primary-h), var(--primary-s), var(--primary-l), 0.1);
   }
   
-  &:active {
-    transform: translateY(0);
-  }
-  
-  &:disabled {
-    color: rgba($accent-color, 0.6);
+  &:focus-visible {
+    box-shadow: 0 0 0 2px hsla(var(--primary-h), var(--primary-s), var(--primary-l), 0.2);
   }
 }
 
