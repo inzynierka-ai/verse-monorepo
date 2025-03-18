@@ -7,6 +7,8 @@ import { Card } from '@/common/components/Card/Card';
 import Input from '@/common/components/Input/Input';
 import Button from '@/common/components/Button/Button';
 import { useScene } from '@/common/hooks/useScene';
+import { useMessages } from '@/common/hooks/useMessages';
+
 
 import styles from './GameView.module.scss';
 
@@ -37,11 +39,17 @@ const GameView = () => {
   // Select the first character from the scene for now (in a real app, you might let the user choose)
   const selectedCharacter = scene?.characters?.[0];
   
-  // Setup scene and messages
+  // Setup scene and real-time messaging with WebSocket
   const { sendMessage, isConnected: wsConnected } = useScene({
     sceneId: scene?.id?.toString() || '',
     onConnectionChange: setIsConnected
   });
+  
+  // Get messages that are updated in real-time by the WebSocket handler in useScene
+  const { data: messages = [] } = useMessages(
+    scene?.id?.toString() || '', 
+    scene?.messages
+  );
   
   const handleSendMessage = () => {
     if (message.trim() && scene?.id) {
@@ -120,9 +128,9 @@ const GameView = () => {
           
           {/* Message display area */}
           <div className={styles.messagesContainer}>
-            {scene.messages && scene.messages.length > 0 ? (
+            {messages.length > 0 ? (
               <div className={styles.messages}>
-                {scene.messages.map((msg, index) => (
+                {messages.map((msg, index) => (
                   <div 
                     key={index} 
                     className={`${styles.message} ${msg.role === 'user' ? styles.userMessage : styles.assistantMessage}`}
