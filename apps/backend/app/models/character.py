@@ -11,7 +11,7 @@ class Character(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, nullable=False)
-    avatar = Column(String, nullable=False)
+    avatar = Column(String, nullable=True)
     description = Column(String, nullable=False)
     relationship_level = Column(Integer, nullable=False)
     prompt = Column(String, nullable=False)
