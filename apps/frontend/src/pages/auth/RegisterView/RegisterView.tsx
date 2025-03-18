@@ -1,13 +1,13 @@
 import { useState, FormEvent } from 'react';
-import { Link } from '@tanstack/react-router';
-import styles from '../styles/auth.module.scss';
-import { useRegister, RegisterCredentials } from '../../../services/api';
+import { Link } from '@/common/components/Link';
+import { AuthCard, AuthForm } from '../components';
+import { useRegister, RegisterCredentials } from '@/services/api';
+import Button from '@/common/components/Button';
+import Input from '@/common/components/Input';
+import { useNavigate } from '@tanstack/react-router';
 
-interface RegisterViewProps {
-  onRegisterSuccess?: () => void;
-}
 
-const RegisterView = ({ onRegisterSuccess }: RegisterViewProps) => {
+const RegisterView = () => {
   const [formData, setFormData] = useState<RegisterCredentials>({
     username: '',
     email: '',
@@ -15,6 +15,8 @@ const RegisterView = ({ onRegisterSuccess }: RegisterViewProps) => {
   });
 
   const [confirmPassword, setConfirmPassword] = useState('');
+  const navigate = useNavigate()
+
   const [errors, setErrors] = useState<Partial<RegisterCredentials & { confirmPassword: string }>>(
     {},
   );
@@ -89,10 +91,7 @@ const RegisterView = ({ onRegisterSuccess }: RegisterViewProps) => {
 
     register(formData, {
       onSuccess: () => {
-        if (onRegisterSuccess) {
-          onRegisterSuccess();
-        }
-        // Redirect to login or handle success in your app
+        navigate({ to: '/login' });
       },
       onError: (error) => {
         setRegisterError(
@@ -102,100 +101,78 @@ const RegisterView = ({ onRegisterSuccess }: RegisterViewProps) => {
     });
   };
 
+  const footerContent = (
+    <>
+      Already have an account?
+      <Link to="/login">Login</Link>
+    </>
+  );
+
   return (
-    <div className={styles.authContainer}>
-      <div className={styles.authCard}>
-        <div className={styles.logoContainer}>
-          <h1>VERSE</h1>
-        </div>
+    <AuthCard 
+      title="Join the Adventure"
+      subtitle="Create your account to begin your journey"
+      errorMessage={registerError}
+      footer={footerContent}
+    >
+      <AuthForm onSubmit={handleSubmit}>
+        <Input
+          type="text"
+          id="username"
+          name="username"
+          value={formData.username}
+          onChange={handleChange}
+          placeholder="Choose a username"
+          disabled={isLoading}
+          label="Username"
+          error={errors.username}
+          fullWidth
+        />
 
-        <h2 className={styles.title}>Join the Adventure</h2>
-        <p className={styles.subtitle}>Create your account to begin your journey</p>
+        <Input
+          type="email"
+          id="email"
+          name="email"
+          value={formData.email}
+          onChange={handleChange}
+          placeholder="Enter your email"
+          disabled={isLoading}
+          label="Email"
+          error={errors.email}
+          fullWidth
+        />
 
-        {registerError && <div className={styles.error}>{registerError}</div>}
+        <Input
+          type="password"
+          id="password"
+          name="password"
+          value={formData.password}
+          onChange={handleChange}
+          placeholder="Create a password"
+          disabled={isLoading}
+          label="Password"
+          error={errors.password}
+          fullWidth
+        />
 
-        <form className={styles.form} onSubmit={handleSubmit}>
-          <div className={styles.formGroup}>
-            <label htmlFor="username" className={styles.label}>
-              Username
-            </label>
-            <input
-              type="text"
-              id="username"
-              name="username"
-              value={formData.username}
-              onChange={handleChange}
-              className={styles.input}
-              placeholder="Choose a username"
-              disabled={isLoading}
-            />
-            {errors.username && <div className={styles.error}>{errors.username}</div>}
-          </div>
+        <Input
+          type="password"
+          id="confirmPassword"
+          name="confirmPassword"
+          value={confirmPassword}
+          onChange={handleChange}
+          placeholder="Confirm your password"
+          disabled={isLoading}
+          label="Confirm Password"
+          error={errors.confirmPassword}
+          fullWidth
+        />
 
-          <div className={styles.formGroup}>
-            <label htmlFor="email" className={styles.label}>
-              Email
-            </label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              className={styles.input}
-              placeholder="Enter your email"
-              disabled={isLoading}
-            />
-            {errors.email && <div className={styles.error}>{errors.email}</div>}
-          </div>
-
-          <div className={styles.formGroup}>
-            <label htmlFor="password" className={styles.label}>
-              Password
-            </label>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              className={styles.input}
-              placeholder="Create a password"
-              disabled={isLoading}
-            />
-            {errors.password && <div className={styles.error}>{errors.password}</div>}
-          </div>
-
-          <div className={styles.formGroup}>
-            <label htmlFor="confirmPassword" className={styles.label}>
-              Confirm Password
-            </label>
-            <input
-              type="password"
-              id="confirmPassword"
-              name="confirmPassword"
-              value={confirmPassword}
-              onChange={handleChange}
-              className={styles.input}
-              placeholder="Confirm your password"
-              disabled={isLoading}
-            />
-            {errors.confirmPassword && <div className={styles.error}>{errors.confirmPassword}</div>}
-          </div>
-
-          <button type="submit" className={styles.button} disabled={isLoading}>
-            {isLoading ? 'Creating Account...' : 'Create Account'}
-          </button>
-        </form>
-
-        <div className={styles.linkContainer}>
-          Already have an account?
-          <Link to="/login" className={styles.link}>
-            Login
-          </Link>
-        </div>
-      </div>
-    </div>
+        <Button type="submit" disabled={isLoading} fullWidth>
+          {isLoading ? 'Creating Account...' : 'Create Account'}
+        </Button>
+      </AuthForm>
+    </AuthCard>
   );
 };
 

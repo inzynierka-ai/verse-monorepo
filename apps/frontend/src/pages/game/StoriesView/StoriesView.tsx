@@ -8,7 +8,9 @@ const StoriesView = () => {
   const navigate = useNavigate();
 
   const handleStoryClick = (storyId: string) => {
-    navigate({ to: `/stories/${storyId}` });
+
+    navigate({ to: `/play/${storyId}` });
+    
   };
 
   if (isLoading) {

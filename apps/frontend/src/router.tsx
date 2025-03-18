@@ -11,7 +11,7 @@ import StoriesView from './pages/game/StoriesView/StoriesView';
 import LoginView from './pages/auth/LoginView';
 import RegisterView from './pages/auth/RegisterView';
 import ForgotPasswordView from './pages/auth/ForgotPasswordView';
-import { IntroductionWrapper } from './components/IntroductionWrapper';
+import HomePage from './pages/homepage/HomePage';
 
 // Define a root route with layout
 const rootRoute = createRootRoute({
@@ -27,14 +27,7 @@ const rootRoute = createRootRoute({
 const introductionRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',
-  component: IntroductionWrapper,
-});
-
-// Game route
-const gameRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: '/game',
-  component: GameView,
+  component: HomePage,
 });
 
 // Stories route
@@ -44,6 +37,12 @@ const storiesRoute = createRoute({
   component: StoriesView,
 });
 
+// Game route - simplified to a single URL
+export const gameRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/play/$storyId',
+  component: GameView,
+});
 
 // Login route
 const loginRoute = createRoute({
@@ -66,7 +65,7 @@ const forgotPasswordRoute = createRoute({
   component: ForgotPasswordView,
 });
 
-// Create the route tree
+// Register all routes
 const routeTree = rootRoute.addChildren([
   introductionRoute,
   gameRoute,

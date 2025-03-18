@@ -1,7 +1,7 @@
 import { render, screen } from '@/testUtils';
 import GameView from './GameView';
-import { useCharacter } from '@/hooks/useCharacter';
-import { useLocation } from '@/hooks/useLocation';
+import { useCharacter } from '@/services/api/hooks/useCharacter';
+import { useLocation } from '@/services/api/hooks/useLocation';
 import { Mock, vi } from 'vitest';
 
 // Mock the hooks
