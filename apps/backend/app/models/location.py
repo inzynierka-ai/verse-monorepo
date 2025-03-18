@@ -9,7 +9,7 @@ class Location(Base):
     __tablename__ = 'locations'
     
     id = Column(Integer, primary_key=True, index=True)
-    background = Column(String, nullable=False)
+    background = Column(String, nullable=True)
     name = Column(String, nullable=False)
     description = Column(String, nullable=False)
     prompt = Column(String, nullable=False)
