@@ -1,8 +1,8 @@
 import { render, screen } from '@/testUtils';
 import Chat from './Chat';
-import { useMessages } from '@/hooks/useMessages';
-import { useAnalysis } from '@/hooks/useAnalysis';
-import { useSendMessage } from '@/hooks/useSendMessage';
+import { useMessages } from '@/common/hooks/useMessages';
+import { useAnalysis } from '@/common/hooks/useAnalysis';
+import { useSendMessage } from '@/common/hooks/useSendMessage';
 import { vi, type Mock } from 'vitest';
 
 // Mock the hooks

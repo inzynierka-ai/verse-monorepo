@@ -1,0 +1,10 @@
+---
+description: check if creating a TS files or react components
+globs: *tsx, *ts
+alwaysApply: false
+---
+- import files using @ as an alias for src/ if at least 2 levels jump are needed
+- create custom hooks to handle fetching data using React Query and [client.ts](mdc:apps/frontend/src/services/api/client.ts) 
+- split components for smaller chunks
+- put heavy logic outside of components to hooks or utils
+- don't add comments

@@ -8,8 +8,8 @@ services:
     volumes:
       - ./apps/frontend:/app
       - /app/node_modules
-    environment:
-      - VITE_API_URL=http://backend:8000
+    env_file:
+      - ./apps/frontend/.env
     depends_on:
       - backend
 
@@ -21,8 +21,8 @@ services:
       - "8000:8000"
     volumes:
       - ./apps/backend:/app
-    environment:
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/verse
+    env_file:
+      - ./apps/backend/.env
     depends_on:
       - db
 
@@ -35,7 +35,7 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_DB=verse
     ports:
-      - "5432:5432"
+      - "5433:5432"
 
 volumes:
   postgres_data: 
