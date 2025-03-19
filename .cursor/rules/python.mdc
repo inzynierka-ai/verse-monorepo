@@ -1,6 +1,6 @@
 ---
-description: guidlines how to write python and fast api code
-globs: 
+description: 
+globs: *.py
 alwaysApply: false
 ---
 

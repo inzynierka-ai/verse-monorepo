@@ -1,7 +1,7 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends
 
 from app.services.llm import LLMService
-from app.schemas.schemas_ws import WorldGenerationRequest, ErrorMessage
+from app.schemas.schemas_ws import WorldGenerationRequest, ErrorMessage, WorldGenerationInput
 from app.utils.websocket_manager import WorldGenWebSocketManager
 from app.services.world_generation.world_generation_coordinator import WorldGenerationCoordinator
 
@@ -53,8 +53,10 @@ async def world_generation_websocket(
                         # This will send updates through the WebSocket as generation progresses
                         await coordinator.generate_world(
                             session_id=session_id,
-                            description=request.description,
-                            settings=request.settings
+                            input_data=WorldGenerationInput(
+                                world=request.world,
+                                playerCharacter=request.playerCharacter
+                            )
                         )
                 except ValueError as e:
                     # Handle invalid request format
