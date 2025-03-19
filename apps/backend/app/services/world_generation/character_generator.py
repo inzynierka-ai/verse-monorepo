@@ -14,6 +14,7 @@ from app.prompts import (
     CHARACTER_IMAGE_PROMPT_SYSTEM_PROMPT,
     CHARACTER_IMAGE_PROMPT_USER_TEMPLATE
 )
+import asyncio
 
 
 async def describe_characters(
@@ -129,12 +130,13 @@ async def generate_characters(
         
         world_description = world.description
         
-        for character in characters:
-            image_prompt = await generate_image_prompt(
-                character,
-                world_description,
-                llm_service
-            )
+        image_prompt_tasks = [
+            generate_image_prompt(character, world_description, llm_service)
+            for character in characters
+        ]
+        image_prompts = await asyncio.gather(*image_prompt_tasks)
+
+        for character, image_prompt in zip(characters, image_prompts):
             character.imagePrompt = image_prompt
         
         return CharactersOutput(characters=characters)
