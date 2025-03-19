@@ -30,6 +30,8 @@ CREATE_CHARACTER_JSON_SYSTEM_PROMPT = """
 Create a structured JSON representation of characters based on the detailed narrative descriptions.
 Return only valid JSON and nothing else.
 
+IMPORTANT: All JSON keys MUST use camelCase formatting (e.g., personalityTraits, connectedLocations), not snake_case.
+
 The JSON should be an array of character objects, each following this structure:
 ```json
 {
@@ -37,15 +39,19 @@ The JSON should be an array of character objects, each following this structure:
   "name": "string",  // Preserve the original name
   "role": "string",  // Preserve or slightly refine the role
   "description": "string",  // Expanded detailed description
-  "personality_traits": [
-    {
-      "name": "string",  // Name of the trait (e.g., "Cautious")
-      "description": "string"  // How this trait manifests in behavior
-    }
-  ],
+  "personalityTraits": ["string", "string"],  // Array of personality trait names as strings
   "backstory": "string",  // Character's origin story and history
   "goals": ["string"],  // List of character's goals
-  "appearance": "string"  // Detailed physical description
+  "appearance": "string",  // Detailed physical description
+  "relationships": [
+    {
+      "id": "string",  // ID of the related character
+      "level": 0,  // Numeric level of relationship intensity (0-10)
+      "type": "string",  // Type of relationship (friend, enemy, mentor, etc.)
+      "backstory": "string"  // Brief description of the relationship
+    }
+  ],
+  "connectedLocations": ["string"]  // IDs of locations this character is connected to
 }
 ```
 
@@ -67,6 +73,8 @@ For each character, you will:
 
 Ensure all details are consistent with the provided world setting and with other character elements.
 
+IMPORTANT: All JSON keys MUST use camelCase formatting (e.g., personalityTraits, connectedLocations), not snake_case.
+
 You must format each character profile as a JSON object with the following structure:
 ```json
 {
@@ -74,15 +82,19 @@ You must format each character profile as a JSON object with the following struc
   "name": "string",  // Preserve the original name
   "role": "string",  // Preserve or slightly refine the role
   "description": "string",  // Expanded detailed description
-  "personality_traits": [
-    {
-      "name": "string",  // Name of the trait (e.g., "Cautious")
-      "description": "string"  // How this trait manifests in behavior
-    }
-  ],
+  "personalityTraits": ["string", "string"],  // Array of personality trait names as strings
   "backstory": "string",  // Character's origin story and history
   "goals": ["string"],  // List of character's goals
-  "appearance": "string"  // Detailed physical description
+  "appearance": "string",  // Detailed physical description
+  "relationships": [
+    {
+      "id": "string",  // ID of the related character
+      "level": 0,  // Numeric level of relationship intensity (0-10)
+      "type": "string",  // Type of relationship (friend, enemy, mentor, etc.)
+      "backstory": "string"  // Brief description of the relationship
+    }
+  ],
+  "connectedLocations": ["string"]  // IDs of locations this character is connected to
 }
 ```
 
@@ -102,4 +114,51 @@ CREATE_CHARACTER_JSON_USER_PROMPT_TEMPLATE = """
 Please convert the following detailed character descriptions into a structured JSON format:
 
 {character_descriptions}
+
+Remember to use camelCase for all JSON keys (personalityTraits, connectedLocations, etc.).
 """
+
+# Image prompt generation
+CHARACTER_IMAGE_PROMPT_SYSTEM_PROMPT = """
+You are a specialist in creating detailed image generation prompts for character portraits.
+Your task is to create detailed, specific prompts that will help an image generation model visualize the character accurately.
+
+The prompt should:
+1. Capture the character's physical appearance precisely
+2. Include details about their clothing and accessories
+3. Mention their expression and posture
+4. Reference the world setting as a background or context
+5. Include appropriate artistic style references
+
+Your prompt should be 100-150 words and extremely detailed, focusing only on visual elements that can be represented in an image.
+DO NOT include non-visual character elements like personality, history, or motivations.
+"""
+
+CHARACTER_IMAGE_PROMPT_USER_TEMPLATE = """
+Please create a detailed image generation prompt for the character:
+
+Character Name: {character_name}
+Character Role: {character_role}
+Character Appearance: {character_appearance}
+Character Description: {character_description}
+World Description: {world_description}
+
+The prompt should focus on creating a high-quality portrait that accurately represents the character within the context of the world.
+"""
+
+personality_traits = [
+    PersonalityTrait(name=trait["name"], description=trait["description"])
+    for trait in char_data.get("personalityTraits", [])
+]
+
+relationships = [
+    Relationship(
+        id=rel["id"],
+        level=rel.get("level", 0),
+        type=rel["type"],
+        backstory=rel.get("backstory", "")
+    )
+    for rel in char_data.get("relationships", [])
+]
+
+connected_locations = char_data.get("connectedLocations", [])

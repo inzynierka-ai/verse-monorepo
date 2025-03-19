@@ -1,20 +1,24 @@
 from typing import Dict, Any, List, Optional
 import json
 from app.services.llm import LLMService, ModelName
-from app.schemas.world_wizard import (
+from app.schemas.world_generation import (
     CharacterGeneratorInput,
     CharacterGeneratorOutput,
     DetailedCharacter,
     PersonalityTrait,
-    CharacterTemplate
+    CharacterTemplate,
+    Relationship
 )
 from app.prompts import (
     CHARACTER_GENERATOR_SYSTEM_PROMPT,
     CHARACTER_GENERATOR_USER_PROMPT_TEMPLATE,
     DESCRIBE_CHARACTER_SYSTEM_PROMPT,
     CREATE_CHARACTER_JSON_SYSTEM_PROMPT,
-    CREATE_CHARACTER_JSON_USER_PROMPT_TEMPLATE
+    CREATE_CHARACTER_JSON_USER_PROMPT_TEMPLATE,
+    CHARACTER_IMAGE_PROMPT_SYSTEM_PROMPT,
+    CHARACTER_IMAGE_PROMPT_USER_TEMPLATE
 )
+from pydantic import ValidationError
 
 
 async def describe_characters(
@@ -63,10 +67,48 @@ async def describe_characters(
     )
 
 
+async def generate_image_prompt(
+    character: DetailedCharacter,
+    world_description: str,
+    llm_service: Optional[LLMService] = None
+) -> str:
+    """
+    Generate a detailed image prompt for a character.
+    
+    Args:
+        character: The detailed character to generate an image prompt for
+        world_description: The world description for context
+        llm_service: Optional LLMService instance to use
+        
+    Returns:
+        A detailed image prompt for the character
+    """
+    llm_service = llm_service or LLMService()
+    
+    user_prompt = CHARACTER_IMAGE_PROMPT_USER_TEMPLATE.format(
+        character_name=character.name,
+        character_role=character.role,
+        character_appearance=character.appearance,
+        character_description=character.description,
+        world_description=world_description
+    )
+    
+    messages = [
+        llm_service.create_message("system", CHARACTER_IMAGE_PROMPT_SYSTEM_PROMPT),
+        llm_service.create_message("user", user_prompt)
+    ]
+    
+    return await llm_service.generate_completion(
+        messages=messages,
+        model=ModelName.GEMINI_2_PRO,
+        temperature=0.7,
+        stream=False
+    )
+
+
 async def generate_characters(
     input_data: CharacterGeneratorInput,
-    llm_service: Optional[LLMService] = None,
-    use_two_step_process: bool = True
+    llm_service: Optional[LLMService] = None
 ) -> CharacterGeneratorOutput:
     """
     Generate detailed character profiles from basic character templates.
@@ -74,7 +116,6 @@ async def generate_characters(
     Args:
         input_data: CharacterGeneratorInput containing world setting and basic characters
         llm_service: Optional LLMService instance to use
-        use_two_step_process: Whether to use the two-step process (narrative description first, then JSON)
         
     Returns:
         CharacterGeneratorOutput containing detailed character profiles
@@ -89,53 +130,40 @@ async def generate_characters(
     # Initialize LLM service if not provided
     llm_service = llm_service or LLMService()
     
-    if use_two_step_process:
-        # Step 1: Generate narrative descriptions
-        character_descriptions = await describe_characters(input_data, llm_service)
-        
-        # Step 2: Convert narrative to structured JSON
-        user_prompt = CREATE_CHARACTER_JSON_USER_PROMPT_TEMPLATE.format(
-            character_descriptions=character_descriptions
-        )
-        
-        messages = [
-            llm_service.create_message("system", CREATE_CHARACTER_JSON_SYSTEM_PROMPT),
-            llm_service.create_message("user", user_prompt)
-        ]
-        
-        response = await llm_service.generate_completion(
-            messages=messages,
-            model=ModelName.GEMINI_2_PRO,
-            temperature=0.7,
-            stream=False
-        )
-    else:
-        # Original single-step process
-        # Format the user prompt with input data
-        user_prompt = create_character_prompt(
-            input_data.world_setting.theme,
-            input_data.world_setting.atmosphere,
-            input_data.world_setting.description,
-            input_data.basic_characters
-        )
-        
-        # Call the LLM
-        messages = [
-            llm_service.create_message("system", CHARACTER_GENERATOR_SYSTEM_PROMPT),
-            llm_service.create_message("user", user_prompt)
-        ]
-        
-        response = await llm_service.generate_completion(
-            messages=messages,
-            model=ModelName.GEMINI_2_PRO,
-            temperature=0.7,
-            stream=False
-        )
+    # Step 1: Generate narrative descriptions
+    character_descriptions = await describe_characters(input_data, llm_service)
+    
+    # Step 2: Convert narrative to structured JSON
+    user_prompt = CREATE_CHARACTER_JSON_USER_PROMPT_TEMPLATE.format(
+        character_descriptions=character_descriptions
+    )
+    
+    messages = [
+        llm_service.create_message("system", CREATE_CHARACTER_JSON_SYSTEM_PROMPT),
+        llm_service.create_message("user", user_prompt)
+    ]
+    
+    response = await llm_service.generate_completion(
+        messages=messages,
+        model=ModelName.GEMINI_2_PRO,
+        temperature=0.7,
+        stream=False
+    )
     
     # Parse the response and create detailed characters
     try:
         characters_data = parse_json_response(response)
         detailed_characters = create_detailed_characters(characters_data)
+        
+        # Generate image prompts for all characters
+        for character in detailed_characters:
+            image_prompt = await generate_image_prompt(
+                character, 
+                input_data.world_setting.description,
+                llm_service
+            )
+            character.image_prompt = image_prompt
+        
         return CharacterGeneratorOutput(detailed_characters=detailed_characters)
     except Exception as e:
         raise ValueError(f"Failed to parse character data: {str(e)}, raw response: {response}")
@@ -279,30 +307,15 @@ def create_detailed_characters(characters_data: List[Dict[str, Any]]) -> List[De
     detailed_characters = []
     
     for char_data in characters_data:
-        # Validate required fields
-        required_fields = ["id", "name", "role", "description", "backstory", "goals", "appearance"]
-        for field in required_fields:
-            if field not in char_data:
-                raise ValueError(f"Missing required field '{field}' in character data")
-        
-        # Convert personality traits
-        personality_traits = [
-            PersonalityTrait(name=trait["name"], description=trait["description"])
-            for trait in char_data.get("personality_traits", [])
-        ]
-        
-        # Create DetailedCharacter object
-        detailed_character = DetailedCharacter(
-            id=char_data["id"],
-            name=char_data["name"],
-            role=char_data["role"],
-            description=char_data["description"],
-            personality_traits=personality_traits,
-            backstory=char_data["backstory"],
-            goals=char_data["goals"],
-            appearance=char_data["appearance"],
-            relationships=[]  # Relationships will be added later if needed
-        )
-        detailed_characters.append(detailed_character)
+        try:
+            # Initialize with empty image_prompt that will be filled later
+            char_data["image_prompt"] = ""
+            
+            # Let Pydantic handle the validation
+            detailed_character = DetailedCharacter(**char_data)
+            detailed_characters.append(detailed_character)
+            
+        except ValidationError as e:
+            raise ValueError(f"Invalid character data: {str(e)}")
     
     return detailed_characters 
