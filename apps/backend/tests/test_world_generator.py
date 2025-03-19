@@ -1,7 +1,7 @@
 import asyncio
 import json
 import sys
-from app.schemas.world_wizard import WorldSettings
+from app.schemas.world_generation import WorldSettings
 from app.services.world_generation.world_generator import generate_complete_world
 
 

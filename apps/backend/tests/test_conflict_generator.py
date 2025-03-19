@@ -1,7 +1,7 @@
 import asyncio
 import json
 from app.services.world_generation.conflict_generator import generate_conflict
-from app.schemas.world_wizard import (
+from app.schemas.world_generation import (
     ConflictGeneratorInput,
     SettingInfo,
     ConflictTemplate

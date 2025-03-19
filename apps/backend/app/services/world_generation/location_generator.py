@@ -1,7 +1,7 @@
 from typing import Dict, Any, List, Optional
 import json
 from app.services.llm import LLMService, ModelName
-from app.schemas.world_wizard import (
+from app.schemas.world_generation import (
     LocationGeneratorInput,
     LocationGeneratorOutput,
     DetailedLocation,

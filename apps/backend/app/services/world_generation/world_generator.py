@@ -2,7 +2,7 @@ from typing import List, Optional, Dict, Any
 from pydantic import BaseModel
 
 from app.services.llm import LLMService
-from app.schemas.world_wizard import WorldSettings, WorldRule
+from app.schemas.world_generation import WorldSettings, WorldRule
 
 class WorldSetting(BaseModel):
     description: str

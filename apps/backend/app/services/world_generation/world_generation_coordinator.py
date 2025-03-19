@@ -3,7 +3,7 @@ import asyncio
 
 from app.services.llm import LLMService
 from app.utils.websocket_manager import WorldGenWebSocketManager
-from app.schemas.world_wizard import (
+from app.schemas.world_generation import (
     WorldSettings,
     CharacterGeneratorInput,
     LocationGeneratorInput

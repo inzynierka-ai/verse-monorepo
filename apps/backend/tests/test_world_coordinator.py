@@ -1,7 +1,7 @@
 import asyncio
 import json
 from app.services.world_generation.world_coordinator import coordinate_world
-from app.schemas.world_wizard import (
+from app.schemas.world_generation import (
     WorldCoordinatorInput,
     SettingInfo,
     DetailedCharacter,
