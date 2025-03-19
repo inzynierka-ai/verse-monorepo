@@ -102,12 +102,7 @@ Return an array of these detailed character profiles as a JSON array.
 """
 
 CHARACTER_GENERATOR_USER_PROMPT_TEMPLATE = """
-World Theme: {theme}
-World Atmosphere: {atmosphere}
-World Description: {setting_description}
-
-Basic Character Templates:
-{character_templates}
+World Description: {world_description}
 """
 
 CREATE_CHARACTER_JSON_USER_PROMPT_TEMPLATE = """
@@ -145,20 +140,3 @@ World Description: {world_description}
 
 The prompt should focus on creating a high-quality portrait that accurately represents the character within the context of the world.
 """
-
-personality_traits = [
-    PersonalityTrait(name=trait["name"], description=trait["description"])
-    for trait in char_data.get("personalityTraits", [])
-]
-
-relationships = [
-    Relationship(
-        id=rel["id"],
-        level=rel.get("level", 0),
-        type=rel["type"],
-        backstory=rel.get("backstory", "")
-    )
-    for rel in char_data.get("relationships", [])
-]
-
-connected_locations = char_data.get("connectedLocations", [])

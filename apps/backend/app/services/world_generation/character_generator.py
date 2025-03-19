@@ -2,15 +2,11 @@ from typing import Dict, Any, List, Optional
 import json
 from app.services.llm import LLMService, ModelName
 from app.schemas.world_generation import (
-    CharacterGeneratorInput,
-    CharacterGeneratorOutput,
-    DetailedCharacter,
-    PersonalityTrait,
-    CharacterTemplate,
-    Relationship
+    Character,
+    CharactersOutput,
+    World
 )
 from app.prompts import (
-    CHARACTER_GENERATOR_SYSTEM_PROMPT,
     CHARACTER_GENERATOR_USER_PROMPT_TEMPLATE,
     DESCRIBE_CHARACTER_SYSTEM_PROMPT,
     CREATE_CHARACTER_JSON_SYSTEM_PROMPT,
@@ -18,42 +14,27 @@ from app.prompts import (
     CHARACTER_IMAGE_PROMPT_SYSTEM_PROMPT,
     CHARACTER_IMAGE_PROMPT_USER_TEMPLATE
 )
-from pydantic import ValidationError
 
 
 async def describe_characters(
-    input_data: CharacterGeneratorInput,
+    world: World,
     llm_service: Optional[LLMService] = None
 ) -> str:
     """
-    Generate detailed narrative descriptions of characters from basic character templates.
+    Generate detailed narrative descriptions of characters based on world description.
     
     Args:
-        input_data: CharacterGeneratorInput containing world setting and basic characters
+        world: World object containing description and other details
         llm_service: Optional LLMService instance to use
         
     Returns:
         A detailed narrative description of the characters
     """
-    # Early validation
-    if not input_data.basic_characters:
-        raise ValueError("No character templates provided")
     
-    if not input_data.world_setting:
-        raise ValueError("World setting is required")
-    
-    # Initialize LLM service if not provided
     llm_service = llm_service or LLMService()
     
-    # Format the user prompt with input data
-    user_prompt = create_character_prompt(
-        input_data.world_setting.theme,
-        input_data.world_setting.atmosphere,
-        input_data.world_setting.description,
-        input_data.basic_characters
-    )
+    user_prompt = create_character_prompt(world.description)
     
-    # Call the LLM with the narrative description prompt
     messages = [
         llm_service.create_message("system", DESCRIBE_CHARACTER_SYSTEM_PROMPT),
         llm_service.create_message("user", user_prompt)
@@ -68,7 +49,7 @@ async def describe_characters(
 
 
 async def generate_image_prompt(
-    character: DetailedCharacter,
+    character: Character,
     world_description: str,
     llm_service: Optional[LLMService] = None
 ) -> str:
@@ -88,8 +69,8 @@ async def generate_image_prompt(
     user_prompt = CHARACTER_IMAGE_PROMPT_USER_TEMPLATE.format(
         character_name=character.name,
         character_role=character.role,
-        character_appearance=character.appearance,
-        character_description=character.description,
+        character_appearance=character.description,
+        character_description=character.backstory,
         world_description=world_description
     )
     
@@ -107,33 +88,24 @@ async def generate_image_prompt(
 
 
 async def generate_characters(
-    input_data: CharacterGeneratorInput,
+    world: World,
     llm_service: Optional[LLMService] = None
-) -> CharacterGeneratorOutput:
+) -> CharactersOutput:
     """
-    Generate detailed character profiles from basic character templates.
+    Generate detailed character profiles based on world description.
     
     Args:
-        input_data: CharacterGeneratorInput containing world setting and basic characters
+        world: World object containing description and other details
         llm_service: Optional LLMService instance to use
         
     Returns:
-        CharacterGeneratorOutput containing detailed character profiles
+        CharactersOutput containing detailed character profiles
     """
-    # Early validation
-    if not input_data.basic_characters:
-        raise ValueError("No character templates provided")
     
-    if not input_data.world_setting:
-        raise ValueError("World setting is required")
-    
-    # Initialize LLM service if not provided
     llm_service = llm_service or LLMService()
     
-    # Step 1: Generate narrative descriptions
-    character_descriptions = await describe_characters(input_data, llm_service)
+    character_descriptions = await describe_characters(world, llm_service)
     
-    # Step 2: Convert narrative to structured JSON
     user_prompt = CREATE_CHARACTER_JSON_USER_PROMPT_TEMPLATE.format(
         character_descriptions=character_descriptions
     )
@@ -150,48 +122,40 @@ async def generate_characters(
         stream=False
     )
     
-    # Parse the response and create detailed characters
     try:
         characters_data = parse_json_response(response)
-        detailed_characters = create_detailed_characters(characters_data)
         
-        # Generate image prompts for all characters
-        for character in detailed_characters:
+        characters = [Character(**char_data) for char_data in characters_data]
+        
+        world_description = world.description
+        
+        for character in characters:
             image_prompt = await generate_image_prompt(
-                character, 
-                input_data.world_setting.description,
+                character,
+                world_description,
                 llm_service
             )
-            character.image_prompt = image_prompt
+            character.imagePrompt = image_prompt
         
-        return CharacterGeneratorOutput(detailed_characters=detailed_characters)
+        return CharactersOutput(characters=characters)
     except Exception as e:
         raise ValueError(f"Failed to parse character data: {str(e)}, raw response: {response}")
 
 
 def create_character_prompt(
-    theme: str,
-    atmosphere: Optional[str],
-    description: str,
-    character_templates: List[CharacterTemplate]
+    world_description: str
 ) -> str:
     """
     Create a formatted prompt for character generation.
     
     Args:
-        theme: The world theme
-        atmosphere: The world atmosphere
-        description: The world description
-        character_templates: List of basic character templates
+        world_description: The world description
         
     Returns:
         Formatted prompt string
     """
     return CHARACTER_GENERATOR_USER_PROMPT_TEMPLATE.format(
-        theme=theme,
-        atmosphere=atmosphere or "Not specified",
-        setting_description=description,
-        character_templates=json.dumps([char.model_dump() for char in character_templates], indent=2)
+        world_description=world_description
     )
 
 
@@ -249,8 +213,8 @@ def parse_json_response(response: str) -> List[Dict[str, Any]]:
     except json.JSONDecodeError as e:
         raise ValueError(f"Invalid JSON format: {str(e)}")
     
-    # Ensure we have a list of characters
-    return normalize_character_data(characters_data)
+
+    return characters_data
 
 
 def extract_json_from_response(response: str) -> str:
@@ -269,53 +233,3 @@ def extract_json_from_response(response: str) -> str:
         return response.split("```")[1].split("```")[0].strip()
     else:
         return response.strip()
-
-
-def normalize_character_data(data: Any) -> List[Dict[str, Any]]:
-    """
-    Normalize character data to ensure it's a list.
-    
-    Args:
-        data: Character data that might be a dict or list
-        
-    Returns:
-        List of character data dictionaries
-    """
-    if isinstance(data, list):
-        return data
-        
-    if isinstance(data, dict):
-        # Check if it's a dict with character keys
-        if any(key.lower().startswith("character") for key in data.keys()):
-            return list(data.values())
-        # Single character dict
-        return [data]
-        
-    raise ValueError(f"Unexpected data format: {type(data)}")
-
-
-def create_detailed_characters(characters_data: List[Dict[str, Any]]) -> List[DetailedCharacter]:
-    """
-    Create DetailedCharacter objects from raw character data.
-    
-    Args:
-        characters_data: List of character data dictionaries
-        
-    Returns:
-        List of DetailedCharacter objects
-    """
-    detailed_characters = []
-    
-    for char_data in characters_data:
-        try:
-            # Initialize with empty image_prompt that will be filled later
-            char_data["image_prompt"] = ""
-            
-            # Let Pydantic handle the validation
-            detailed_character = DetailedCharacter(**char_data)
-            detailed_characters.append(detailed_character)
-            
-        except ValidationError as e:
-            raise ValueError(f"Invalid character data: {str(e)}")
-    
-    return detailed_characters 
