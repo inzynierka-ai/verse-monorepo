@@ -1,192 +1,24 @@
-from typing import Dict, Any, List, Optional
+from typing import List, Optional
 
 from app.services.llm import LLMService, ModelName
-
-class PossibleEndingsGenerator:
-    """
-    Generator for creating multiple potential endings for the story
-    based on chapter events and character relationships.
-    """
-    
-    def __init__(self, llm_service: Optional[LLMService] = None):
-        """
-        Initialize the PossibleEndingsGenerator.
-        
-        Args:
-            llm_service: Optional LLMService instance to use
-        """
-        self.llm_service = llm_service or LLMService()
-    
-    async def generate_endings(self, chapter_overview: str, characters: List[Dict[str, Any]], 
-                              locations: List[Dict[str, Any]]) -> List[Dict[str, str]]:
-        """
-        Generate multiple possible endings based on chapter information.
-        
-        Args:
-            chapter_overview: Free-form overview of the chapter
-            characters: List of character information
-            locations: List of location information
-            
-        Returns:
-            List of dictionaries with 'trigger' and 'result' for each ending
-        """
-        # Create a prompt for the LLM to generate possible endings
-        prompt = self._create_endings_prompt(chapter_overview, characters, locations)
-        
-        # Call the LLM to generate endings
-        raw_endings = await self._generate_raw_endings(prompt)
-        
-        # Process and structure the endings
-        structured_endings = self._process_endings(raw_endings)
-        
-        return structured_endings
-    
-    def _create_endings_prompt(self, chapter_overview: str, characters: List[Dict[str, Any]], 
-                              locations: List[Dict[str, Any]]) -> str:
-        """
-        Create a prompt for the LLM to generate possible endings.
-        
-        Args:
-            chapter_overview: Free-form overview of the chapter
-            characters: List of character information
-            locations: List of location information
-            
-        Returns:
-            Formatted prompt string
-        """
-        # Extract key character information
-        character_info = "\n".join([
-            f"- {char.get('name', 'Unknown')}: {char.get('role', 'Unknown')} - {char.get('description', 'No description')[:100]}..."
-            for char in characters[:5]  # Limit to 5 characters for prompt clarity
-        ])
-        
-        # Extract key location information
-        location_info = "\n".join([
-            f"- {loc.get('name', 'Unknown')}: {loc.get('description', 'No description')[:100]}..."
-            for loc in locations[:5]  # Limit to 5 locations for prompt clarity
-        ])
-        
-        # Construct the prompt
-        return f"""Based on the following chapter overview, characters, and locations, generate 4-6 possible endings to the story.
-        
-CHAPTER OVERVIEW:
-{chapter_overview}
-
-KEY CHARACTERS:
-{character_info}
-
-KEY LOCATIONS:
-{location_info}
-
-For each ending, include:
-1. A specific trigger or decision point that leads to this ending
-2. A detailed description of the resulting outcome
-
-Return your response in this format:
-Ending 1:
-Trigger: [What causes this ending]
-Result: [Detailed description of what happens]
-
-Ending 2:
-Trigger: [What causes this ending]
-Result: [Detailed description of what happens]
-
-And so on...
-"""
-    
-    async def _generate_raw_endings(self, prompt: str) -> str:
-        """
-        Call the LLM to generate raw endings text.
-        
-        Args:
-            prompt: The formatted prompt for ending generation
-            
-        Returns:
-            Raw text response from the LLM
-        """
-        messages = [
-            self.llm_service.create_message("system", 
-                "You are a creative story generator specialized in creating diverse and interesting endings based on story elements."),
-            self.llm_service.create_message("user", prompt)
-        ]
-        
-        response = await self.llm_service.generate_completion(
-            messages=messages,
-            model=ModelName.GEMINI_2_PRO,  # Adjust model as needed
-            temperature=0.8,  # Higher temperature for creative variety
-            stream=False
-        )
-        
-        return response
-    
-    def _process_endings(self, raw_endings: str) -> List[Dict[str, str]]:
-        """
-        Process raw LLM output into structured endings.
-        
-        Args:
-            raw_endings: Raw text from the LLM
-            
-        Returns:
-            List of dictionaries with 'trigger' and 'result' for each ending
-        """
-        # Initialize results list
-        structured_endings = []
-        
-        # Define pattern to extract endings
-        # Looking for patterns like "Ending N:" followed by "Trigger:" and "Result:" sections
-        # This is a simple parser and might need refinement based on actual LLM output
-        current_ending = None
-        current_section = None
-        
-        for line in raw_endings.split('\n'):
-            line = line.strip()
-            
-            # Skip empty lines
-            if not line:
-                continue
-            
-            # Check for new ending
-            if line.lower().startswith('ending'):
-                # If we were processing an ending, add it to results
-                if current_ending and 'trigger' in current_ending and 'result' in current_ending:
-                    structured_endings.append(current_ending)
-                
-                # Start new ending
-                current_ending = {'trigger': '', 'result': ''}
-                current_section = None
-                continue
-            
-            # Check for trigger section
-            if line.lower().startswith('trigger:'):
-                current_section = 'trigger'
-                current_ending['trigger'] = line[len('trigger:'):].strip()
-                continue
-            
-            # Check for result section
-            if line.lower().startswith('result:'):
-                current_section = 'result'
-                current_ending['result'] = line[len('result:'):].strip()
-                continue
-            
-            # Append to current section if we're in one
-            if current_section and current_ending:
-                current_ending[current_section] += ' ' + line
-        
-        # Don't forget to add the last ending
-        if current_ending and 'trigger' in current_ending and 'result' in current_ending:
-            structured_endings.append(current_ending)
-        
-        return structured_endings
+from app.schemas.world_generation import PossibleEnding, PossibleEndingsOutput, Character, Location
+from app.utils.json_service import JSONService
+from app.prompts import (
+    POSSIBLE_ENDINGS_SYSTEM_PROMPT,
+    POSSIBLE_ENDINGS_USER_PROMPT_TEMPLATE,
+    CREATE_ENDINGS_JSON_SYSTEM_PROMPT,
+    CREATE_ENDINGS_JSON_USER_PROMPT_TEMPLATE
+)
 
 
 async def generate_possible_endings(
     chapter_overview: str, 
-    characters: List[Dict[str, Any]], 
-    locations: List[Dict[str, Any]],
+    characters: List[Character], 
+    locations: List[Location],
     llm_service: Optional[LLMService] = None
-) -> Dict[str, List[Dict[str, str]]]:
+) -> PossibleEndingsOutput:
     """
-    Standalone function to generate possible endings.
+    Generate multiple possible endings based on chapter information.
     
     Args:
         chapter_overview: Free-form overview of the chapter
@@ -195,9 +27,117 @@ async def generate_possible_endings(
         llm_service: Optional LLMService instance
         
     Returns:
-        Dictionary containing the possible endings
+        PossibleEndingsOutput containing the possible endings
     """
-    generator = PossibleEndingsGenerator(llm_service)
-    possible_endings = await generator.generate_endings(chapter_overview, characters, locations)
+    llm_service = llm_service or LLMService()
     
-    return {"possibleEndings": possible_endings} 
+    # Create a prompt for the LLM to generate possible endings
+    prompt = create_endings_prompt(chapter_overview, characters, locations)
+    
+    # Generate free-form endings descriptions
+    endings_descriptions = await generate_endings_descriptions(prompt, llm_service)
+    
+    # Convert free-form descriptions to structured JSON
+    endings = await structure_endings_to_json(endings_descriptions, llm_service)
+    
+    return PossibleEndingsOutput(possibleEndings=endings)
+
+
+def create_endings_prompt(
+    chapter_overview: str, 
+    characters: List[Character], 
+    locations: List[Location]
+) -> str:
+    """
+    Create a prompt for the LLM to generate possible endings.
+    
+    Args:
+        chapter_overview: Free-form overview of the chapter
+        characters: List of character information
+        locations: List of location information
+        
+    Returns:
+        Formatted prompt string
+    """
+    # Extract key character information
+    character_info = "\n".join([
+        f"- {char.name}: {char.role} - {char.description[:100]}..."
+        for char in characters[:5]  # Limit to 5 characters for prompt clarity
+    ])
+    
+    # Extract key location information
+    location_info = "\n".join([
+        f"- {loc.name}: {loc.description[:100]}..."
+        for loc in locations[:5]  # Limit to 5 locations for prompt clarity
+    ])
+    
+    # Construct the prompt using template
+    return POSSIBLE_ENDINGS_USER_PROMPT_TEMPLATE.format(
+        chapter_overview=chapter_overview,
+        character_info=character_info,
+        location_info=location_info
+    )
+
+
+async def generate_endings_descriptions(
+    prompt: str,
+    llm_service: LLMService
+) -> str:
+    """
+    Generate free-form descriptions of possible endings.
+    
+    Args:
+        prompt: The formatted prompt for ending generation
+        llm_service: LLMService instance
+        
+    Returns:
+        Free-form descriptions of possible endings
+    """
+    messages = [
+        llm_service.create_message("system", POSSIBLE_ENDINGS_SYSTEM_PROMPT),
+        llm_service.create_message("user", prompt)
+    ]
+    
+    return await llm_service.generate_completion(
+        messages=messages,
+        model=ModelName.GEMINI_2_PRO,
+        temperature=0.8,  # Higher temperature for creative variety
+        stream=False
+    )
+
+
+async def structure_endings_to_json(
+    endings_descriptions: str,
+    llm_service: LLMService
+) -> List[PossibleEnding]:
+    """
+    Convert free-form ending descriptions to structured JSON.
+    
+    Args:
+        endings_descriptions: Free-form descriptions of endings
+        llm_service: LLMService instance
+        
+    Returns:
+        List of PossibleEnding objects
+    """
+    prompt = CREATE_ENDINGS_JSON_USER_PROMPT_TEMPLATE.format(
+        endings_descriptions=endings_descriptions
+    )
+    
+    messages = [
+        llm_service.create_message("system", CREATE_ENDINGS_JSON_SYSTEM_PROMPT),
+        llm_service.create_message("user", prompt)
+    ]
+    
+    response = await llm_service.generate_completion(
+        messages=messages,
+        model=ModelName.GEMINI_2_PRO,
+        temperature=0.3,  # Lower temperature for more consistent output
+        stream=False
+    )
+    
+    try:
+        endings_data = JSONService.parse_and_validate_json_list(response, PossibleEnding)
+        return endings_data
+    except Exception as e:
+        raise ValueError(f"Failed to parse endings data: {str(e)}, raw response: {response}") 

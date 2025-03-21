@@ -30,6 +30,12 @@ from app.prompts.world_coordinator import (
     WORLD_COORDINATOR_SYSTEM_PROMPT,
     WORLD_COORDINATOR_USER_PROMPT_TEMPLATE,
 )
+from app.prompts.possible_endings_generator import (
+    POSSIBLE_ENDINGS_SYSTEM_PROMPT,
+    POSSIBLE_ENDINGS_USER_PROMPT_TEMPLATE,
+    CREATE_ENDINGS_JSON_SYSTEM_PROMPT,
+    CREATE_ENDINGS_JSON_USER_PROMPT_TEMPLATE,
+)
 
 # World Wizard prompts
 WORLD_WIZARD_SYSTEM_PROMPT = """You are an expert world-building AI that creates engaging and rich narrative worlds for interactive fiction and RPGs. Given a theme, you'll generate a detailed description of a game world including setting, atmosphere, characters, locations, and initial conflicts.
@@ -101,4 +107,8 @@ __all__ = [
     'WORLD_WIZARD_USER_PROMPT_TEMPLATE',
     'WORLD_STRUCTURE_SYSTEM_PROMPT',
     'WORLD_STRUCTURE_USER_PROMPT_TEMPLATE',
+    'POSSIBLE_ENDINGS_SYSTEM_PROMPT',
+    'POSSIBLE_ENDINGS_USER_PROMPT_TEMPLATE',
+    'CREATE_ENDINGS_JSON_SYSTEM_PROMPT',
+    'CREATE_ENDINGS_JSON_USER_PROMPT_TEMPLATE',
 ]

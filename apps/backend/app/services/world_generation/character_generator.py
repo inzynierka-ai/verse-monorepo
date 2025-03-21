@@ -1,5 +1,4 @@
-from typing import Dict, Any, List, Optional
-import json
+from typing import Optional
 from app.services.llm import LLMService, ModelName
 from app.schemas.world_generation import (
     Character,
@@ -14,6 +13,7 @@ from app.prompts import (
     CHARACTER_IMAGE_PROMPT_SYSTEM_PROMPT,
     CHARACTER_IMAGE_PROMPT_USER_TEMPLATE
 )
+from app.utils.json_service import JSONService
 import asyncio
 
 
@@ -34,7 +34,7 @@ async def describe_characters(
     
     llm_service = llm_service or LLMService()
     
-    user_prompt = create_character_prompt(world.description)
+    user_prompt = create_character_prompt(world)
     
     messages = [
         llm_service.create_message("system", DESCRIBE_CHARACTER_SYSTEM_PROMPT),
@@ -124,28 +124,26 @@ async def generate_characters(
     )
     
     try:
-        characters_data = parse_json_response(response)
-        
-        characters = [Character(**char_data) for char_data in characters_data]
+        characters_data = JSONService.parse_and_validate_json_list(response, Character)
         
         world_description = world.description
         
         image_prompt_tasks = [
             generate_image_prompt(character, world_description, llm_service)
-            for character in characters
+            for character in characters_data
         ]
         image_prompts = await asyncio.gather(*image_prompt_tasks)
 
-        for character, image_prompt in zip(characters, image_prompts):
+        for character, image_prompt in zip(characters_data, image_prompts):
             character.imagePrompt = image_prompt
         
-        return CharactersOutput(characters=characters)
+        return CharactersOutput(characters=characters_data)
     except Exception as e:
         raise ValueError(f"Failed to parse character data: {str(e)}, raw response: {response}")
 
 
 def create_character_prompt(
-    world_description: str
+    world: World
 ) -> str:
     """
     Create a formatted prompt for character generation.
@@ -157,81 +155,7 @@ def create_character_prompt(
         Formatted prompt string
     """
     return CHARACTER_GENERATOR_USER_PROMPT_TEMPLATE.format(
-        world_description=world_description
+        world_description=world.description,
+        world_rules=world.rules,
+        world_prolog=world.prolog
     )
-
-
-async def call_llm(
-    llm_service: LLMService,
-    system_prompt: str,
-    user_prompt: str,
-    model: ModelName = ModelName.GEMINI_2_PRO,
-    temperature: float = 0.7
-) -> str:
-    """
-    Call the LLM service with the given prompts.
-    
-    Args:
-        llm_service: The LLM service to use
-        system_prompt: The system prompt
-        user_prompt: The user prompt
-        model: The model to use
-        temperature: The temperature to use
-        
-    Returns:
-        The LLM response
-    """
-    messages = [
-        llm_service.create_message("system", system_prompt),
-        llm_service.create_message("user", user_prompt)
-    ]
-    
-    return await llm_service.generate_completion(
-        messages=messages,
-        model=model,
-        temperature=temperature,
-        stream=False
-    )
-
-
-def parse_json_response(response: str) -> List[Dict[str, Any]]:
-    """
-    Parse a JSON response from the LLM.
-    
-    Args:
-        response: The LLM response text
-        
-    Returns:
-        List of character data dictionaries
-    """
-    if not response:
-        raise ValueError("Empty response received from LLM")
-        
-    # Try to extract JSON from markdown code blocks if present
-    json_content = extract_json_from_response(response)
-    
-    try:
-        characters_data = json.loads(json_content)
-    except json.JSONDecodeError as e:
-        raise ValueError(f"Invalid JSON format: {str(e)}")
-    
-
-    return characters_data
-
-
-def extract_json_from_response(response: str) -> str:
-    """
-    Extract JSON content from a response that might contain markdown.
-    
-    Args:
-        response: The response text
-        
-    Returns:
-        Extracted JSON content as string
-    """
-    if "```json" in response:
-        return response.split("```json")[1].split("```")[0].strip()
-    elif "```" in response:
-        return response.split("```")[1].split("```")[0].strip()
-    else:
-        return response.strip()

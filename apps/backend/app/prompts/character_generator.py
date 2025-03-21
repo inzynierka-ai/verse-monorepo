@@ -103,6 +103,8 @@ Return an array of these detailed character profiles as a JSON array.
 
 CHARACTER_GENERATOR_USER_PROMPT_TEMPLATE = """
 World Description: {world_description}
+World Rules: {world_rules}
+World Prolog: {world_prolog}
 """
 
 CREATE_CHARACTER_JSON_USER_PROMPT_TEMPLATE = """
