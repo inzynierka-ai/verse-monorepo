@@ -11,10 +11,12 @@ class Character(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, nullable=False)
-    avatar = Column(String, nullable=True)
-    description = Column(String, nullable=False)
-    relationship_level = Column(Integer, nullable=False)
-    prompt = Column(String, nullable=False)
+    role = Column(String, nullable=False)
+    description = Column(String, nullable=False) # brief description of character
+    details = Column(String, nullable=False) # incl. physical description, personality traits, backstory, goals, relationships
+    image_dir = Column(String, nullable=True) # directory where all character images are stored
+    image_prompt = Column(String, nullable=True) # this might not be necessary to store in db
+    relationship_level = Column(Integer, nullable=False) # on hold for now
     story_id = Column(Integer, ForeignKey('stories.id'), nullable=False)
     
     # Relationships

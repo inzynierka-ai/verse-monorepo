@@ -9,10 +9,10 @@ class Location(Base):
     __tablename__ = 'locations'
     
     id = Column(Integer, primary_key=True, index=True)
-    background = Column(String, nullable=True)
     name = Column(String, nullable=False)
     description = Column(String, nullable=False)
-    prompt = Column(String, nullable=False)
+    image_prompt = Column(String, nullable=True)
+    details = Column(String, nullable=False) # incl. connected loacations, rules
     story_id = Column(Integer, ForeignKey('stories.id'), nullable=False)
     
     story = relationship("Story", back_populates="locations")

@@ -1,12 +1,15 @@
 from pydantic import BaseModel
+from typing import Optional
 
 class CharacterBase(BaseModel):
     name: str
-    avatar: str
+    role: str 
     description: str
+    details: str 
     relationship_level: int
-    prompt: str
     story_id: int
+    image_dir: Optional[str] = None
+    image_prompt: Optional[str] = None 
 
 class CharacterCreate(CharacterBase):
     pass
