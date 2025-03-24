@@ -116,6 +116,12 @@ class PossibleEndingsOutput(BaseModel):
     possibleEndings: List[PossibleEnding] = Field(..., description="List of possible endings for the chapter")
 
 
+# Narrator models
+class IntroductionOutput(BaseModel):
+    """Complete narrative introduction output"""
+    steps: List[str] = Field(..., description="List of sequential introduction text steps")
+
+
 # Aggregate output model
 class ChapterOutput(BaseModel):
     """Complete chapter output including all components"""
