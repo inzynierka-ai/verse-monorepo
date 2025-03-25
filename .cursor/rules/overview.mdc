@@ -1,0 +1,18 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Verse
+
+The game is an AI-driven, text-based adventure that showcases today’s AI capabilities by creating an engaging and dynamic narrative with simple mechanics. The main goal is to build relationships with AI characters, who remember interactions and adapt based on player choices.
+
+## Goals
+
+- Player Interaction with Characters
+    - Players can chat with AI-generated characters, building relationships and influencing NPC attitudes through social tasks and dialogue choices. NPCs will remember interactions, creating a sense of personality and consistency over time.
+    - The player’s choices drive the story forward in an endless, relationship-centered narrative.
+- Adaptive World Creation:
+    - At the start, the player chooses or defines a setting, such as a spaceship, medieval times, or a school. The AI then tailors the world, NPC attitudes, and visuals to fit this theme.
+    - As players progress, the AI dynamically introduces new locations, characters, and story elements, keeping gameplay fresh and engaging.
+    - The tone will adjust to the selected environment—for example, a school setting might feel lighthearted, while a murder mystery might be darker and more suspenseful. This adaptive tone provides a unique experience based on the player’s chosen world.

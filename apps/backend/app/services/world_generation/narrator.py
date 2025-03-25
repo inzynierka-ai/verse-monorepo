@@ -12,7 +12,7 @@ from app.prompts.narrator_prompts import (
     LOCATION_PROMPT_TEMPLATE,
     CALL_TO_ACTION_PROMPT_TEMPLATE
 )
-from app.schemas.world_generation import IntroductionOutput, Character, Location, World, ChapterOutput
+from app.schemas.world_generation import IntroductionOutput, Character, Location
 
 logger = logging.getLogger(__name__)
 
