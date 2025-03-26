@@ -1,4 +1,4 @@
-from typing import Dict, Any, List, Type, TypeVar, Generic, Optional
+from typing import Dict, Any, List, Type, TypeVar
 import json
 from pydantic import BaseModel, ValidationError
 
@@ -39,12 +39,13 @@ class JSONService:
             
         # Try to extract JSON from markdown code blocks if present
         json_content = JSONService.extract_json_from_response(response)
+        print(f"JSON content: {json_content}")
         
         try:
             data = json.loads(json_content)
             return data
         except json.JSONDecodeError as e:
-            raise ValueError(f"Invalid JSON format: {str(e)}")
+            raise ValueError(f"Invalid JSON format: {str(e)}") from e
     
     @staticmethod
     def parse_and_validate_json_response(response: str, model_class: Type[T]) -> T:
@@ -63,7 +64,7 @@ class JSONService:
         try:
             return model_class.model_validate(data)
         except ValidationError as e:
-            raise ValueError(f"JSON validation failed: {str(e)}")
+            raise ValueError(f"JSON validation failed: {str(e)}") from e
     
     @staticmethod
     def parse_and_validate_json_list(response: str, model_class: Type[T]) -> List[T]:
@@ -88,6 +89,6 @@ class JSONService:
                 validated_item = model_class.model_validate(item)
                 result.append(validated_item)
             except ValidationError as e:
-                raise ValueError(f"Validation failed for item {i}: {str(e)}")
+                raise ValueError(f"Validation failed for item {i}: {str(e)}") from e
         
         return result 

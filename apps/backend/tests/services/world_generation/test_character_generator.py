@@ -2,7 +2,7 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock
 
 from app.services.world_generation.character_generator import CharacterGenerator
-from app.schemas.world_generation import CharacterDraft, World, Character
+from app.schemas.world_generation import CharacterDraft, World, CharacterFromLLM
 from app.services.llm import LLMService
 
 
@@ -82,7 +82,7 @@ async def test_generate_character(character_generator, test_character_draft, tes
     
     
     # Assertions
-    assert isinstance(result, Character)
+    assert isinstance(result, CharacterFromLLM)
     assert result.imagePrompt == image_prompt
     
     # Verify expected calls

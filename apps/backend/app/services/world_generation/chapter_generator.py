@@ -1,4 +1,5 @@
-from typing import Dict, Any, List, Optional, Tuple
+from typing import Dict, Any, Optional, Tuple, List
+from openai.types.chat import ChatCompletionMessageParam
 
 from app.services.llm import LLMService, ModelName
 
@@ -87,7 +88,7 @@ that will serve as the foundation for generating characters, locations, and poss
         Returns:
             Chapter overview text from the LLM
         """
-        messages = [
+        messages: List[ChatCompletionMessageParam] = [
             self.llm_service.create_message("system", 
                 "You are a master storyteller specialized in creating compelling narratives using the Hero's Journey framework."),
             self.llm_service.create_message("user", prompt)
@@ -95,12 +96,12 @@ that will serve as the foundation for generating characters, locations, and poss
         
         response = await self.llm_service.generate_completion(
             messages=messages,
-            model=ModelName.GEMINI_2_PRO,  # Adjust model as needed
+            model=ModelName.GEMINI_25_PRO,  # Adjust model as needed
             temperature=0.7,
             stream=False
         )
         
-        return response.strip()
+        return response.strip() # type: ignore
     
     def _get_heros_journey_stage(self, chapter_number: int) -> Tuple[str, str]:
         """

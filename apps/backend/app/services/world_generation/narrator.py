@@ -12,14 +12,14 @@ from app.prompts.narrator_prompts import (
     LOCATION_PROMPT_TEMPLATE,
     CALL_TO_ACTION_PROMPT_TEMPLATE
 )
-from app.schemas.world_generation import IntroductionOutput, Character, Location
+from app.schemas.world_generation import IntroductionOutput, CharacterFromLLM, Location
 
 logger = logging.getLogger(__name__)
 
 
 async def generate_introduction(
     world_data: Dict[str, Any],  # Keep as Dict for now since we need additional chapter data
-    player_character: Character,
+    player_character: CharacterFromLLM,
     starting_location: Location, 
     use_llm: bool = True, 
     llm_service: Optional[LLMService] = None
@@ -55,7 +55,7 @@ async def generate_introduction(
 
 async def generate_llm_introduction(
     world_data: Dict[str, Any],
-    player_character: Character,
+    player_character: CharacterFromLLM,
     starting_location: Location,
     llm_service: LLMService
 ) -> List[str]:
@@ -107,7 +107,7 @@ async def generate_llm_content(prompt: str, llm_service: LLMService) -> str:
     
     response = await llm_service.generate_completion(
         messages=messages,
-        model=ModelName.GEMINI_2_PRO,
+        model=ModelName.GEMINI_25_PRO,
         temperature=0.8,
         stream=False
     )
@@ -120,7 +120,7 @@ async def generate_llm_content(prompt: str, llm_service: LLMService) -> str:
 
 def generate_template_introduction(
     world_data: Dict[str, Any],
-    player_character: Character,
+    player_character: CharacterFromLLM,
     starting_location: Location
 ) -> List[str]:
     """
@@ -218,7 +218,7 @@ def prepare_setting_prompt(world_data: Dict[str, Any]) -> str:
     )
 
 
-def prepare_character_prompt(player_character: Character) -> str:
+def prepare_character_prompt(player_character: CharacterFromLLM) -> str:
     """Prepare prompt for character introduction."""
     name = player_character.name
     description = player_character.description
@@ -292,7 +292,7 @@ def prepare_location_prompt(location: Location) -> str:
     )
 
 
-def prepare_call_to_action_prompt(player_character: Character, world_data: Dict[str, Any]) -> str:
+def prepare_call_to_action_prompt(player_character: CharacterFromLLM, world_data: Dict[str, Any]) -> str:
     """Prepare prompt for call to action."""
     # Get player goals
     goals = player_character.goals
@@ -344,7 +344,7 @@ def generate_setting_establishment(world_data: Dict[str, Any]) -> str:
     return content
 
 
-def generate_character_introduction(player_character: Character) -> str:
+def generate_character_introduction(player_character: CharacterFromLLM) -> str:
     """Generate the second step: Character Introduction using templates."""
     name = player_character.name
     description = player_character.description
@@ -452,7 +452,7 @@ def generate_location_focus(location: Location) -> str:
     return content
 
 
-def generate_call_to_action(player_character: Character, world_data: Dict[str, Any]) -> str:
+def generate_call_to_action(player_character: CharacterFromLLM, world_data: Dict[str, Any]) -> str:
     """Generate the fifth step: Call to Action using templates."""
     # Get player goals
     goals = player_character.goals
@@ -505,7 +505,7 @@ async def from_json_file(file_path: str, llm_service: Optional[LLMService] = Non
     with open(file_path, 'r') as f:
         world_data = json.load(f)
         
-    from app.schemas.world_generation import Character, Location, ChapterOutput
+    from app.schemas.world_generation import CharacterFromLLM, Location, ChapterOutput
     from pydantic import parse_obj_as
     
     # Try to parse as ChapterOutput if possible
@@ -525,7 +525,7 @@ async def from_json_file(file_path: str, llm_service: Optional[LLMService] = Non
         logger.warning(f"Failed to parse as ChapterOutput: {str(e)}")
         
         # Fall back to manual extraction
-        characters = parse_obj_as(List[Character], world_data.get("characters", []))
+        characters = parse_obj_as(List[CharacterFromLLM], world_data.get("characters", []))
         locations = parse_obj_as(List[Location], world_data.get("locations", []))
         
         player_character = next((c for c in characters if c.role.lower() == "player"), characters[0] if characters else None)
@@ -550,7 +550,7 @@ async def from_json_string(json_string: str, llm_service: Optional[LLMService] =
     """
     world_data = json.loads(json_string)
     
-    from app.schemas.world_generation import Character, Location, ChapterOutput
+    from app.schemas.world_generation import CharacterFromLLM, Location, ChapterOutput
     from pydantic import parse_obj_as
     
     # Try to parse as ChapterOutput if possible
@@ -570,7 +570,7 @@ async def from_json_string(json_string: str, llm_service: Optional[LLMService] =
         logger.warning(f"Failed to parse as ChapterOutput: {str(e)}")
         
         # Fall back to manual extraction
-        characters = parse_obj_as(List[Character], world_data.get("characters", []))
+        characters = parse_obj_as(List[CharacterFromLLM], world_data.get("characters", []))
         locations = parse_obj_as(List[Location], world_data.get("locations", []))
         
         player_character = next((c for c in characters if c.role.lower() == "player"), characters[0] if characters else None)

@@ -1,8 +1,9 @@
-from typing import Optional
+from typing import Optional, AsyncGenerator, Union
 from app.services.llm import LLMService, ModelName
 from app.schemas.world_generation import (
-    Character,
+    CharacterFromLLM,
     World,
+    Character,
     CharacterDraft
 )
 from app.prompts import (
@@ -16,11 +17,15 @@ from app.prompts import (
 from app.utils.json_service import JSONService
 
 
+
 class CharacterGenerator:
+    """
+    Service for generating characters.        
+    """
     def __init__(self, llm_service: Optional[LLMService] = None):
         self.llm_service = llm_service or LLMService()
     
-    async def generate_character(self, character_draft: CharacterDraft, world: World) -> Character:
+    async def generate_character(self, character_draft: CharacterDraft, world: World, is_player: bool ) -> Character:
         """
         Orchestrates the entire character generation process.
         
@@ -33,15 +38,30 @@ class CharacterGenerator:
         """
         # 1. Generate detailed character description
         character_description = await self._describe_character(character_draft, world)
-        
         # 2. Create character JSON from description
-        character = await self._create_character_json(character_description)
-        
+        character_from_llm = await self._create_character_json(character_description)
         # 3. Generate image prompt for the character
-        image_prompt = await self._generate_image_prompt(character, world.description)
-        character.imagePrompt = image_prompt
-        
+        image_prompt = await self._generate_image_prompt(character_from_llm, world.description)
+
+        # Create Character object from CharacterFromLLM
+        character = Character(
+            **character_from_llm.model_dump(),
+            imagePrompt=image_prompt,
+            role="player" if is_player else "npc"
+        )
+
         return character
+    
+    async def _extract_content(self, response: Union[str, AsyncGenerator[str, None]]) -> str:
+        """Extract string content from either str or AsyncGenerator response."""
+        if isinstance(response, str):
+            return response
+            
+        # Handle AsyncGenerator case
+        result = ""
+        async for chunk in response:
+            result += chunk
+        return result
     
     async def _describe_character(
         self,
@@ -65,16 +85,18 @@ class CharacterGenerator:
             self.llm_service.create_message("user", user_prompt)
         ]
         
-        return await self.llm_service.generate_completion(
+        response = await self.llm_service.generate_completion(
             messages=messages,
-            model=ModelName.GEMINI_2_PRO,
+            model=ModelName.GEMINI_25_PRO,
             temperature=0.7,
             stream=False
         )
+        
+        return await self._extract_content(response)
     
     async def _generate_image_prompt(
         self,
-        character: Character,
+        character: CharacterFromLLM,
         world_description: str
     ) -> str:
         """
@@ -89,9 +111,7 @@ class CharacterGenerator:
         """
         user_prompt = CHARACTER_IMAGE_PROMPT_USER_TEMPLATE.format(
             character_name=character.name,
-            character_role=character.role,
-            character_appearance=character.description,
-            character_description=character.backstory,
+            character_description=character.description,
             world_description=world_description
         )
         
@@ -100,17 +120,19 @@ class CharacterGenerator:
             self.llm_service.create_message("user", user_prompt)
         ]
         
-        return await self.llm_service.generate_completion(
+        response = await self.llm_service.generate_completion(
             messages=messages,
-            model=ModelName.GEMINI_2_PRO,
+            model=ModelName.GEMINI_25_PRO,
             temperature=0.7,
             stream=False
         )
+        
+        return await self._extract_content(response)
     
     async def _create_character_json(
         self,
         character_description: str
-    ) -> Character:
+    ) -> CharacterFromLLM:
         """
         Generate a detailed character profile based on character description.
         
@@ -131,21 +153,23 @@ class CharacterGenerator:
         
         response = await self.llm_service.generate_completion(
             messages=messages,
-            model=ModelName.GEMINI_2_PRO,
+            model=ModelName.GEMINI_2_FLASH_LITE,
             temperature=0.7,
             stream=False
         )
         
+        response_text = await self._extract_content(response)
+        
         try:
             # Parse the JSON response into a character object
-            character = JSONService.parse_and_validate_json_response(response, Character)
+            character = JSONService.parse_and_validate_json_response(response_text, CharacterFromLLM)
             
             if not character:
                 raise ValueError("No character data found in response")
             
             return character
         except Exception as e:
-            raise ValueError(f"Failed to parse character data: {str(e)}, raw response: {response}")
+            raise ValueError(f"Failed to parse character data: {str(e)}, raw response: {response_text}") from e
     
     def _create_character_prompt(
         self,

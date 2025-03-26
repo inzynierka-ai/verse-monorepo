@@ -41,7 +41,7 @@ async def describe_location(
 
     return await llm_service.generate_completion(
         messages=messages,
-        model=ModelName.GEMINI_2_PRO,
+        model=ModelName.GEMINI_25_PRO,
         temperature=0.7,
         stream=False
     )
@@ -79,7 +79,7 @@ async def generate_image_prompt(
 
     return await llm_service.generate_completion(
         messages=messages,
-        model=ModelName.GEMINI_2_PRO,
+        model=ModelName.GEMINI_25_PRO,
         temperature=0.7,
         stream=False
     )
@@ -116,7 +116,7 @@ async def create_location_json(
 
     response = await llm_service.generate_completion(
         messages=messages,
-        model=ModelName.GEMINI_2_PRO,
+        model=ModelName.GEMINI_25_PRO,
         temperature=0.7,
         stream=False
     )

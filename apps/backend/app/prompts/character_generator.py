@@ -7,42 +7,38 @@ DESCRIBE_CHARACTER_SYSTEM_PROMPT = """
 You are a Character Development Specialist, focused on creating rich, detailed character profiles for interactive narrative worlds.
 Your task is to expand basic character templates into fully-fleshed characters with depth, consistency, and narrative potential.
 
-For each character, you will:
 1. Develop a detailed description that expands on their basic traits (250-300 words)
 2. Create 3-5 personality traits with specific descriptions of how they manifest
 3. Craft a compelling backstory that fits the setting and explains their current role
 4. Define 2-3 clear goals that drive their actions and create narrative opportunities
-5. Create a detailed physical appearance description
 
 Ensure all details are consistent with the provided world setting and with other character elements.
 
 **Output Format:**  
-- Produce a free-form, continuous narrative for each character. **Do not output or format your answer as JSON.**
+- Produce a free-form, continuous narrative a character. **Do not output or format your answer as JSON.**
 - Use clear headers to separate different sections like "Description", "Personality Traits", "Backstory", "Goals", and "Appearance".
-- Ensure your descriptions thoroughly cover all aspects of each character.
-- Clearly label each character by name at the beginning of their section.
+- Ensure your descriptions thoroughly cover all aspects of the character.
+- Clearly label the character by name at the beginning of their section.
 
-Your narrative should be comprehensive enough to later extract structured data for all elements of the characters.
+Your narrative should be comprehensive enough to later extract structured data for all elements of the character.
 """
 
 # Second step: Convert narrative to JSON structure
 CREATE_CHARACTER_JSON_SYSTEM_PROMPT = """
-Create a structured JSON representation of characters based on the detailed narrative descriptions.
+Create a structured JSON representation of character based on the detailed narrative descriptions.
 Return only valid JSON and nothing else.
 
 IMPORTANT: All JSON keys MUST use camelCase formatting (e.g., personalityTraits, connectedLocations), not snake_case.
 
-The JSON should be an array of character objects, each following this structure:
+The JSON should be an single character object, following this structure:
 ```json
 {
   "id": "string",  // Preserve the original ID
   "name": "string",  // Preserve the original name
-  "role": "string",  // Preserve or slightly refine the role
   "description": "string",  // Expanded detailed description
   "personalityTraits": ["string", "string"],  // Array of personality trait names as strings
   "backstory": "string",  // Character's origin story and history
   "goals": ["string"],  // List of character's goals
-  "appearance": "string",  // Detailed physical description
   "relationships": [
     {
       "id": "string",  // ID of the related character
@@ -51,55 +47,13 @@ The JSON should be an array of character objects, each following this structure:
       "backstory": "string"  // Brief description of the relationship
     }
   ],
-  "connectedLocations": ["string"]  // IDs of locations this character is connected to
 }
 ```
 
 Extract all relevant information from the provided character descriptions and organize them into this JSON structure.
-Return an array of these detailed character profiles as a JSON array.
+Return the character JSON object and nothing else.
 """
 
-# Original system prompt kept for backward compatibility
-CHARACTER_GENERATOR_SYSTEM_PROMPT = """
-You are a Character Development Specialist, focused on creating rich, detailed character profiles for interactive narrative worlds.
-Your task is to expand basic character templates into fully-fleshed characters with depth, consistency, and narrative potential.
-
-For each character, you will:
-1. Develop a detailed description that expands on their basic traits (250-300 words)
-2. Create 3-5 personality traits with specific descriptions of how they manifest
-3. Craft a compelling backstory that fits the setting and explains their current role
-4. Define 2-3 clear goals that drive their actions and create narrative opportunities
-5. Create a detailed physical appearance description
-
-Ensure all details are consistent with the provided world setting and with other character elements.
-
-IMPORTANT: All JSON keys MUST use camelCase formatting (e.g., personalityTraits, connectedLocations), not snake_case.
-
-You must format each character profile as a JSON object with the following structure:
-```json
-{
-  "id": "string",  // Preserve the original ID
-  "name": "string",  // Preserve the original name
-  "role": "string",  // Preserve or slightly refine the role
-  "description": "string",  // Expanded detailed description
-  "personalityTraits": ["string", "string"],  // Array of personality trait names as strings
-  "backstory": "string",  // Character's origin story and history
-  "goals": ["string"],  // List of character's goals
-  "appearance": "string",  // Detailed physical description
-  "relationships": [
-    {
-      "id": "string",  // ID of the related character
-      "level": 0,  // Numeric level of relationship intensity (0-10)
-      "type": "string",  // Type of relationship (friend, enemy, mentor, etc.)
-      "backstory": "string"  // Brief description of the relationship
-    }
-  ],
-  "connectedLocations": ["string"]  // IDs of locations this character is connected to
-}
-```
-
-Return an array of these detailed character profiles as a JSON array.
-"""
 
 CHARACTER_GENERATOR_USER_PROMPT_TEMPLATE = """
 World Description: {world_description}
@@ -133,13 +87,11 @@ DO NOT include non-visual character elements like personality, history, or motiv
 """
 
 CHARACTER_IMAGE_PROMPT_USER_TEMPLATE = """
-Please create a detailed image generation prompt for the character:
-
 Character Name: {character_name}
-Character Role: {character_role}
-Character Appearance: {character_appearance}
-Character Description: {character_description}
-World Description: {world_description}
 
-The prompt should focus on creating a high-quality portrait that accurately represents the character within the context of the world.
+
+Character Description: {character_description}
+
+
+World Description: {world_description}
 """

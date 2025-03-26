@@ -1,0 +1,20 @@
+{
+  "id": "Raven",
+  "name": "Raven",
+  "description": "Raven moves through the neon-drenched, rain-slicked streets of the corporate sprawl like a phantom, a product of the very system she now despises. Standing just shy of six feet, her build is lean, honed by years of corporate security training and the harsh realities of life off the grid. There's a wiry strength beneath the worn, dark fabrics she favors, suggesting agility and resilience. Her presence is typically understated, preferring to blend into the shadows, but there's an undeniable intensity about her, a coiled readiness that keeps others at a distance. Scars, faint lines near joints and along her forearms, hint at older, less sophisticated cybernetics or close calls she barely survived. She carries herself with a guarded economy of motion, every step measured, her head often slightly tilted as if constantly listening or scanning. The most striking features remain her eyes \u2013 advanced OptiLink cybernetic implants that replaced her originals. They usually emit a low, steady electric blue glow, but can shift intensity or color depending on the vision mode engaged, granting her access to thermal, electromagnetic, and telescopic views of the grim world around her. They are a constant, visible reminder of her past connection to the corporate machine, a past she can't entirely escape. The air around her feels charged with a cynical watchfulness, the quiet hum of someone perpetually assessing threats and calculating odds.",
+  "personalityTraits": [
+    "Deeply Cynical",
+    "Resourceful & Pragmatic",
+    "Intensely Guarded",
+    "Latent Sense of Justice"
+  ],
+  "backstory": "Raven, designation unknown before she adopted the moniker, was once a rising star in OmniCorp's elite security division. Recruited young from the lower sectors for her sharp intellect and physical aptitude, she was augmented and rigorously trained, buying into the corporate promise of stability and advancement. She excelled, specializing in threat assessment and infiltration countermeasures. Her loyalty began to fracture when she was assigned to oversee security for \"Project Chimera,\" a clandestine bio-engineering initiative. Initially presented as advanced medical research, Raven gradually uncovered evidence of illegal human experimentation, weaponizing cybernetics, and using vulnerable populations from the lower sectors as unwilling test subjects. The final straw came when she was ordered to permanently silence a lead researcher who threatened to leak the project's true nature. Instead, Raven helped the researcher escape (though their current fate is unknown to her) and staged her own disappearance, using her intimate knowledge of OmniCorp security protocols to vanish into the sprawling underbelly of the city. Branded a traitor and hunted by her former employers, she shed her old identity, adopting the name Raven and leveraging her skills as a freelance operative \u2013 a ghost in the machine navigating the shadows, surviving day-to-day while nursing a burning grudge against OmniCorp.",
+  "goals": [
+    "Expose Project Chimera",
+    "Locate and Protect Dr. Aris Thorne",
+    "Dismantle the Local OmniCorp Security Network"
+  ],
+  "relationships": [],
+  "imagePrompt": "High-quality portrait of Raven, a lean cyberpunk operative standing just under six feet tall. Her advanced OptiLink cybernetic eyes emit a steady, low electric blue glow, the most prominent feature against her otherwise shadowed face. She wears worn, dark, functional fabrics\u2014perhaps a sleek, dark grey trench coat weathered at the edges over muted tactical gear. Faint, thin scars are visible along her forearms near the wrists. Her posture is guarded but alert, head slightly tilted as if listening intently. The background features a rain-slicked street in a neon-drenched corporate sprawl, with blurred towering structures and colourful reflections on the wet ground. Capture her intense, watchful expression. Realistic cyberpunk art style, emphasizing detailed textures and atmospheric, cinematic lighting reminiscent of Blade Runner 2049 concept art.",
+  "role": "player"
+}

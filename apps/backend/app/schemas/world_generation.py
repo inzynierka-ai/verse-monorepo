@@ -61,14 +61,12 @@ class CharacterRelationship(BaseModel):
         ..., description="Backstory of the relationship")
 
 
-class Character(BaseModel):
+class CharacterFromLLM(BaseModel):
     """Character in the generated world"""
     id: str = Field(...,
                     description="Unique identifier for the character")
     name: str = Field(...,
                       description="Character name")
-    role: Literal["player", "npc"] = Field(
-        ..., description="Character's role in the story (player or npc)")
     description: str = Field(...,
                              description="Detailed description of the character")
     personalityTraits: Optional[List[str]] = Field(
@@ -79,28 +77,14 @@ class Character(BaseModel):
                              description="Character's goals")
     relationships: List[CharacterRelationship] = Field(
         ..., description="Character's relationships")
-    imagePrompt: Optional[str] = Field(
-        None, description="Image generation prompt for this character")
 
 
-class CharacterWithImagePrompt(BaseModel):
-    """Character with image prompt for image generation"""
-    id: str = Field(...,
-                    description="Unique identifier for the character")
+class Character(CharacterFromLLM):
+    """Final character output structure"""
     imagePrompt: str = Field(...,
                              description="Image generation prompt for this character")
-
-
-class CharactersOutput(BaseModel):
-    """Characters output structure"""
-    characters: List[Character] = Field(...,
-                                        description="List of generated characters")
-
-
-class CharacterImagePromptsOutput(BaseModel):
-    """Character image prompts output structure"""
-    characters: List[CharacterWithImagePrompt] = Field(
-        ..., description="List of character image prompts")
+    role: Literal["player", "npc"] = Field(
+        ..., description="Character's role in the story (player or npc)")
 
 
 # Location models
