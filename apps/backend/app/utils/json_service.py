@@ -83,7 +83,7 @@ class JSONService:
         if not isinstance(data, list):
             raise ValueError(f"Expected JSON list but got {type(data).__name__}")
         
-        result = []
+        result: List[T] = []
         for i, item in enumerate(data):
             try:
                 validated_item = model_class.model_validate(item)

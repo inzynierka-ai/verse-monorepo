@@ -47,26 +47,29 @@ class LLMService:
         max_tokens: Optional[int] = None,
         stream: bool = False,
     ) -> AsyncGenerator[str, None] | str:
-        try:
-            # Add metadata to the current span
-            langfuse_context.update_current_observation(
-                metadata={
-                    "model": model.value,
-                    "temperature": temperature,
-                    "max_tokens": max_tokens,
-                    "stream": stream,
-                    "messages_count": len(messages)
-                }
+        """
+        Generate a completion for the given messages.
+        """
+        # Add metadata to the current span
+        langfuse_context.update_current_observation(
+            metadata={
+                "model": model.value,
+                "temperature": temperature,
+                "max_tokens": max_tokens,
+                "stream": stream,
+                "messages_count": len(messages)
+            }
+        )
+
+        if stream:
+            return self._stream_completion(
+                messages=messages,
+                model=model,
+                temperature=temperature,
+                max_tokens=max_tokens
             )
 
-            if stream:
-                return self._stream_completion(
-                    messages=messages,
-                    model=model,
-                    temperature=temperature,
-                    max_tokens=max_tokens
-                )
-
+        try:
             response = await self.client.chat.completions.create(
                 model=model.value,
                 messages=messages,
@@ -75,35 +78,30 @@ class LLMService:
                 stream=False
             )
 
-            if len(response.choices) == 0:
-                self.logger.error("Response choices list is empty: %s", response)
-                raise ValueError("Response choices list is empty")
-
-            if not hasattr(response.choices[0], 'message'):
-                self.logger.error("First choice has no 'message' attribute: %s", response)
-                raise ValueError("First choice has no message")
+            # Handle possible error response
+            if not response.choices:
+                # Pass the entire response object to the exception
+                raise ValueError(f"Error response received: {response}")
 
             # Log the successful completion
-            try:
-                langfuse_context.update_current_observation(
-                    output=response.choices[0].message.content,
-                    usage=response.usage
-                )
-            except Exception as log_error:
-                self.logger.error("Error during logging to Langfuse: %s", str(log_error))
+            
+            langfuse_context.update_current_observation(
+                output=response.choices[0].message.content,
+                usage=response.usage
+            )
+            
 
             return response.choices[0].message.content or ""
 
-        except Exception as e:
-            self.logger.error("Error in generate_completion: %s", str(e))
-            import traceback
-            self.logger.error("Traceback: %s", traceback.format_exc())
+        except Exception as api_error:
+            error_str = str(api_error)
 
-            # Log the error to Langfuse
-            langfuse_context.update_current_observation(
-                level="ERROR",
-                status_message=str(e)
-            )
+            # Check for error response with code
+            if "error" in error_str:
+                self.logger.error("API error: %s", error_str)
+                raise ValueError(f"API error: {error_str}") from api_error
+
+            # Re-raise all other errors
             raise
 
     @observe(name="stream_completion", as_type="generation")
