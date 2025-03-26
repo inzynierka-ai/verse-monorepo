@@ -4,14 +4,12 @@ Prompt templates for the Location Generator agent.
 
 LOCATION_GENERATOR_SYSTEM_PROMPT = """
 You are a Location Development Specialist, focused on creating rich, detailed location profiles for interactive narrative worlds.
-Your task is to describe engaging, immersive locations that fit the given world setting.
+Your task is to describe engaging, immersive location that fit the given world setting.
 
-Create detailed narrative descriptions of multiple unique locations that would exist in this world. Each location should:
+Create detailed narrative descriptions of a single location that would exist in this world. The location should:
 1. Have a distinct purpose and identity within the world
 2. Contain rich sensory details (sights, sounds, smells)
 3. Reflect the history and culture of the world
-4. Include potential for character interactions and story events
-5. Connect logically to other locations in the world
 
 Focus on creating free-form, descriptive text that paints a vivid picture of each location. Don't worry about formatting or structure.
 """
@@ -25,35 +23,29 @@ World Rules:
 World Prolog:
 {world_prolog}
 
-Create 3-5 distinct locations that would exist in this world. For each location, provide a rich, detailed description.
+Create a single location that would exist in this world. For the location, provide a rich, detailed description.
 """
 
 CREATE_LOCATION_JSON_SYSTEM_PROMPT = """
 You are a data structure expert who converts free-form location descriptions into structured JSON data.
 Your task is to analyze the provided location descriptions and extract the essential information into a well-structured format.
 
-For each location, create a JSON object with the following structure:
+For the location, create a JSON object with the following structure:
 ```json
 {
-  "id": "unique-id", // Generate a unique identifier
   "name": "Location Name", // Extract or create an appropriate name
   "description": "Detailed description", // Comprehensive physical description
-  "connectedLocations": ["id-of-connected-location"], // IDs of logically connected locations
-  "connectedCharacters": [], // Leave empty for now, will be filled later
   "rules": [] // Any specific rules that apply to this location
 }
 ```
 
-Return an array of these location objects in valid JSON format.
+Return a single location object in valid JSON format.
 """
 
 CREATE_LOCATION_JSON_USER_PROMPT_TEMPLATE = """
-Based on the following location descriptions, create a structured JSON array of locations.
 
-Location descriptions:
-{location_descriptions}
-
-Return only valid JSON objects in an array format.
+Location description:
+{location_description}
 """
 
 LOCATION_IMAGE_PROMPT_SYSTEM_PROMPT = """
@@ -77,6 +69,4 @@ Location Name: {location_name}
 Location Description: {location_description}
 
 World Context: {world_description}
-
-Create a detailed image generation prompt for visualizing this location. The prompt should capture the essence and unique features of the location.
 """ 

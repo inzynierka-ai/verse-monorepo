@@ -1,4 +1,4 @@
-from typing import Optional, AsyncGenerator, Union
+from typing import Optional
 from app.services.llm import LLMService, ModelName
 from app.schemas.world_generation import (
     CharacterFromLLM,
@@ -52,17 +52,6 @@ class CharacterGenerator:
 
         return character
     
-    async def _extract_content(self, response: Union[str, AsyncGenerator[str, None]]) -> str:
-        """Extract string content from either str or AsyncGenerator response."""
-        if isinstance(response, str):
-            return response
-            
-        # Handle AsyncGenerator case
-        result = ""
-        async for chunk in response:
-            result += chunk
-        return result
-    
     async def _describe_character(
         self,
         character: CharacterDraft,
@@ -92,7 +81,7 @@ class CharacterGenerator:
             stream=False
         )
         
-        return await self._extract_content(response)
+        return await self.llm_service.extract_content(response)
     
     async def _generate_image_prompt(
         self,
@@ -127,7 +116,7 @@ class CharacterGenerator:
             stream=False
         )
         
-        return await self._extract_content(response)
+        return await self.llm_service.extract_content(response)
     
     async def _create_character_json(
         self,
@@ -158,7 +147,7 @@ class CharacterGenerator:
             stream=False
         )
         
-        response_text = await self._extract_content(response)
+        response_text = await self.llm_service.extract_content(response)
         
         try:
             # Parse the JSON response into a character object

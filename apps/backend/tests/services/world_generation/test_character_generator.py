@@ -16,7 +16,7 @@ def mock_llm_service():
 
 
 @pytest.fixture
-def character_generator(mock_llm_service):
+def character_generator(mock_llm_service: LLMService):
     """Create a CharacterGenerator instance with a mock LLM service."""
     return CharacterGenerator(llm_service=mock_llm_service)
 
@@ -44,7 +44,12 @@ def test_world():
 
 
 @pytest.mark.asyncio
-async def test_generate_character(character_generator, test_character_draft, test_world, mock_llm_service):
+async def test_generate_character(
+    character_generator: CharacterGenerator, 
+    test_character_draft: CharacterDraft, 
+    test_world: World, 
+    mock_llm_service: MagicMock
+):
     """Test the generate_character method."""
     # Mock the LLM service responses
     character_description = "This is a detailed character description."
@@ -78,7 +83,7 @@ async def test_generate_character(character_generator, test_character_draft, tes
     ]
     
     # Call the method
-    result = await character_generator.generate_character(test_character_draft, test_world)
+    result = await character_generator.generate_character(test_character_draft, test_world, is_player=False)
     
     
     # Assertions

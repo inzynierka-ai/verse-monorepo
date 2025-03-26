@@ -1,4 +1,4 @@
-from typing import Optional, AsyncGenerator, List
+from typing import Optional, AsyncGenerator, List, Union
 from openai import AsyncOpenAI
 from openai.types.chat import ChatCompletionMessageParam
 from openai.types.chat.chat_completion_system_message_param import ChatCompletionSystemMessageParam
@@ -163,3 +163,15 @@ class LLMService:
         if role == "assistant":
             return ChatCompletionAssistantMessageParam(role=role, content=content)
         raise ValueError(f"Unsupported role: {role}")
+        
+    @staticmethod
+    async def extract_content(response: Union[str, AsyncGenerator[str, None]]) -> str:
+        """Extract string content from either str or AsyncGenerator response."""
+        if isinstance(response, str):
+            return response
+            
+        # Handle AsyncGenerator case
+        result = ""
+        async for chunk in response:
+            result += chunk
+        return result

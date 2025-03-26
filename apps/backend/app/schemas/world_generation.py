@@ -51,8 +51,8 @@ class WorldOutput(BaseModel):
 # Character models
 class CharacterRelationship(BaseModel):
     """A relationship between characters"""
-    id: str = Field(...,
-                    description="ID of the related character")
+    name: str = Field(...,
+                      description="Name of the related character")
     level: int = Field(...,
                        description="Level or strength of the relationship")
     type: str = Field(...,
@@ -63,8 +63,6 @@ class CharacterRelationship(BaseModel):
 
 class CharacterFromLLM(BaseModel):
     """Character in the generated world"""
-    id: str = Field(...,
-                    description="Unique identifier for the character")
     name: str = Field(...,
                       description="Character name")
     description: str = Field(...,
@@ -88,38 +86,21 @@ class Character(CharacterFromLLM):
 
 
 # Location models
-class Location(BaseModel):
+
+class LocationFromLLM(BaseModel):
     """Location in the generated world"""
-    id: str = Field(...,
-                    description="Unique identifier for the location")
     name: str = Field(...,
                       description="Location name")
     description: str = Field(...,
                              description="Detailed description of the location")
     rules: List[str] = Field(...,
                              description="Rules specific to this location")
-    imagePrompt: Optional[str] = Field(
-        None, description="Image generation prompt for this location")
 
 
-class LocationWithImagePrompt(BaseModel):
-    """Location with image prompt for image generation"""
-    id: str = Field(...,
-                    description="Unique identifier for the location")
+class Location(LocationFromLLM):
+    """Final location output structure"""
     imagePrompt: str = Field(...,
                              description="Image generation prompt for this location")
-
-
-class LocationsOutput(BaseModel):
-    """Locations output structure"""
-    locations: List[Location] = Field(...,
-                                      description="List of generated locations")
-
-
-class LocationImagePromptsOutput(BaseModel):
-    """Location image prompts output structure"""
-    locations: List[LocationWithImagePrompt] = Field(
-        ..., description="List of location image prompts")
 
 
 # Narrator models

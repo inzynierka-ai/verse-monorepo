@@ -33,7 +33,6 @@ IMPORTANT: All JSON keys MUST use camelCase formatting (e.g., personalityTraits,
 The JSON should be an single character object, following this structure:
 ```json
 {
-  "id": "string",  // Preserve the original ID
   "name": "string",  // Preserve the original name
   "description": "string",  // Expanded detailed description
   "personalityTraits": ["string", "string"],  // Array of personality trait names as strings
@@ -41,7 +40,7 @@ The JSON should be an single character object, following this structure:
   "goals": ["string"],  // List of character's goals
   "relationships": [
     {
-      "id": "string",  // ID of the related character
+      "name": "string",  // Name of the related character
       "level": 0,  // Numeric level of relationship intensity (0-10)
       "type": "string",  // Type of relationship (friend, enemy, mentor, etc.)
       "backstory": "string"  // Brief description of the relationship
