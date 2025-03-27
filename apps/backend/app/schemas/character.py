@@ -5,11 +5,15 @@ class CharacterBase(BaseModel):
     name: str
     role: str 
     description: str
-    details: str 
-    relationship_level: int
     story_id: int
+    personalityTraits: Optional[str] = None
+    backstory: Optional[str] = None
+    goals: Optional[str] = None
+    speaking_style: Optional[str] = None
+    relationships: Optional[str] = None
     image_dir: Optional[str] = None
-    image_prompt: Optional[str] = None 
+    image_prompt: Optional[str] = None
+    relationship_level: Optional[int] = None
 
 class CharacterCreate(CharacterBase):
     pass

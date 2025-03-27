@@ -370,4 +370,4 @@ def seed_database(force_reseed=False):
         db.close()
 
 if __name__ == "__main__":
-    seed_database()
+    seed_database(True)

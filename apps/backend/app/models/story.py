@@ -9,9 +9,9 @@ class Story(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
-    title = Column(String, nullable=False)
-    description = Column(String, nullable=False)
-    prompt = Column(String, nullable=False)
+    title = Column(String)
+    description = Column(String)
+    rules = Column(String)
     # date_created = Column(TIMESTAMP(timezone=True), server_default=func.now())
     # date_last_played = Column(TIMESTAMP(timezone=True), nullable=True)
     
