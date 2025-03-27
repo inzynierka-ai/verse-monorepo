@@ -30,8 +30,6 @@ class World(BaseModel):
                              description="Detailed description of the world")
     rules: List[str] = Field(...,
                              description="Rules or principles of the world")
-    prolog: str = Field(...,
-                        description="Introductory narrative for the world")
 
 
 class WorldGenerationInput(BaseModel):

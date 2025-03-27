@@ -178,6 +178,5 @@ class CharacterGenerator:
         return CHARACTER_GENERATOR_USER_PROMPT_TEMPLATE.format(
             character_draft=character,
             world_description=world.description,
-            world_rules=world.rules,
-            world_prolog=world.prolog
+            world_rules=world.rules
         )

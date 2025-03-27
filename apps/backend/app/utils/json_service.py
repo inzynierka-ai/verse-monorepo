@@ -4,6 +4,9 @@ from pydantic import BaseModel, ValidationError
 
 T = TypeVar('T', bound=BaseModel)
 
+class RuleItem(BaseModel):
+    rule: str
+
 class JSONService:
     @staticmethod
     def extract_json_from_response(response: str) -> str:
@@ -91,4 +94,34 @@ class JSONService:
             except ValidationError as e:
                 raise ValueError(f"Validation failed for item {i}: {str(e)}") from e
         
-        return result 
+        return result
+    
+    @staticmethod
+    def parse_and_validate_string_list(response: str) -> List[str]:
+        """
+        Parse a JSON response and validate it as a list of strings.
+        
+        Args:
+            response: The LLM response text
+            
+        Returns:
+            List of validated strings
+        
+        Raises:
+            ValueError: If the response is not a valid JSON list of strings
+        """
+        data = JSONService.parse_json_response(response)
+        
+        if not isinstance(data, list):
+            raise ValueError(f"Expected JSON list but got {type(data).__name__}")
+        
+        result: List[str] = []
+        for i, item in enumerate(data):
+            # Using Any type since item can be any JSON value before validation
+            item: Any = item
+            if not isinstance(item, str):
+                raise ValueError(f"Item at index {i} is not a string: {type(item).__name__}")
+            result.append(item)
+        
+        return result
+

@@ -172,6 +172,5 @@ class LocationGenerator:
         """
         return LOCATION_GENERATOR_USER_PROMPT_TEMPLATE.format(
             world_description=world.description,
-            world_rules=world.rules,
-            world_prolog=world.prolog
+            world_rules=world.rules
         )

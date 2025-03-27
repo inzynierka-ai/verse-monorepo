@@ -1,118 +1,130 @@
-from typing import List, Optional, Dict, Any
-from pydantic import BaseModel
+from typing import Optional, List
+from app.services.llm import LLMService, ModelName
+from app.schemas.world_generation import (
+    World,
+    WorldInput
+)
+from app.utils.json_service import JSONService
 
-from app.services.llm import LLMService
-from app.schemas.world_generation import WorldSettings, WorldRule
-
-class WorldSetting(BaseModel):
-    description: str
-    rules: List[WorldRule]
-    backstory: str
-
-class WorldTemplate(BaseModel):
-    setting: WorldSetting
-    basic_characters: List[Dict[str, Any]]
-    basic_locations: List[Dict[str, Any]]
 
 class WorldGenerator:
-    def __init__(self, llm_service: LLMService):
-        self.llm_service = llm_service
+    """
+    Service for generating world descriptions, rules, and prologs.
+    """
+    def __init__(self, llm_service: Optional[LLMService] = None):
+        self.llm_service = llm_service or LLMService()
     
-    async def create_world_template(self, settings: WorldSettings) -> WorldTemplate:
+    async def generate_world(self, world_input: WorldInput) -> World:
         """
-        Generate high-level overview of the world and transform it into structured data
+        Generates a detailed world from user input.
         
         Args:
-            settings: User-provided settings for world generation
+            world_input: Basic world parameters provided by user
             
         Returns:
-            WorldTemplate with setting, basic character and location information
+            A fully detailed World object with description, rules, and prolog
         """
-        # Generate the high-level free text overview of the world
-        world_overview_prompt = self._build_world_overview_prompt(settings)
-        world_overview_response = await self.llm_service.generate_text(world_overview_prompt)
+        # Generate world description
+        description = await self._generate_world_description(world_input)
         
-        # Transform the free text into structured JSON
-        structured_world_prompt = self._build_structured_world_prompt(settings, world_overview_response)
-        structured_world_json = await self.llm_service.generate_json(structured_world_prompt)
+        # Generate world rules
+        rules = await self._generate_world_rules(description)
+    
         
-        # Extract and format the data
-        world_data = structured_world_json.get("world", {})
-        
-        # Create WorldRule objects for each rule
-        world_rules = []
-        for rule_data in world_data.get("rules", []):
-            # Handle both string rules and dictionary rules with name/description
-            if isinstance(rule_data, str):
-                # For simple string rules, use the string as the description
-                world_rules.append(WorldRule(name=f"Rule", description=rule_data))
-            elif isinstance(rule_data, dict) and "description" in rule_data:
-                # For dictionary rules with a description
-                name = rule_data.get("name", "Rule")
-                world_rules.append(WorldRule(name=name, description=rule_data["description"]))
-        
-        # Create the setting model
-        setting = WorldSetting(
-            description=world_data.get("description", ""),
-            rules=world_rules,
-            backstory=world_data.get("prolog", "")
-        )
-        
-        # Extract basic character and location information
-        basic_characters = structured_world_json.get("basicCharacters", [])
-        basic_locations = structured_world_json.get("basicLocations", [])
-        
-        return WorldTemplate(
-            setting=setting,
-            basic_characters=basic_characters,
-            basic_locations=basic_locations
+        # Construct and return World object
+        return World(
+            description=description,
+            rules=rules,
         )
     
-    def _build_world_overview_prompt(self, settings: WorldSettings) -> str:
-        """Build prompt for generating free-form world overview"""
-        prompt = f"""
-        Create a detailed description of an imaginative world based on the following parameters:
-        
-        {settings.description}
-        
-        {settings.additional_context if settings.additional_context else ""}
-        
-        Your response should include:
-        1. A vivid description of the world setting, atmosphere, and key features
-        2. Important rules or principles that govern this world
-        3. A backstory or prolog that explains how this world came to be
-        
-        Be creative and detailed while maintaining consistency with the provided parameters.
+    async def _generate_world_description(self, world_input: WorldInput) -> str:
         """
-        return prompt
+        Generate a detailed description of the world.
+        
+        Args:
+            world_input: Basic world input from user
+            
+        Returns:
+            Detailed world description
+        """
+        prompt = f"""
+        Create a detailed and immersive description of a world with the following parameters:
+        
+        Theme: {world_input.theme}
+        Genre: {world_input.genre}
+        Year: {world_input.year}
+        Setting: {world_input.setting}
+        
+        Provide a comprehensive description that covers:
+        - The physical environment and geography
+        - Social structure and power dynamics
+        - Technology level and key innovations
+        - Major conflicts or tensions
+        - Unique cultural elements
+        
+        Focus on creating a cohesive, believable world that would serve as an engaging backdrop for interactive storytelling.
+        """
+        
+        messages = [
+            self.llm_service.create_message("system", "You are an expert worldbuilder for interactive fiction. Create detailed, immersive worlds that are internally consistent and rich with storytelling potential."),
+            self.llm_service.create_message("user", prompt)
+        ]
+        
+        response = await self.llm_service.generate_completion(
+            messages=messages,
+            model=ModelName.GEMINI_25_PRO,
+            temperature=0.7,
+            stream=False
+        )
+        
+        return await self.llm_service.extract_content(response)
     
-    def _build_structured_world_prompt(self, settings: WorldSettings, world_overview: str) -> str:
-        """Build prompt for transforming free text into structured JSON"""
-        prompt = f"""
-        Based on the following world description:
-        
-        {world_overview}
-        
-        And these input parameters:
-        {settings.description}
-        {settings.additional_context if settings.additional_context else ""}
-        
-        Transform this description into a structured JSON format with the following components:
-        
-        1. "world": An object containing:
-           - "description": A concise description of the world
-           - "rules": An array of objects, each with a "name" and "description" field representing a rule or principle of the world
-           - "prolog": A backstory explaining the world's origin
-        
-        2. "basicCharacters": An array of character outlines that would exist in this world,
-           with each character having at least an "id", "name", and brief "description"
-           
-           If a player character was specified in the input, make sure to include them
-           as one of the characters with appropriate connections to the world.
-        
-        3. "basicLocations": An array of location outlines in this world,
-           with each location having at least an "id", "name", and brief "description"
-        
-        Return only valid JSON with these components.
+    async def _generate_world_rules(self, description: str) -> List[str]:
         """
-        return prompt 
+        Generate a list of rules that govern the world.
+        
+        Args:
+            description: The detailed world description
+            
+        Returns:
+            List of world rules
+        """
+        prompt = f"""
+        Based on this world description:
+        
+        {description}
+        
+        Create a list of 5-8 key rules or principles that govern how this world functions. These should include:
+        
+        - Physical laws (if different from our world)
+        - Social norms and taboos
+        - Economic principles
+        - Power structures
+        - Any supernatural or technological constraints
+        
+        Format your response as a JSON array of objects, where each object has a "rule" property containing 
+        a distinct rule explained in 1-2 sentences.
+        
+        Example format:
+        [
+            "Gravity is 1.5 times Earth normal, making physical activities more strenuous and affecting architecture.",
+            "Mind-reading is possible but strictly regulated by the governing council."
+        ]
+        """
+        
+        messages = [
+            self.llm_service.create_message("system", "You are an expert worldbuilder specializing in creating consistent rule systems for fictional worlds. Create logical, coherent rules that define how the world functions. Always respond with valid JSON."),
+            self.llm_service.create_message("user", prompt)
+        ]
+        
+        response = await self.llm_service.generate_completion(
+            messages=messages,
+            model=ModelName.GEMINI_2_FLASH_LITE,
+            temperature=0.5,
+            stream=False
+        )
+        
+        content = await self.llm_service.extract_content(response)
+        
+        rule_items = JSONService.parse_and_validate_string_list(content)
+        return rule_items

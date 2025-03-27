@@ -1,4 +1,4 @@
-from typing import Literal, Dict, Any, Optional, Union, List
+from typing import Literal, Dict, Any, Optional, Union
 from pydantic import BaseModel, Field
 
 # Player Character model

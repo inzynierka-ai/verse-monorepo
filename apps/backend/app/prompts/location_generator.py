@@ -20,9 +20,6 @@ World Description: {world_description}
 World Rules:
 {world_rules}
 
-World Prolog:
-{world_prolog}
-
 Create a single location that would exist in this world. For the location, provide a rich, detailed description.
 """
 

@@ -57,7 +57,6 @@ Return the character JSON object and nothing else.
 CHARACTER_GENERATOR_USER_PROMPT_TEMPLATE = """
 World Description: {world_description}
 World Rules: {world_rules}
-World Prolog: {world_prolog}
 Character Draft: {character_draft}
 """
 
