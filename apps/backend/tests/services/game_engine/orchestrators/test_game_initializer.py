@@ -1,9 +1,9 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 
-from app.services.world_generation.game_initializer import GameInitializer, InitialGameState
-from app.services.world_generation.world_generator import WorldGenerator
-from app.services.world_generation.character_generator import CharacterGenerator
+from app.services.game_engine.orchestrators.game_initializer import GameInitializer, InitialGameState
+from app.services.game_engine.tools.world_generator import WorldGenerator
+from app.services.game_engine.tools.character_generator import CharacterGenerator
 from app.schemas.world_generation import (
     WorldGenerationInput,
     WorldInput,

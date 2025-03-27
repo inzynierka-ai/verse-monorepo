@@ -9,7 +9,7 @@ from app.utils.json_service import JSONService
 
 class WorldGenerator:
     """
-    Service for generating world descriptions, rules, and prologs.
+    Service for generating world description and rules.
     """
     def __init__(self, llm_service: Optional[LLMService] = None):
         self.llm_service = llm_service or LLMService()
@@ -22,7 +22,7 @@ class WorldGenerator:
             world_input: Basic world parameters provided by user
             
         Returns:
-            A fully detailed World object with description, rules, and prolog
+            A fully detailed World object with description and rules
         """
         # Generate world description
         description = await self._generate_world_description(world_input)

@@ -8,7 +8,7 @@ from pathlib import Path
 backend_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
 sys.path.insert(0, backend_dir)
 
-from app.services.world_generation.character_generator import CharacterGenerator
+from app.services.game_engine.tools.character_generator import CharacterGenerator
 from app.schemas.world_generation import CharacterDraft, World
 from app.services.llm import LLMService
 
@@ -18,8 +18,7 @@ async def main():
         description="A cyberpunk world set in 2077, where corporations control society and cybernetic enhancements are common.",
         rules=["Characters should have cybernetic enhancements.", 
                "The world is divided between corporate elites and struggling lower classes.",
-               "Technology is advanced but unevenly distributed."],
-        prolog="The year is 2077. After economic collapse, mega-corporations rose to power, controlling every aspect of life."
+               "Technology is advanced but unevenly distributed."]
     )
     
     character_draft = CharacterDraft(

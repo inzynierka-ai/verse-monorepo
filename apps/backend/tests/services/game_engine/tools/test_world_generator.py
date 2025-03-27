@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from app.services.world_generation.world_generator import WorldGenerator
+from app.services.game_engine.tools.world_generator import WorldGenerator
 from app.schemas.world_generation import World, WorldInput
 from app.services.llm import LLMService
 

@@ -3,7 +3,7 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends
 from app.services.llm import LLMService
 from app.schemas.schemas_ws import WorldGenerationRequest, ErrorMessage, WorldGenerationInput
 from app.utils.websocket_manager import WorldGenWebSocketManager
-from app.services.world_generation.world_generation_coordinator import WorldGenerationCoordinator
+from app.services.game_engine.orchestrators.world_generation_coordinator import WorldGenerationCoordinator
 
 router = APIRouter(
     prefix="/world-generation",

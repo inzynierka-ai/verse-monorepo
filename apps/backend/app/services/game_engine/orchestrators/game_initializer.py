@@ -1,8 +1,8 @@
 from typing import Optional
 from pydantic import BaseModel
 
-from app.services.world_generation.world_generator import WorldGenerator
-from app.services.world_generation.character_generator import CharacterGenerator
+from app.services.game_engine.tools.world_generator import WorldGenerator
+from app.services.game_engine.tools.character_generator import CharacterGenerator
 from app.schemas.world_generation import (
     WorldGenerationInput,
     World,
@@ -29,7 +29,7 @@ class GameInitializer:
     Story Controller and Scene Director to dynamically expand the world as needed.
     
     The GameInitializer delegates the actual generation work to specialized services:
-    - WorldGenerator for creating the world description, rules, and prolog
+    - WorldGenerator for creating the world description and rules
     - CharacterGenerator for creating the detailed player character
     
     This service doesn't create NPCs or locations beyond the player character and world

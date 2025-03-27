@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from app.services.world_generation.character_generator import CharacterGenerator
+from app.services.game_engine.tools.character_generator import CharacterGenerator
 from app.schemas.world_generation import (
     CharacterDraft, 
     World, 
