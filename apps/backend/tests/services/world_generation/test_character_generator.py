@@ -1,8 +1,14 @@
 import pytest
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from app.services.world_generation.character_generator import CharacterGenerator
-from app.schemas.world_generation import CharacterDraft, World, CharacterFromLLM
+from app.schemas.world_generation import (
+    CharacterDraft, 
+    World, 
+    Character, 
+    CharacterFromLLM,
+    CharacterRelationship
+)
 from app.services.llm import LLMService
 
 
@@ -12,6 +18,7 @@ def mock_llm_service():
     llm_service = MagicMock(spec=LLMService)
     llm_service.create_message = MagicMock(return_value={"role": "user", "content": "test"})
     llm_service.generate_completion = AsyncMock()
+    llm_service.extract_content = AsyncMock()
     return llm_service
 
 
@@ -38,9 +45,7 @@ def test_world():
     return World(
         description="A test world description",
         rules=["Rule 1", "Rule 2"],
-        prolog="Once upon a time...",
     )
-
 
 
 @pytest.mark.asyncio
@@ -53,42 +58,51 @@ async def test_generate_character(
     """Test the generate_character method."""
     # Mock the LLM service responses
     character_description = "This is a detailed character description."
-    character_json = """
-    {
-        "id": "char123",
-        "name": "Test Character",
-        "role": "npc",
-        "description": "Tall with brown hair and a distinguished look",
-        "personalityTraits": ["Brave", "Intelligent"],
-        "backstory": "A mysterious background with many secrets",
-        "goals": ["Find the truth", "Protect their family"],
-        "relationships": [
-            {
-                "id": "char456",
-                "level": 5,
-                "type": "friend",
-                "backstory": "Old childhood friends"
-            }
-        ],
-        "connectedLocations": ["loc123"]
-    }
-    """
+    
+    # Create a valid CharacterRelationship object
+    relationship = CharacterRelationship(
+        name="John Smith",  
+        level=5,
+        type="friend",
+        backstory="Old childhood friends"
+    )
+    
+    # Define a character with valid relationships
+    character_from_llm = CharacterFromLLM(
+        name="Test Character",
+        description="Tall with brown hair and a distinguished look",
+        personalityTraits=["Brave", "Intelligent"],
+        backstory="A mysterious background with many secrets",
+        goals=["Find the truth", "Protect their family"],
+        relationships=[relationship]
+    )
+    
     image_prompt = "A detailed image of Test Character standing tall with brown hair."
     
-    # Configure the mock
-    mock_llm_service.generate_completion.side_effect = [
-        character_description,  # _describe_character
-        character_json,         # _create_character_json
-        image_prompt,           # _generate_image_prompt
+    # Configure the mock for extract_content
+    mock_llm_service.extract_content.side_effect = [
+        character_description,
+        "dummy_json",  # This will be bypassed with the patch
+        image_prompt
     ]
     
-    # Call the method
-    result = await character_generator.generate_character(test_character_draft, test_world, is_player=False)
+    # Configure generate_completion to return something (not used directly)
+    mock_llm_service.generate_completion.return_value = "dummy_response"
     
+    # Patch JSONService.parse_and_validate_json_response to return our valid character
+    with patch('app.utils.json_service.JSONService.parse_and_validate_json_response', 
+              return_value=character_from_llm):
+        
+        # Call the method
+        result = await character_generator.generate_character(test_character_draft, test_world, is_player=False)
     
     # Assertions
-    assert isinstance(result, CharacterFromLLM)
+    assert isinstance(result, Character)
+    assert result.name == "Test Character"
     assert result.imagePrompt == image_prompt
+    assert len(result.relationships) == 1
+    assert result.relationships[0].name == "John Smith"
     
     # Verify expected calls
     assert mock_llm_service.generate_completion.call_count == 3
+    assert mock_llm_service.extract_content.call_count == 3

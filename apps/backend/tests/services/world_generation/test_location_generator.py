@@ -2,7 +2,7 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from app.services.world_generation.location_generator import LocationGenerator
-from app.schemas.world_generation import Location, World
+from app.schemas.world_generation import Location, World, LocationFromLLM
 from app.services.llm import LLMService
 
 
@@ -28,7 +28,6 @@ def test_world() -> World:
     return World(
         description="A test world description",
         rules=["Rule 1", "Rule 2"],
-        prolog="Once upon a time...",
     )
 
 
@@ -58,25 +57,23 @@ async def test_generate_location(
         image_prompt
     ]
     
-    # Mocking the JSON parsing result
-    location_obj = Location(
-        id="loc123",
+    # Mock the JSONService.parse_and_validate_json_response
+    # Use a LocationFromLLM instance without imagePrompt to prevent duplicate
+    location_from_llm = LocationFromLLM(
         name="Test Location",
         description="A beautiful test location with stunning views",
         rules=["No smoking", "Keep quiet"],
-        imagePrompt=None
     )
     
     # Use patch instead of monkeypatch.context
     with patch('app.utils.json_service.JSONService.parse_and_validate_json_response', 
-              return_value=location_obj):
+              return_value=location_from_llm):
         
         # Call the method
         result = await location_generator.generate_location(test_world)
     
     # Assertions
     assert isinstance(result, Location)
-    assert result.id == "loc123"
     assert result.name == "Test Location"
     assert result.imagePrompt == image_prompt
     
