@@ -34,7 +34,7 @@ class SceneService:
         if not location:
             raise ValueError(f"Location {location_id} not found")
         
-        base_prompt = character.prompt
+        base_prompt = character.description
                 
         location_context = f"\nLocation Context:\nYou are in the {location.name}. {location.description}"
         return base_prompt + location_context

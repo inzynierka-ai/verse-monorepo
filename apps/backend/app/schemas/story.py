@@ -1,10 +1,11 @@
 from pydantic import BaseModel
+from typing import Optional
 
 class StoryBase(BaseModel):
     user_id: int
     title: str
     description: str
-    prompt: str
+    rules: Optional[str] = None
 
 class StoryCreate(StoryBase):
     pass

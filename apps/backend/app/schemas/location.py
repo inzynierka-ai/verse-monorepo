@@ -1,11 +1,14 @@
 from pydantic import BaseModel
+from typing import Optional, List
 
 class LocationBase(BaseModel):
-    background: str
     name: str
     description: str
-    prompt: str
     story_id: int
+    image_prompt: Optional[str] = None
+    rules: Optional[str] = None
+    colors: Optional[str] = None
+    image_dir: Optional[str] = None
 
 class LocationCreate(LocationBase):
     pass
