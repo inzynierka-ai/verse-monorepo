@@ -21,10 +21,13 @@ services:
       - "8000:8000"
     volumes:
       - ./apps/backend:/app
+      - C:/Users/Marta/Downloads/ComfyUI_windows_portable/ComfyUI/output:/app/comfyui_output
     env_file:
       - ./apps/backend/.env
     depends_on:
       - db
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
   db:
     image: postgres:16-alpine
@@ -38,4 +41,4 @@ services:
       - "5433:5432"
 
 volumes:
-  postgres_data: 
+  postgres_data: {}
