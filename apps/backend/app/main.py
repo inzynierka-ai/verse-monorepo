@@ -8,7 +8,7 @@ from app.models import *
 from app.db.seed import seed_database
 
 app = FastAPI(title="Verse", description="Create your own story", version="0.1.0")
-Base.metadata.create_all(bind=engine)
+# Base.metadata.create_all(bind=engine)
 
 # Configure CORS
 app.add_middleware(
@@ -27,9 +27,10 @@ class ChatMessage(BaseModel):
     content: str
     sceneId: str
 
-@app.on_event("startup")
-def startup_event():
-    seed_database()
+# @app.on_event("startup")
+# def startup_event():
+#     # seed_database()
+#     pass
 
 @app.get("/")
 async def root():

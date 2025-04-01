@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Callable, Awaitable
 from pydantic import BaseModel
 
 from app.services.game_engine.tools.world_generator import WorldGenerator
@@ -53,12 +53,19 @@ class GameInitializer:
         self.world_generator = world_generator or WorldGenerator()
         self.character_generator = character_generator or CharacterGenerator()
     
-    async def initialize_game(self, user_input: WorldGenerationInput) -> InitialGameState:
+    async def initialize_game(
+        self, 
+        user_input: WorldGenerationInput,
+        on_world_generated: Optional[Callable[[World], Awaitable[None]]] = None,
+        on_character_generated: Optional[Callable[[Character], Awaitable[None]]] = None
+    ) -> InitialGameState:
         """
         Creates the initial game state from user input.
         
         Args:
-            input: User input containing world parameters and player character draft
+            user_input: User input containing world parameters and player character draft
+            on_world_generated: Optional callback called immediately after world generation
+            on_character_generated: Optional callback called immediately after character generation
             
         Returns:
             InitialGameState with generated world and player character
@@ -66,12 +73,20 @@ class GameInitializer:
         # 1. Generate the world first
         world = await self.world_generator.generate_world(user_input.world)
         
+        # Call the callback if provided
+        if on_world_generated:
+            await on_world_generated(world)
+        
         # 2. Generate the player character within the context of the world
         player_character = await self.character_generator.generate_character(
             user_input.playerCharacter,
             world,
             is_player=True
         )
+        
+        # Call the callback if provided
+        if on_character_generated:
+            await on_character_generated(player_character)
         
         # 3. Return the initial game state
         return InitialGameState(

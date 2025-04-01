@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 class ChapterBase(BaseModel):
     title: str
@@ -12,5 +12,6 @@ class ChapterCreate(ChapterBase):
 class Chapter(ChapterBase):
     id: int
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
+    
+    
