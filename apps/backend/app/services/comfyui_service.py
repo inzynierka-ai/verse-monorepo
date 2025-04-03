@@ -2,27 +2,26 @@ import os
 import json
 import requests
 import uuid
+import random
+import time
+import shutil
 from typing import Dict, Any, List
 from pathlib import Path
 from app.core.config import settings
+import logging
 
 class ComfyUIService:
     def __init__(self):
-        import logging
         self.comfyui_api_url = settings.COMFYUI_API_URL
         self.output_dir = Path(settings.MEDIA_ROOT) / "comfyui"
         self.output_dir.mkdir(parents=True, exist_ok=True)
-        self.workflow_path = Path(settings.COMFYUI_WORKFLOWS_DIR) / "characters_api.json"
         self.client_id = str(uuid.uuid4())
-        logging.info(f"Initializing ComfyUIService with API URL: {self.comfyui_api_url}")
 
     def _queue_prompt(self, prompt, client_id=None, timeout=30):
         """Send a workflow prompt to ComfyUI's queue"""
-        import logging
         if client_id is None:
             client_id = self.client_id
         
-        # Force the hostname to match config
         hostname = "host.docker.internal"
         port = 8188
         comfy_url = f"http://{hostname}:{port}"
@@ -42,22 +41,16 @@ class ComfyUIService:
                 logging.error(f"Error details from requests: {response.text}")
             return response.json()
         except Exception as e:
-            logging.error(f"Failed to queue prompt: {str(e)}")
             raise Exception(f"Failed to queue prompt: {str(e)}")
             
     async def generate_image_from_prompt(self, prompt: str) -> Dict[str, Any]:
         """Generate image using ComfyUI based on text prompt"""
-        import logging
-        
         generation_id = str(uuid.uuid4())
         output_path = self.output_dir / generation_id
         output_path.mkdir(exist_ok=True)
         
-        # Save generation ID as instance attribute to be available in _wait_for_generation
-        self.current_generation_id = generation_id
-        
         # Prepare workflow for ComfyUI
-        workflow = self._create_workflow(prompt, str(output_path))
+        workflow = self._create_workflow(prompt, generation_id)
         
         try:
             response_data = self._queue_prompt(workflow)
@@ -68,7 +61,7 @@ class ComfyUIService:
                 raise ValueError("No prompt_id in response from ComfyUI")
                 
             # Wait for the image generation to complete
-            image_paths = self._wait_for_generation(prompt_id)
+            image_paths = self._wait_for_generation(prompt_id, generation_id)
             
             # Return the relative paths to the generated images
             return {
@@ -81,13 +74,8 @@ class ComfyUIService:
             logging.error(f"Error queuing prompt to ComfyUI: {str(e)}")
             raise
     
-    def _create_workflow(self, prompt: str, output_path: str) -> Dict:
-        """Create ComfyUI workflow JSON with the given prompt and output path"""
-        import random
-        
-        # Get generation ID
-        generation_id = os.path.basename(output_path)
-        
+    def _create_workflow(self, prompt: str, generation_id: str) -> Dict:
+        """Create ComfyUI workflow JSON with the given prompt"""
         # Generate random seed for unique images
         random_seed = random.randint(1, 2147483647)
         random_steps = random.randint(20, 40)
@@ -158,24 +146,14 @@ class ComfyUIService:
             }
         }
     
-    def _wait_for_generation(self, prompt_id: str, timeout: int = 300, polling_interval: int = 5) -> List[str]:
+    def _wait_for_generation(self, prompt_id: str, generation_id: str, timeout: int = 300, polling_interval: int = 5) -> List[str]:
         """Wait for ComfyUI to complete image generation and return paths"""
-        import logging
-        import time
-        import shutil
-        import os
-        import requests
-        from pathlib import Path
-        from app.core.config import settings
-        
-        # Use saved generation ID
         target_dir = Path(settings.MEDIA_ROOT) / "comfyui" 
         target_dir.mkdir(parents=True, exist_ok=True)
         
         # Use path from configuration - should now point to mounted volume
         comfyui_output_dir = settings.COMFYUI_DEFAULT_OUTPUT_DIR
         
-        # Force the hostname to match config
         hostname = "host.docker.internal"
         port = 8188
         comfy_url = f"http://{hostname}:{port}"
