@@ -12,6 +12,7 @@ class Story(Base):
     title = Column(String)
     description = Column(String)
     rules = Column(String)
+    uuid = Column(String, nullable=False)
     # date_created = Column(TIMESTAMP(timezone=True), server_default=func.now())
     # date_last_played = Column(TIMESTAMP(timezone=True), nullable=True)
     

@@ -10,6 +10,7 @@ class Scene(Base):
     prompt = Column(String, nullable=False)
     location_id = Column(Integer, ForeignKey('locations.id'), nullable=False)
     chapter_id = Column(Integer, ForeignKey('chapters.id'), nullable=False)
+    uuid = Column(String, nullable=False)
     
     # Relationships
     location = relationship("Location", back_populates="scenes")

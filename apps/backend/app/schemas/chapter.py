@@ -3,8 +3,8 @@ from pydantic import BaseModel
 class ChapterBase(BaseModel):
     title: str
     description: str
-    prompt: str
     story_id: int
+    uuid: str
 
 class ChapterCreate(ChapterBase):
     pass

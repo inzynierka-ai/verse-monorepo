@@ -6,6 +6,7 @@ class StoryBase(BaseModel):
     title: str
     description: str
     rules: Optional[str] = None
+    uuid: str
 
 class StoryCreate(StoryBase):
     pass

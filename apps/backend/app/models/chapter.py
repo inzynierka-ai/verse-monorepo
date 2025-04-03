@@ -10,9 +10,9 @@ class Chapter(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     story_id = Column(Integer, ForeignKey('stories.id'), nullable=False)
-    title = Column(String, index=True, nullable=False)
-    description = Column(String, nullable=False)
-    prompt = Column(String, nullable=False)
+    title = Column(String)
+    description = Column(String)
+    uuid = Column(String, nullable=False)
 
     # Relationships
     story = relationship("Story", back_populates="chapters")

@@ -6,6 +6,7 @@ class MessageBase(BaseModel):
     character_id: int
     content: str
     timestamp: datetime
+    uuid: str
 
 class MessageCreate(MessageBase):
     pass

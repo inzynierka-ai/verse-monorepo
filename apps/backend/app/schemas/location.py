@@ -9,6 +9,7 @@ class LocationBase(BaseModel):
     rules: Optional[str] = None
     colors: Optional[str] = None
     image_dir: Optional[str] = None
+    uuid: str
 
 class LocationCreate(LocationBase):
     pass

@@ -16,6 +16,7 @@ class Location(Base):
     colors = Column(String) # interface colors
     image_dir = Column(String) # directory where all location images are stored
     story_id = Column(Integer, ForeignKey('stories.id'), nullable=False)
+    uuid = Column(String, nullable=False)
     
     # Relationships
     story = relationship("Story", back_populates="locations")

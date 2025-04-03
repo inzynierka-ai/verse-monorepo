@@ -22,6 +22,7 @@ class Character(Base):
     image_prompt = Column(String) # this might not be necessary to store in db
     relationship_level = Column(Integer) # on hold for now
     story_id = Column(Integer, ForeignKey('stories.id'), nullable=False)
+    uuid = Column(String, nullable=False)
     
     # Relationships
     story = relationship("Story", back_populates="characters")

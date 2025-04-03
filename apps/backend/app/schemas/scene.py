@@ -11,6 +11,7 @@ class SceneBase(BaseModel):
     prompt: str
     location_id: int
     chapter_id: int
+    uuid: str
 
 class SceneCreate(SceneBase):
     pass
