@@ -6,7 +6,7 @@ from . import stories, chapters, scenes, messages, characters, locations, auth, 
 
 api_router = APIRouter()
 
-# Istniejące routery
+# Existing routers
 api_router.include_router(auth.router, prefix="/auth", tags=["auth"])
 api_router.include_router(stories.router, prefix="/stories", tags=["stories"])
 api_router.include_router(chapters.router, prefix="/api")
@@ -17,5 +17,8 @@ api_router.include_router(locations.router, prefix="/api")
 api_router.include_router(auth.router, prefix="/auth")
 api_router.include_router(game_ws_router.router)
 # Dodaj router ComfyUI
+
+# Add ComfyUI router
 api_router.include_router(comfyui.router, prefix="/comfyui", tags=["comfyui"])
-# api_router.include_router(world_wizard_router, prefix="/api")  # Tymczasowo wyłączone
+
+# api_router.include_router(world_wizard_router, prefix="/api")  # Temporarily disabled

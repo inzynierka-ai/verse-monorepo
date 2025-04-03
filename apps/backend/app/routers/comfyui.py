@@ -10,7 +10,7 @@ class ImageGenerationRequest(BaseModel):
 
 class ImagePathsModel(BaseModel):
     base: str
-    images: List[str]  # Dodajemy pole images jako listę ścieżek
+    images: List[str]  # Adding images field as a list of paths
 
 class ImageGenerationResponse(BaseModel):
     imagePaths: ImagePathsModel
