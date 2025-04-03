@@ -12,26 +12,25 @@ import logging
 
 class ComfyUIService:
     def __init__(self):
-        self.comfyui_api_url = settings.COMFYUI_API_URL
         self.output_dir = Path(settings.MEDIA_ROOT) / "comfyui"
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.client_id = str(uuid.uuid4())
+        # Define ComfyUI connection once
+        self.hostname = "host.docker.internal"
+        self.port = 8188
+        self.comfy_url = f"http://{self.hostname}:{self.port}"
 
     def _queue_prompt(self, prompt, client_id=None, timeout=30):
         """Send a workflow prompt to ComfyUI's queue"""
         if client_id is None:
             client_id = self.client_id
         
-        hostname = "host.docker.internal"
-        port = 8188
-        comfy_url = f"http://{hostname}:{port}"
-        
         try:
             p = {"prompt": prompt, "client_id": client_id}
             headers = {'Content-Type': 'application/json'}
             
             response = requests.post(
-                f"{comfy_url}/prompt", 
+                f"{self.comfy_url}/prompt", 
                 json=p,
                 headers=headers,
                 timeout=timeout
@@ -81,11 +80,11 @@ class ComfyUIService:
         random_steps = random.randint(20, 40)
         random_cfg = round(random.uniform(6.5, 8.5), 1)
         
-        # List of samplers to randomly choose from
+        # Choose random sampler for variation
         samplers = ["euler", "euler_ancestral", "heun", "dpm_2", "dpm_2_ancestral", "lms", "ddim"]
         random_sampler = random.choice(samplers)
         
-        # Workflow with random parameters for unique generation but same model
+        # Workflow with random parameters for unique generation
         return {
             "1": {
                 "class_type": "CheckpointLoaderSimple",
@@ -151,17 +150,13 @@ class ComfyUIService:
         target_dir = Path(settings.MEDIA_ROOT) / "comfyui" 
         target_dir.mkdir(parents=True, exist_ok=True)
         
-        # Use path from configuration - should now point to mounted volume
+        # Get ComfyUI output directory from settings
         comfyui_output_dir = settings.COMFYUI_DEFAULT_OUTPUT_DIR
-        
-        hostname = "host.docker.internal"
-        port = 8188
-        comfy_url = f"http://{hostname}:{port}"
         
         start_time = time.time()
         while time.time() - start_time < timeout:
             try:
-                response = requests.get(f"{comfy_url}/history/{prompt_id}")
+                response = requests.get(f"{self.comfy_url}/history/{prompt_id}")
                 
                 if response.status_code == 200:
                     history = response.json()
@@ -171,7 +166,7 @@ class ComfyUIService:
                         outputs = history[prompt_id]["outputs"]
                         image_paths = []
                         
-                        # Search outputs for all nodes generating images
+                        # Process all generated images
                         for node_id, node_output in outputs.items():
                             if "images" in node_output:
                                 for img in node_output["images"]:
@@ -180,7 +175,7 @@ class ComfyUIService:
                                         # Full path to file in ComfyUI output folder
                                         source_path = os.path.join(comfyui_output_dir, filename)
                                         
-                                        # Full target path in our project
+                                        # Target path in our project
                                         target_path = os.path.join(str(target_dir), os.path.basename(filename))
                                         
                                         # Copy file to our directory
