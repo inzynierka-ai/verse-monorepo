@@ -14,6 +14,7 @@ class CharacterBase(BaseModel):
     image_dir: Optional[str] = None
     image_prompt: Optional[str] = None
     relationship_level: Optional[int] = None
+    uuid: str
 
 class CharacterCreate(CharacterBase):
     pass
