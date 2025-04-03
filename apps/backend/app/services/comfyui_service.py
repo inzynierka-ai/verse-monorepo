@@ -1,10 +1,7 @@
 import os
 import json
-import socket  # Added import for connection testing
 import requests
 import uuid
-import urllib.request
-import urllib.error
 from typing import Dict, Any, List
 from pathlib import Path
 from app.core.config import settings
@@ -13,75 +10,14 @@ class ComfyUIService:
     def __init__(self):
         import logging
         self.comfyui_api_url = settings.COMFYUI_API_URL
-        logging.info(f"COMFYUI URL FROM SETTINGS: {self.comfyui_api_url}")
-        
         self.output_dir = Path(settings.MEDIA_ROOT) / "comfyui"
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.workflow_path = Path(settings.COMFYUI_WORKFLOWS_DIR) / "characters_api.json"
-        
-        # Check if workflow file exists
-        logging.info(f"Checking workflow path: {self.workflow_path}")
-        if not self.workflow_path.exists():
-            logging.error(f"Workflow file does not exist: {self.workflow_path}")
-            # List files in the directory to help debug
-            try:
-                workflow_dir = Path(settings.COMFYUI_WORKFLOWS_DIR)
-                if workflow_dir.exists():
-                    logging.info(f"Files in {workflow_dir}:")
-                    for f in workflow_dir.iterdir():
-                        logging.info(f"  {f}")
-                else:
-                    logging.error(f"Workflow directory does not exist: {workflow_dir}")
-            except Exception as e:
-                logging.error(f"Error listing workflow directory: {e}")
-        
         self.client_id = str(uuid.uuid4())
-        
-        # Test connection to ComfyUI
         logging.info(f"Initializing ComfyUIService with API URL: {self.comfyui_api_url}")
-        self._test_connection()
-
-    def _test_connection(self):
-        """Test connection to ComfyUI server"""
-        import logging
-        
-        # Extract hostname and port from URL
-        from urllib.parse import urlparse
-        parsed_url = urlparse(self.comfyui_api_url)
-        
-        # Force the hostname to match config
-        hostname = "host.docker.internal"  # Forcing correct address
-        port = 8188
-        
-        logging.info(f"Testing connection to FORCED {hostname}:{port}")
-        
-        # Try socket connection first to test basic connectivity
-        try:
-            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            s.settimeout(3)
-            s.connect((hostname, port))
-            s.close()
-            logging.info(f"Socket connection successful to {hostname}:{port}")
-        except Exception as e:
-            logging.error(f"Socket connection failed to {hostname}:{port}: {e}")
-        
-        # Now try HTTP request with FORCED URL
-        try:
-            test_url = f"http://{hostname}:{port}/system_stats"
-            logging.info(f"Trying HTTP request to {test_url}")
-            response = requests.get(test_url, timeout=5)
-            if response.status_code == 200:
-                logging.info(f"Successfully connected to ComfyUI at {test_url}")
-            else:
-                logging.warning(f"ComfyUI responded with status code {response.status_code}")
-        except Exception as e:
-            logging.error(f"Failed to connect to ComfyUI at {test_url}: {e}")
-            logging.info("Please ensure ComfyUI is running and accessible from Docker")
 
     def _queue_prompt(self, prompt, client_id=None, timeout=30):
-        """
-        Send a workflow prompt to ComfyUI's queue
-        """
+        """Send a workflow prompt to ComfyUI's queue"""
         import logging
         if client_id is None:
             client_id = self.client_id
@@ -91,64 +27,26 @@ class ComfyUIService:
         port = 8188
         comfy_url = f"http://{hostname}:{port}"
         
-        logging.info(f"Sending prompt to FORCED URL: {comfy_url}/prompt")
-        
         try:
-            # Check prompt format
-            logging.info(f"Prompt type: {type(prompt)}")
-            
-            # Save full prompt content to file for debugging
-            debug_file = Path("/tmp/comfyui_prompt_debug.json")
-            with open(debug_file, "w") as f:
-                json.dump(prompt, f, indent=2)
-            logging.info(f"Saved complete prompt to {debug_file}")
-            
             p = {"prompt": prompt, "client_id": client_id}
             headers = {'Content-Type': 'application/json'}
             
-            data = json.dumps(p).encode('utf-8')
-            
-            # Try alternative approach with requests
-            try:
-                logging.info("Trying with requests library...")
-                response = requests.post(
-                    f"{comfy_url}/prompt", 
-                    json=p,
-                    headers=headers,
-                    timeout=timeout
-                )
-                logging.info(f"Requests response status: {response.status_code}")
-                if response.status_code == 400:
-                    logging.error(f"Error details from requests: {response.text}")
-                return response.json()
-            except Exception as req_e:
-                logging.error(f"Requests approach failed: {req_e}, falling back to urllib")
-            
-            # Original approach
-            req = urllib.request.Request(
-                f"{comfy_url}/prompt",
-                data=data, 
-                headers=headers
+            response = requests.post(
+                f"{comfy_url}/prompt", 
+                json=p,
+                headers=headers,
+                timeout=timeout
             )
             
-            with urllib.request.urlopen(req, timeout=timeout) as response:
-                response_data = response.read()
-                logging.info(f"Response status: {response.status}")
-                return json.loads(response_data)
-        except urllib.error.HTTPError as e:
-            # Log detailed error for HTTP errors
-            logging.error(f"HTTP Error: {e.code} - {e.reason}")
-            if hasattr(e, 'read'):
-                error_content = e.read().decode('utf-8')
-                logging.error(f"Error content: {error_content}")
-            raise Exception(f"Failed to queue prompt: {str(e)}")
-        except (urllib.error.URLError, json.JSONDecodeError, TimeoutError) as e:
-            logging.error(f"Error details: {e}")
+            if response.status_code == 400:
+                logging.error(f"Error details from requests: {response.text}")
+            return response.json()
+        except Exception as e:
+            logging.error(f"Failed to queue prompt: {str(e)}")
             raise Exception(f"Failed to queue prompt: {str(e)}")
             
     async def generate_image_from_prompt(self, prompt: str) -> Dict[str, Any]:
         """Generate image using ComfyUI based on text prompt"""
-        # Create unique ID for this generation
         import logging
         
         generation_id = str(uuid.uuid4())
@@ -161,12 +59,8 @@ class ComfyUIService:
         # Prepare workflow for ComfyUI
         workflow = self._create_workflow(prompt, str(output_path))
         
-        # Send request to ComfyUI using the queue_prompt method
         try:
-            logging.info(f"Sending prompt to ComfyUI: {self.comfyui_api_url}")
-            
             response_data = self._queue_prompt(workflow)
-            logging.info(f"Received response: {response_data}")
             
             # Get the prompt ID from the response
             prompt_id = response_data.get("prompt_id")
@@ -184,30 +78,18 @@ class ComfyUIService:
                 }
             }
         except Exception as e:
-            # Log the error and re-raise
             logging.error(f"Error queuing prompt to ComfyUI: {str(e)}")
             raise
     
     def _create_workflow(self, prompt: str, output_path: str) -> Dict:
         """Create ComfyUI workflow JSON with the given prompt and output path"""
-        import logging
-        import os
         import random
         
         # Get generation ID
         generation_id = os.path.basename(output_path)
         
-        # Make sure the target directory exists
-        target_dir = os.path.join(r"C:\Users\Marta\projekt\verse-monorepo\apps\backend\media\comfyui", generation_id)
-        os.makedirs(target_dir, exist_ok=True)
-        
-        logging.info(f"Container path: {output_path}")
-        logging.info(f"Generation ID: {generation_id}")
-        
         # Generate random seed for unique images
         random_seed = random.randint(1, 2147483647)
-        
-        # Randomly vary parameters that affect generation while keeping the model
         random_steps = random.randint(20, 40)
         random_cfg = round(random.uniform(6.5, 8.5), 1)
         
@@ -215,14 +97,12 @@ class ComfyUIService:
         samplers = ["euler", "euler_ancestral", "heun", "dpm_2", "dpm_2_ancestral", "lms", "ddim"]
         random_sampler = random.choice(samplers)
         
-        logging.info(f"Creating dynamic workflow with seed={random_seed}, steps={random_steps}, cfg={random_cfg}, sampler={random_sampler}")
-        
         # Workflow with random parameters for unique generation but same model
-        dynamic_workflow = {
+        return {
             "1": {
                 "class_type": "CheckpointLoaderSimple",
                 "inputs": {
-                    "ckpt_name": "dreamshaper_8.safetensors"  # Keeping the existing model
+                    "ckpt_name": "dreamshaper_8.safetensors"
                 }
             },
             "2": {
@@ -274,13 +154,9 @@ class ComfyUIService:
                 "inputs": {
                     "filename_prefix": f"generated_{generation_id}_{str(random_seed)}",
                     "images": ["6", 0]
-                    # Removed output_dir parameter - ComfyUI will use default folder
                 }
             }
         }
-        
-        logging.info(f"Using dynamic workflow with dreamshaper model and randomized parameters")
-        return dynamic_workflow
     
     def _wait_for_generation(self, prompt_id: str, timeout: int = 300, polling_interval: int = 5) -> List[str]:
         """Wait for ComfyUI to complete image generation and return paths"""
@@ -292,10 +168,7 @@ class ComfyUIService:
         from pathlib import Path
         from app.core.config import settings
         
-        logging.info(f"Waiting for ComfyUI generation with prompt_id {prompt_id}")
-        
         # Use saved generation ID
-        generation_id = self.current_generation_id
         target_dir = Path(settings.MEDIA_ROOT) / "comfyui" 
         target_dir.mkdir(parents=True, exist_ok=True)
         
@@ -311,7 +184,6 @@ class ComfyUIService:
         while time.time() - start_time < timeout:
             try:
                 response = requests.get(f"{comfy_url}/history/{prompt_id}")
-                logging.info(f"Checking status at: {comfy_url}/history/{prompt_id}, code: {response.status_code}")
                 
                 if response.status_code == 200:
                     history = response.json()
@@ -327,8 +199,6 @@ class ComfyUIService:
                                 for img in node_output["images"]:
                                     filename = img.get("filename")
                                     if filename:
-                                        logging.info(f"ComfyUI returned filename: {filename}")
-                                        
                                         # Full path to file in ComfyUI output folder
                                         source_path = os.path.join(comfyui_output_dir, filename)
                                         
@@ -338,21 +208,12 @@ class ComfyUIService:
                                         # Copy file to our directory
                                         if os.path.exists(source_path):
                                             shutil.copy2(source_path, target_path)
-                                            logging.info(f"Copied image from {source_path} to {target_path}")
                                             image_paths.append(os.path.basename(filename))
-                                        else:
-                                            logging.error(f"Source file not found: {source_path}")
-                                            # List files in directory for debugging
-                                            if os.path.exists(comfyui_output_dir):
-                                                files = os.listdir(comfyui_output_dir)
-                                                logging.info(f"Available files in {comfyui_output_dir}: {files}")
                         
                         if image_paths:
-                            logging.info(f"Generation completed, found and copied {len(image_paths)} images")
                             return image_paths
                 
                 # If no results found, wait and try again
-                logging.info(f"Generation in progress, checking again in {polling_interval} seconds...")
                 time.sleep(polling_interval)
                 
             except Exception as e:
@@ -360,4 +221,4 @@ class ComfyUIService:
                 time.sleep(polling_interval)
         
         # After timeout, raise error
-        raise TimeoutError(f"Timeout waiting for image generation by ComfyUI after {timeout} seconds")
+        raise TimeoutError(f"Timeout waiting for image generation after {timeout} seconds")
