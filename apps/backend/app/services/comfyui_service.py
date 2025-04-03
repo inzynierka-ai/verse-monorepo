@@ -1,6 +1,6 @@
 import os
 import json
-import socket  # Dodaj ten import
+import socket  # Added import for connection testing
 import requests
 import uuid
 import urllib.request
@@ -50,7 +50,7 @@ class ComfyUIService:
         parsed_url = urlparse(self.comfyui_api_url)
         
         # Force the hostname to match config
-        hostname = "host.docker.internal"  # Wymuszamy poprawny adres
+        hostname = "host.docker.internal"  # Forcing correct address
         port = 8188
         
         logging.info(f"Testing connection to FORCED {hostname}:{port}")
@@ -94,10 +94,10 @@ class ComfyUIService:
         logging.info(f"Sending prompt to FORCED URL: {comfy_url}/prompt")
         
         try:
-            # Sprawdź format promptu
+            # Check prompt format
             logging.info(f"Prompt type: {type(prompt)}")
             
-            # Zapisz pełną zawartość promptu do pliku dla debugowania
+            # Save full prompt content to file for debugging
             debug_file = Path("/tmp/comfyui_prompt_debug.json")
             with open(debug_file, "w") as f:
                 json.dump(prompt, f, indent=2)
@@ -108,7 +108,7 @@ class ComfyUIService:
             
             data = json.dumps(p).encode('utf-8')
             
-            # Wypróbuj alternatywne podejście z requests
+            # Try alternative approach with requests
             try:
                 logging.info("Trying with requests library...")
                 response = requests.post(
@@ -124,7 +124,7 @@ class ComfyUIService:
             except Exception as req_e:
                 logging.error(f"Requests approach failed: {req_e}, falling back to urllib")
             
-            # Oryginalne podejście
+            # Original approach
             req = urllib.request.Request(
                 f"{comfy_url}/prompt",
                 data=data, 
@@ -155,7 +155,7 @@ class ComfyUIService:
         output_path = self.output_dir / generation_id
         output_path.mkdir(exist_ok=True)
         
-        # Zapisz ID generacji jako atrybut instancji, aby był dostępny w _wait_for_generation
+        # Save generation ID as instance attribute to be available in _wait_for_generation
         self.current_generation_id = generation_id
         
         # Prepare workflow for ComfyUI
@@ -294,12 +294,12 @@ class ComfyUIService:
         
         logging.info(f"Waiting for ComfyUI generation with prompt_id {prompt_id}")
         
-        #Używamy zapisanego ID generacji
+        # Use saved generation ID
         generation_id = self.current_generation_id
         target_dir = Path(settings.MEDIA_ROOT) / "comfyui" 
         target_dir.mkdir(parents=True, exist_ok=True)
         
-        # Używamy ścieżki z konfiguracji - powinna teraz wskazywać na zamontowany wolumin
+        # Use path from configuration - should now point to mounted volume
         comfyui_output_dir = settings.COMFYUI_DEFAULT_OUTPUT_DIR
         
         # Force the hostname to match config
@@ -311,54 +311,53 @@ class ComfyUIService:
         while time.time() - start_time < timeout:
             try:
                 response = requests.get(f"{comfy_url}/history/{prompt_id}")
-                logging.info(f"Sprawdzanie statusu pod adresem: {comfy_url}/history/{prompt_id}, kod: {response.status_code}")
+                logging.info(f"Checking status at: {comfy_url}/history/{prompt_id}, code: {response.status_code}")
                 
                 if response.status_code == 200:
                     history = response.json()
                     
-                    # Sprawdź czy zadanie zostało ukończone
+                    # Check if the task is completed
                     if prompt_id in history and "outputs" in history[prompt_id]:
                         outputs = history[prompt_id]["outputs"]
                         image_paths = []
                         
-                        # Przeszukaj outputy po wszystkich węzłach generujących obrazy
+                        # Search outputs for all nodes generating images
                         for node_id, node_output in outputs.items():
                             if "images" in node_output:
                                 for img in node_output["images"]:
                                     filename = img.get("filename")
                                     if filename:
-                                        logging.info(f"ComfyUI zwrócił nazwę pliku: {filename}")
+                                        logging.info(f"ComfyUI returned filename: {filename}")
                                         
-                                        # Pełna ścieżka do pliku w folderze wyjściowym ComfyUI
+                                        # Full path to file in ComfyUI output folder
                                         source_path = os.path.join(comfyui_output_dir, filename)
                                         
-                                        # Pełna ścieżka docelowa w naszym projekcie
+                                        # Full target path in our project
                                         target_path = os.path.join(str(target_dir), os.path.basename(filename))
                                         
-                                        # Kopiujemy plik do naszego katalogu
+                                        # Copy file to our directory
                                         if os.path.exists(source_path):
                                             shutil.copy2(source_path, target_path)
-                                            logging.info(f"Skopiowano obraz z {source_path} do {target_path}")
+                                            logging.info(f"Copied image from {source_path} to {target_path}")
                                             image_paths.append(os.path.basename(filename))
                                         else:
-                                            logging.error(f"Nie znaleziono pliku źródłowego: {source_path}")
-                                            # Wypisz listę plików w katalogu dla debugowania
+                                            logging.error(f"Source file not found: {source_path}")
+                                            # List files in directory for debugging
                                             if os.path.exists(comfyui_output_dir):
                                                 files = os.listdir(comfyui_output_dir)
-                                                logging.info(f"Dostępne pliki w {comfyui_output_dir}: {files}")
+                                                logging.info(f"Available files in {comfyui_output_dir}: {files}")
                         
                         if image_paths:
-                            logging.info(f"Generacja zakończona, znaleziono i skopiowano {len(image_paths)} obrazów")
+                            logging.info(f"Generation completed, found and copied {len(image_paths)} images")
                             return image_paths
                 
-                # Jeśli nie znaleziono wyników, poczekaj i spróbuj ponownie
-                logging.info(f"Generacja w toku, sprawdzanie ponownie za {polling_interval} sekund...")
+                # If no results found, wait and try again
+                logging.info(f"Generation in progress, checking again in {polling_interval} seconds...")
                 time.sleep(polling_interval)
                 
             except Exception as e:
-                logging.error(f"Błąd podczas sprawdzania statusu ComfyUI: {str(e)}")
+                logging.error(f"Error while checking ComfyUI status: {str(e)}")
                 time.sleep(polling_interval)
         
-        # Po upływie czasu zgłoś błąd timeout
-        raise TimeoutError(f"Upłynął limit czasu oczekiwania na generację obrazów przez ComfyUI po {timeout} sekundach")
-
+        # After timeout, raise error
+        raise TimeoutError(f"Timeout waiting for image generation by ComfyUI after {timeout} seconds")
