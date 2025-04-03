@@ -90,7 +90,7 @@ def downgrade() -> None:
     op.drop_column('characters', 'speaking_style')
     op.drop_column('characters', 'goals')
     op.drop_column('characters', 'backstory')
-    op.drop_column('characters', 'personalityTraits')
+    op.drop_column('characters', 'personality_traits')
     op.drop_table('location_connections')
     op.drop_table('location_character_association')
     # ### end Alembic commands ###

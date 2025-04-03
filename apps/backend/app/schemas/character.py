@@ -6,7 +6,7 @@ class CharacterBase(BaseModel):
     role: str 
     description: str
     story_id: int
-    personalityTraits: Optional[str] = None
+    personality_traits: Optional[str] = None
     backstory: Optional[str] = None
     goals: Optional[str] = None
     speaking_style: Optional[str] = None
