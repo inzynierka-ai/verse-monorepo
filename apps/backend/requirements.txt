@@ -45,3 +45,4 @@ watchfiles==1.0.4
 websockets==14.2
 tenacity==9.0.0
 langfuse>=0.9.0
+pgvector==0.4.0
