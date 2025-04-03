@@ -192,23 +192,37 @@ class ComfyUIService:
         """Create ComfyUI workflow JSON with the given prompt and output path"""
         import logging
         import os
+        import random
         
-        # Pobierz ID generacji
+        # Get generation ID
         generation_id = os.path.basename(output_path)
         
-        # Upewnij się, że katalog docelowy istnieje
+        # Make sure the target directory exists
         target_dir = os.path.join(r"C:\Users\Marta\projekt\verse-monorepo\apps\backend\media\comfyui", generation_id)
         os.makedirs(target_dir, exist_ok=True)
         
         logging.info(f"Container path: {output_path}")
         logging.info(f"Generation ID: {generation_id}")
         
-        # Uproszczone workflow dla testów - używa modelu dostępnego w Twojej instalacji
-        simple_test_workflow = {
+        # Generate random seed for unique images
+        random_seed = random.randint(1, 2147483647)
+        
+        # Randomly vary parameters that affect generation while keeping the model
+        random_steps = random.randint(20, 40)
+        random_cfg = round(random.uniform(6.5, 8.5), 1)
+        
+        # List of samplers to randomly choose from
+        samplers = ["euler", "euler_ancestral", "heun", "dpm_2", "dpm_2_ancestral", "lms", "ddim"]
+        random_sampler = random.choice(samplers)
+        
+        logging.info(f"Creating dynamic workflow with seed={random_seed}, steps={random_steps}, cfg={random_cfg}, sampler={random_sampler}")
+        
+        # Workflow with random parameters for unique generation but same model
+        dynamic_workflow = {
             "1": {
                 "class_type": "CheckpointLoaderSimple",
                 "inputs": {
-                    "ckpt_name": "dreamshaper_8.safetensors"  # Zmieniamy na model dostępny w Twojej instalacji
+                    "ckpt_name": "dreamshaper_8.safetensors"  # Keeping the existing model
                 }
             },
             "2": {
@@ -221,7 +235,7 @@ class ComfyUIService:
             "3": {
                 "class_type": "CLIPTextEncode",
                 "inputs": {
-                    "text": "bad quality, blurry",
+                    "text": "bad quality, blurry, deformed, ugly, low resolution",
                     "clip": ["1", 1]
                 }
             },
@@ -236,10 +250,10 @@ class ComfyUIService:
             "5": {
                 "class_type": "KSampler",
                 "inputs": {
-                    "seed": 41956761,
-                    "steps": 20,
-                    "cfg": 7,
-                    "sampler_name": "euler_ancestral",
+                    "seed": random_seed,
+                    "steps": random_steps,
+                    "cfg": random_cfg,
+                    "sampler_name": random_sampler,
                     "scheduler": "normal",
                     "denoise": 1,
                     "model": ["1", 0],
@@ -258,15 +272,15 @@ class ComfyUIService:
             "7": {
                 "class_type": "SaveImage",
                 "inputs": {
-                    "filename_prefix": f"generated_{generation_id}_{str(uuid.uuid4())[:8]}",
+                    "filename_prefix": f"generated_{generation_id}_{str(random_seed)}",
                     "images": ["6", 0]
-                    # Całkowicie usuwamy parametr output_dir - ComfyUI użyje domyślnego folderu
+                    # Removed output_dir parameter - ComfyUI will use default folder
                 }
             }
         }
         
-        logging.warning(f"Using simplified test workflow with dreamshaper model and default ComfyUI output folder")
-        return simple_test_workflow
+        logging.info(f"Using dynamic workflow with dreamshaper model and randomized parameters")
+        return dynamic_workflow
     
     def _wait_for_generation(self, prompt_id: str, timeout: int = 300, polling_interval: int = 5) -> List[str]:
         """Wait for ComfyUI to complete image generation and return paths"""
@@ -280,9 +294,9 @@ class ComfyUIService:
         
         logging.info(f"Waiting for ComfyUI generation with prompt_id {prompt_id}")
         
-        # Używamy zapisanego ID generacji
+        #Używamy zapisanego ID generacji
         generation_id = self.current_generation_id
-        target_dir = Path(settings.MEDIA_ROOT) / "comfyui" / generation_id
+        target_dir = Path(settings.MEDIA_ROOT) / "comfyui" 
         target_dir.mkdir(parents=True, exist_ok=True)
         
         # Używamy ścieżki z konfiguracji - powinna teraz wskazywać na zamontowany wolumin
