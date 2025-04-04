@@ -79,7 +79,7 @@ def sample_character() -> Character:
         backstory="Once a promising engineer, now searching for purpose",
         goals=["Find clean water source", "Build a safe community"],
         relationships=[],
-        imagePrompt="A tall person with dark hair and scar, wearing practical clothing",
+        imageUrl="https://localhost:8000/media/comfyui/test.png",
         role="player"
     )
 

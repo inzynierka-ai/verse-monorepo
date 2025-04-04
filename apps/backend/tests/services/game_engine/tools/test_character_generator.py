@@ -99,7 +99,6 @@ async def test_generate_character(
     # Assertions
     assert isinstance(result, Character)
     assert result.name == "Test Character"
-    assert result.imagePrompt == image_prompt
     assert len(result.relationships) == 1
     assert result.relationships[0].name == "John Smith"
     

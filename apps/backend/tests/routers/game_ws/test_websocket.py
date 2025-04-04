@@ -61,7 +61,7 @@ def sample_character() -> Character:
         backstory="Was framed for treason and exiled",
         goals=["Clear my name", "Return to the kingdom"],
         relationships=[],
-        imagePrompt="A knight in worn armor",
+        imageUrl="https://localhost:8000/media/comfyui/test.png",
         role="player"
     )
 
