@@ -14,6 +14,10 @@ const HomePage = (): ReactElement => {
     navigate({ to: '/stories' });
   };
 
+  const handleCreateStory = () => {
+    navigate({ to: '/create-story' });
+  };
+
   const handleLogin = () => {
     navigate({ to: '/login' });
   };
@@ -29,12 +33,21 @@ const HomePage = (): ReactElement => {
         </p>
         
         {isLoggedIn ? (
-          <Button 
-            onClick={handleExploreStories} 
-            className={styles.exploreButton}
-          >
-            Explore Stories
-          </Button>
+          <div className={styles.authButtons}>
+            <Button 
+              onClick={handleExploreStories} 
+              className={styles.exploreButton}
+            >
+              Explore Stories
+            </Button>
+            <Button 
+              onClick={handleCreateStory} 
+              variant="secondary"
+              className={styles.createButton}
+            >
+              Create New Story
+            </Button>
+          </div>
         ) : (
           <div className={styles.authButtons}>
             <Button 

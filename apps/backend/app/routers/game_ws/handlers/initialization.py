@@ -72,6 +72,7 @@ class GameInitializationHandler(BaseMessageHandler):
                     "payload": character.model_dump()
                 })
             
+            print("Initializing game", input_data)
             # Start game initialization with callbacks
             await self.game_initializer.initialize_game(
                 input_data,

@@ -25,6 +25,7 @@ class WorldGenerator:
             A fully detailed World object with description and rules
         """
         # Generate world description
+        print("Generating world description", world_input)
         description = await self._generate_world_description(world_input)
         
         # Generate world rules
@@ -89,12 +90,8 @@ class WorldGenerator:
         Returns:
             List of world rules
         """
-        prompt = f"""
-        Based on this world description:
-        
-        {description}
-        
-        Create a list of 5-8 key rules or principles that govern how this world functions. These should include:
+        prompt = """
+        Based on the world description create a list of 5-8 key rules or principles that govern how this world functions. These should include:
         
         - Physical laws (if different from our world)
         - Social norms and taboos
@@ -102,8 +99,7 @@ class WorldGenerator:
         - Power structures
         - Any supernatural or technological constraints
         
-        Format your response as a JSON array of objects, where each object has a "rule" property containing 
-        a distinct rule explained in 1-2 sentences.
+        Format your response as a JSON array of strings, where each string contains a distinct rule explained in 1-2 sentences.
         
         Example format:
         [
@@ -113,8 +109,8 @@ class WorldGenerator:
         """
         
         messages = [
-            self.llm_service.create_message("system", "You are an expert worldbuilder specializing in creating consistent rule systems for fictional worlds. Create logical, coherent rules that define how the world functions. Always respond with valid JSON."),
-            self.llm_service.create_message("user", prompt)
+            self.llm_service.create_message("system", prompt),
+            self.llm_service.create_message("user", description)
         ]
         
         response = await self.llm_service.generate_completion(

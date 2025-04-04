@@ -77,6 +77,7 @@ class GameMessageHandler:
     async def handle_message(self, message: Dict[str, Any], websocket: WebSocket):
         """Route incoming message to appropriate handler based on type"""
         message_type = message.get("type")
+        print("Handling message", message_type)
         
         if not message_type:
             await websocket.send_json({
@@ -117,6 +118,7 @@ async def game_websocket(websocket: WebSocket):
     
     try:
         while True:
+            print("Waiting for message")
             # Receive and parse JSON message
             data = await websocket.receive_text()
             try:
