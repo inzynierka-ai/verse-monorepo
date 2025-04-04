@@ -77,8 +77,8 @@ class CharacterFromLLM(BaseModel):
 
 class Character(CharacterFromLLM):
     """Final character output structure"""
-    imagePrompt: str = Field(...,
-                             description="Image generation prompt for this character")
+    imageUrl: str = Field(...,
+                         description="URL of the generated image for this character")
     role: Literal["player", "npc"] = Field(
         ..., description="Character's role in the story (player or npc)")
 

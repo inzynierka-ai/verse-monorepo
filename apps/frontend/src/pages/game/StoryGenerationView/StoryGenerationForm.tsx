@@ -116,15 +116,13 @@ const StoryGenerationForm = ({ onSubmit }: StoryGenerationFormProps) => {
   return (
     <div className={styles.content}>
       <h1 className={styles.title}>Create Your Story</h1>
-      <p className={styles.subtitle}>
-        Define your world and character to begin an AI-generated adventure
-      </p>
-      
+      <p className={styles.subtitle}>Define your world and character to begin an AI-generated adventure</p>
+
       <form className={styles.form} onSubmit={handleSubmit}>
         {/* World Settings Section */}
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>World Settings</h2>
-          
+
           <div className={styles.formRow}>
             <Input
               label="Theme"
@@ -136,7 +134,7 @@ const StoryGenerationForm = ({ onSubmit }: StoryGenerationFormProps) => {
               fullWidth
             />
           </div>
-          
+
           <div className={styles.formRow}>
             <Input
               label="Genre"
@@ -148,7 +146,7 @@ const StoryGenerationForm = ({ onSubmit }: StoryGenerationFormProps) => {
               fullWidth
             />
           </div>
-          
+
           <div className={styles.formRow}>
             <Input
               label="Year"
@@ -161,7 +159,7 @@ const StoryGenerationForm = ({ onSubmit }: StoryGenerationFormProps) => {
               fullWidth
             />
           </div>
-          
+
           <div className={styles.formRow}>
             <Input
               label="Setting"
@@ -174,11 +172,11 @@ const StoryGenerationForm = ({ onSubmit }: StoryGenerationFormProps) => {
             />
           </div>
         </div>
-        
+
         {/* Character Section */}
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>Your Character</h2>
-          
+
           <div className={styles.formRow}>
             <Input
               label="Name"
@@ -190,7 +188,7 @@ const StoryGenerationForm = ({ onSubmit }: StoryGenerationFormProps) => {
               fullWidth
             />
           </div>
-          
+
           <div className={styles.formRow}>
             <Input
               label="Age"
@@ -202,7 +200,7 @@ const StoryGenerationForm = ({ onSubmit }: StoryGenerationFormProps) => {
               fullWidth
             />
           </div>
-          
+
           <div className={styles.formRow}>
             <Input
               label="Appearance"
@@ -214,7 +212,7 @@ const StoryGenerationForm = ({ onSubmit }: StoryGenerationFormProps) => {
               fullWidth
             />
           </div>
-          
+
           <div className={styles.formRow}>
             <Input
               label="Background"
@@ -227,7 +225,7 @@ const StoryGenerationForm = ({ onSubmit }: StoryGenerationFormProps) => {
             />
           </div>
         </div>
-        
+
         <div className={styles.buttonContainer}>
           <Button type="submit" fullWidth>
             Generate Story

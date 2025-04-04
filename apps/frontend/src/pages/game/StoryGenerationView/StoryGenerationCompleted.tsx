@@ -19,12 +19,12 @@ const StoryGenerationCompleted = ({ world, character, onReset }: StoryGeneration
   return (
     <div className={styles.content}>
       <h1 className={styles.title}>Your Story Awaits</h1>
-      
+
       {world && (
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>World</h2>
           <p className={styles.worldDescription}>{world.description}</p>
-          
+
           {world.rules.length > 0 && (
             <>
               <h3>World Rules</h3>
@@ -37,27 +37,31 @@ const StoryGenerationCompleted = ({ world, character, onReset }: StoryGeneration
           )}
         </div>
       )}
-      
+
       {character && (
         <div className={styles.section}>
-          <h2 className={styles.sectionTitle}>Character: {character.name}</h2>
+          <h2 className={styles.sectionTitle}>{character.name}</h2>
           <div className={styles.characterInfo}>
+            <div className={styles.characterImageContainer}>
+              <img src={character.imageUrl} alt={`${character.name}`} className={styles.characterImage} />
+            </div>
             <p>{character.description}</p>
-            
             <div>
               <h3>Personality Traits</h3>
               <div>
                 {character.personalityTraits.map((trait, index) => (
-                  <span key={index} className={styles.trait}>{trait}</span>
+                  <span key={index} className={styles.trait}>
+                    {trait}
+                  </span>
                 ))}
               </div>
             </div>
-            
+
             <div>
               <h3>Backstory</h3>
               <p>{character.backstory}</p>
             </div>
-            
+
             {character.goals.length > 0 && (
               <div>
                 <h3>Goals</h3>
@@ -68,7 +72,7 @@ const StoryGenerationCompleted = ({ world, character, onReset }: StoryGeneration
                 </ul>
               </div>
             )}
-            
+
             {character.relationships.length > 0 && (
               <div>
                 <h3>Relationships</h3>
@@ -84,11 +88,9 @@ const StoryGenerationCompleted = ({ world, character, onReset }: StoryGeneration
           </div>
         </div>
       )}
-      
+
       <div className={styles.buttonContainer}>
-        <Button onClick={handleExploreStories}>
-          Explore Stories
-        </Button>
+        <Button onClick={handleExploreStories}>Explore Stories</Button>
         <Button onClick={onReset} variant="secondary">
           Create Another Story
         </Button>

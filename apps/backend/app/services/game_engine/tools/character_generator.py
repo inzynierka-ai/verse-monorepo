@@ -1,3 +1,4 @@
+import os
 from typing import Optional
 from app.services.llm import LLMService, ModelName
 from app.schemas.world_generation import (
@@ -42,11 +43,13 @@ class CharacterGenerator:
         character_from_llm = await self._create_character_json(character_description)
         # 3. Generate image prompt for the character
         image_prompt = await self._generate_image_prompt(character_from_llm, world.description)
+        # 4. Generate image for the character
+        image_url = await self._generate_image(image_prompt)
 
         # Create Character object from CharacterFromLLM
         character = Character(
             **character_from_llm.model_dump(),
-            imagePrompt=image_prompt,
+            imageUrl=image_url,
             role="player" if is_player else "npc"
         )
 
@@ -82,6 +85,13 @@ class CharacterGenerator:
         )
         
         return await self.llm_service.extract_content(response)
+    
+    async def _generate_image(self, image_prompt: str) -> str:
+        """
+        Generate an image for a character.
+        """
+        # TODO: Integrate with ComfyUI service
+        return f"{os.getenv('BACKEND_URL')}/media/comfyui/test.png"
     
     async def _generate_image_prompt(
         self,

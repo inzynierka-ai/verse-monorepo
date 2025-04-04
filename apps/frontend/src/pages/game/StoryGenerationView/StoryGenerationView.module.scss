@@ -176,6 +176,21 @@
   }
 }
 
+.characterImageContainer {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.characterImage {
+  max-width: 100%;
+  max-height: 300px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  border: 2px solid rgba($accent-color, 0.3);
+}
+
 .buttonContainer {
   display: flex;
   justify-content: center;

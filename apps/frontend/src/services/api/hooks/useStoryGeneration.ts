@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { useWebSocket } from '@/common/hooks/webSockets/useWebSocket';
 import { sendWebSocketMessage } from '@/utils/webSocket';
 
@@ -72,21 +72,24 @@ interface UseStoryGenerationReturn {
 export const useStoryGeneration = ({
   onStateChange,
   onConnectionChange,
-  enabled = false
 }: UseStoryGenerationProps = {}): UseStoryGenerationReturn => {
+  // Track internal state
+  const [internalState, setInternalState] = useState<StoryGenerationState>({
+    status: 'idle',
+    statusMessage: 'Ready to generate story',
+  });
+
   // Create a callback to update state
   const updateState = useCallback((newState: Partial<StoryGenerationState>) => {
     const updatedState = {
-      status: newState.status || 'idle',
-      statusMessage: newState.statusMessage || 'Ready to generate story',
-      world: newState.world,
-      character: newState.character,
-      errorMessage: newState.errorMessage,
+      ...internalState,
+      ...newState,
     };
     
+    setInternalState(updatedState);
     onStateChange?.(updatedState);
     return updatedState;
-  }, [onStateChange]);
+  }, [internalState, onStateChange]);
 
   // Handle incoming WebSocket messages
   const handleMessage = useCallback((event: MessageEvent) => {
@@ -151,7 +154,6 @@ export const useStoryGeneration = ({
     onMessage: handleMessage,
     onOpen: handleOpen,
     onClose: handleClose,
-    // enabled
   });
 
   // Generate story handler
@@ -178,14 +180,14 @@ export const useStoryGeneration = ({
     updateState({
       status: 'idle',
       statusMessage: 'Ready to generate story',
+      world: undefined,
+      character: undefined,
+      errorMessage: undefined
     });
   }, [updateState]);
 
   return {
-    state: {
-      status: 'idle',
-      statusMessage: 'Ready to generate story',
-    },
+    state: internalState,
     generateStory,
     reset,
     isConnected,

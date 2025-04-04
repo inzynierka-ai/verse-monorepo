@@ -1,6 +1,8 @@
+import os
 from fastapi import FastAPI, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from app.routers.api import api_router
 from app.db.session import engine, Base
@@ -21,6 +23,11 @@ app.add_middleware(
 
 # Include the aggregated router
 app.include_router(api_router)
+
+
+# Mount media directory for serving generated images
+os.makedirs("./media", exist_ok=True)
+app.mount("/media", StaticFiles(directory="./media"), name="media")
 
 class ChatMessage(BaseModel):
     type: str
