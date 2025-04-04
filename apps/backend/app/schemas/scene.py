@@ -1,5 +1,5 @@
 from typing import List, Literal
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from app.schemas.websocket import BaseClientMessage, BaseServerMessage
 
 from pydantic import BaseModel
@@ -19,16 +19,14 @@ class SceneCreate(SceneBase):
 class Scene(SceneBase):
     id: int
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class SceneDetail(Scene):
     location: Location
     characters: List[Character]
     messages: List[Message]
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class SceneClientMessage(BaseClientMessage):
     """Base class for all scene-related client messages"""

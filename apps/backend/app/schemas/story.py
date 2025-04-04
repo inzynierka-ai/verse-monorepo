@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Optional
 
 class StoryBase(BaseModel):
@@ -14,5 +14,4 @@ class StoryCreate(StoryBase):
 class Story(StoryBase):
     id: int
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
