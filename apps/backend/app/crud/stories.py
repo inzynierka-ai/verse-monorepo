@@ -15,8 +15,9 @@ def create_story(db: Session, story: story_schema.StoryCreate):
     db_story = Story(
         title=story.title,
         description=story.description,
-        prompt=story.prompt,
         user_id=story.user_id,
+        rules=story.rules,
+        uuid=story.uuid
     )
     db.add(db_story)
     db.commit()

@@ -51,7 +51,24 @@ const StoryGenerationView = (): ReactElement => {
         <StoryGenerationForm onSubmit={handleGenerateStory} />
       )}
       
-      {/* Rest of your component... */}
+      {(generationState.status === 'connecting' || generationState.status === 'generating') && (
+        <StoryGenerationLoading message={generationState.statusMessage} />
+      )}
+      
+      {generationState.status === 'error' && (
+        <StoryGenerationError 
+          errorMessage={generationState.errorMessage || 'Unknown error'} 
+          onReset={handleReset}
+        />
+      )}
+      
+      {generationState.status === 'complete' && (
+        <StoryGenerationCompleted
+          world={generationState.world}
+          character={generationState.character}
+          onReset={handleReset}
+        />
+      )}
     </div>
   );
 };

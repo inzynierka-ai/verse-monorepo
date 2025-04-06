@@ -154,6 +154,9 @@ export const useStoryGeneration = ({
     onMessage: handleMessage,
     onOpen: handleOpen,
     onClose: handleClose,
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem('auth-token')}`
+    }
   });
 
   // Generate story handler
