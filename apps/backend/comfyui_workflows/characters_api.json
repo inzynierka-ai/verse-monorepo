@@ -1,1 +1,97 @@
-{}
+{
+  "3": {
+    "inputs": {
+      "seed": 1010909602644870,
+      "steps": 20,
+      "cfg": 8,
+      "sampler_name": "euler",
+      "scheduler": "normal",
+      "denoise": 0.7000000000000001,
+      "model": [
+        "4",
+        0
+      ],
+      "positive": [
+        "16",
+        0
+      ],
+      "negative": [
+        "40",
+        0
+      ],
+      "latent_image": [
+        "66",
+        0
+      ]
+    },
+    "class_type": "KSampler"
+  },
+  "4": {
+    "inputs": {
+      "ckpt_name": "dreamshaper_8.safetensors"
+    },
+    "class_type": "CheckpointLoaderSimple"
+  },
+  "16": {
+    "inputs": {
+      "text": "A portrait of a majestic and commanding queen, chest-up. Her face is a masterpiece of grace and power, with high cheekbones, deep, intelligent eyes, and a regal expression that exudes both wisdom and authority. Her lips are slightly parted, as if she is about to deliver a decree that could shape the fate of nations. Her dark, intricately braided hair is adorned with delicate golden chains and pearls, cascading elegantly over her shoulders. A magnificent crown, encrusted with sapphires and emeralds, rests atop her head, its fine craftsmanship a testament to her royal lineage. She wears a flowing velvet gown of deep sapphire blue, embroidered with silver thread in swirling celestial patterns. Over her shoulders drapes a heavy fur-lined cloak, fastened at the front with an ornate brooch in the shape of a phoenix. Her slender fingers, adorned with rings set with rare gemstones, rest gracefully on the hilt of a ceremonial dagger, a symbol of both her wisdom and her ability to command. The background is softly blurred, revealing grand marble pillars and flickering candlelight, enhancing the atmosphere of regal splendor.",
+      "clip": [
+        "4",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode"
+  },
+  "40": {
+    "inputs": {
+      "text": "",
+      "clip": [
+        "4",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode"
+  },
+  "65": {
+    "inputs": {
+      "image": "93ccb5a8-f1bc-4c6b-a7fe-7517165c4c87.webp",
+      "upload": "image"
+    },
+    "class_type": "LoadImage"
+  },
+  "66": {
+    "inputs": {
+      "pixels": [
+        "65",
+        0
+      ],
+      "vae": [
+        "4",
+        2
+      ]
+    },
+    "class_type": "VAEEncode"
+  },
+  "67": {
+    "inputs": {
+      "samples": [
+        "3",
+        0
+      ],
+      "vae": [
+        "4",
+        2
+      ]
+    },
+    "class_type": "VAEDecode"
+  },
+  "68": {
+    "inputs": {
+      "images": [
+        "67",
+        0
+      ]
+    },
+    "class_type": "PreviewImage"
+  }
+}
