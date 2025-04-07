@@ -5,10 +5,13 @@ import uuid
 import random
 import time
 import shutil
-from typing import Dict, Any, List
+import websocket
+import threading
+from typing import Dict, Any, List, Optional, Callable
 from pathlib import Path
 from app.core.config import settings
 import logging
+
 
 class ComfyUIService:
     def __init__(self):
@@ -19,71 +22,105 @@ class ComfyUIService:
         self.hostname = "host.docker.internal"
         self.port = 8188
         self.comfy_url = f"http://{self.hostname}:{self.port}"
+        self.ws_url = f"ws://{self.hostname}:{self.port}/ws?clientId={self.client_id}"
 
     def _queue_prompt(self, prompt, client_id=None, timeout=30):
         """Send a workflow prompt to ComfyUI's queue"""
         if client_id is None:
             client_id = self.client_id
-        
+
         try:
             p = {"prompt": prompt, "client_id": client_id}
             headers = {'Content-Type': 'application/json'}
-            
+            print("Queuing the prompt")
             response = requests.post(
-                f"{self.comfy_url}/prompt", 
+                f"{self.comfy_url}/prompt",
                 json=p,
                 headers=headers,
                 timeout=timeout
             )
-            
+
             if response.status_code == 400:
                 logging.error(f"Error details from requests: {response.text}")
+                raise ValueError(f"Bad request to ComfyUI: {response.text}")
+
+            if response.status_code != 200:
+                raise ConnectionError(
+                    f"Failed to connect to ComfyUI: HTTP {response.status_code}")
+
             return response.json()
+        except requests.exceptions.RequestException as e:
+            raise ConnectionError(f"Failed to queue prompt: {str(e)}")
         except Exception as e:
             raise Exception(f"Failed to queue prompt: {str(e)}")
-            
-    async def generate_image_from_prompt(self, prompt: str) -> Dict[str, Any]:
-        """Generate image using ComfyUI based on text prompt"""
-        generation_id = str(uuid.uuid4())
-        output_path = self.output_dir / generation_id
-        output_path.mkdir(exist_ok=True)
+
+    def _track_progress(self, prompt_id: str, on_progress: Optional[Callable[[int, int], None]] = None):
+        """
+        Track generation progress via WebSocket
         
-        # Prepare workflow for ComfyUI
-        workflow = self._create_workflow(prompt, generation_id)
+        Args:
+            prompt_id: The ID of the prompt to track
+            on_progress: Optional callback function that receives (current_step, total_steps)
         
-        try:
-            response_data = self._queue_prompt(workflow)
-            
-            # Get the prompt ID from the response
-            prompt_id = response_data.get("prompt_id")
-            if not prompt_id:
-                raise ValueError("No prompt_id in response from ComfyUI")
-                
-            # Wait for the image generation to complete
-            image_paths = self._wait_for_generation(prompt_id, generation_id)
-            
-            # Return the relative paths to the generated images
-            return {
-                "imagePaths": {
-                    "base": f"/media/comfyui/{generation_id}",
-                    "images": image_paths
-                }
-            }
-        except Exception as e:
-            logging.error(f"Error queuing prompt to ComfyUI: {str(e)}")
-            raise
-    
+        Returns:
+            True when generation is complete
+        """
+        def on_message(ws, message):
+            data = json.loads(message)
+            if data["type"] == "progress":
+                if on_progress:
+                    value = data["data"]["value"]
+                    max_value = data["data"]["max"]
+                    on_progress(value, max_value)
+
+            elif data["type"] == "executed" and data["data"]["prompt_id"] == prompt_id:
+                ws.close()
+
+        def on_error(ws, error):
+            logging.error(f"WebSocket error: {error}")
+
+        def on_close(ws, close_status_code, close_msg):
+            logging.info(
+                f"WebSocket connection closed: {close_status_code}, {close_msg}")
+
+        def on_open(ws):
+            logging.info("WebSocket connection established")
+
+        ws = websocket.WebSocketApp(self.ws_url,
+                                    on_message=on_message,
+                                    on_error=on_error,
+                                    on_close=on_close,
+                                    on_open=on_open)
+
+        # Start WebSocket connection in a separate thread
+        wst = threading.Thread(target=ws.run_forever)
+        wst.daemon = True
+        wst.start()
+
+        # Wait for the thread to complete (when ws.close() is called in on_message)
+        max_wait_time = 300  # 5 minutes timeout
+        start_time = time.time()
+        while wst.is_alive():
+            if time.time() - start_time > max_wait_time:
+                ws.close()
+                raise TimeoutError(
+                    f"Timeout waiting for generation after {max_wait_time} seconds")
+            time.sleep(1)
+
+        return True
+
     def _create_workflow(self, prompt: str, generation_id: str) -> Dict:
         """Create ComfyUI workflow JSON with the given prompt"""
         # Generate random seed for unique images
         random_seed = random.randint(1, 2147483647)
         random_steps = random.randint(20, 40)
         random_cfg = round(random.uniform(6.5, 8.5), 1)
-        
+
         # Choose random sampler for variation
-        samplers = ["euler", "euler_ancestral", "heun", "dpm_2", "dpm_2_ancestral", "lms", "ddim"]
+        samplers = ["euler", "euler_ancestral", "heun",
+                    "dpm_2", "dpm_2_ancestral", "lms", "ddim"]
         random_sampler = random.choice(samplers)
-        
+
         # Workflow with random parameters for unique generation
         return {
             "1": {
@@ -144,54 +181,194 @@ class ComfyUIService:
                 }
             }
         }
-    
-    def _wait_for_generation(self, prompt_id: str, generation_id: str, timeout: int = 300, polling_interval: int = 5) -> List[str]:
-        """Wait for ComfyUI to complete image generation and return paths"""
-        target_dir = Path(settings.MEDIA_ROOT) / "comfyui" 
-        target_dir.mkdir(parents=True, exist_ok=True)
+
+    def _get_history(self, prompt_id: str) -> Dict[str, Any]:
+        """Get generation history from ComfyUI"""
+        try:
+            response = requests.get(
+                f"{self.comfy_url}/history/{prompt_id}", timeout=10)
+
+            if response.status_code == 200:
+                return response.json()
+            else:
+                logging.error(
+                    f"Failed to get history, status code: {response.status_code}")
+                return {}
+
+        except Exception as e:
+            logging.error(f"Error getting history: {str(e)}")
+            return {}
+
+    def _get_image(self, filename: str, subfolder: str = "", folder_type: str = "output") -> bytes:
+        """Get raw image data from ComfyUI"""
+        try:
+            params = {
+                "filename": filename,
+                "subfolder": subfolder,
+                "type": folder_type
+            }
+
+            response = requests.get(
+                f"{self.comfy_url}/view", params=params, timeout=10)
+
+            if response.status_code == 200:
+                return response.content
+            else:
+                logging.error(
+                    f"Failed to get image, status code: {response.status_code}")
+                return b""
+
+        except Exception as e:
+            logging.error(f"Error getting image: {str(e)}")
+            return b""
+
+    def save_image_bytes(self, image_bytes: bytes, filename: str) -> str:
+        """
+        Save image bytes to a file in the output directory
         
-        # Get ComfyUI output directory from settings
-        comfyui_output_dir = settings.COMFYUI_DEFAULT_OUTPUT_DIR
+        Args:
+            image_bytes: The raw image data
+            filename: Name for the saved file
+            
+        Returns:
+            Path to the saved file or empty string on failure
+        """
+        try:
+            if not image_bytes:
+                logging.error("Cannot save empty image data")
+                return ""
+                
+            # Create full path within output directory
+            file_path = self.output_dir / filename
+            
+            # Write bytes to file
+            with open(file_path, "wb") as f:
+                f.write(image_bytes)
+                
+            logging.info(f"Image saved to {file_path}")
+            return str(file_path)
+            
+        except Exception as e:
+            logging.error(f"Error saving image: {str(e)}")
+            return ""
+
+    def generate_image(self, prompt: str) -> Dict[str, Any]:
+        """
+        Generate an image from a text prompt and save it to disk
         
-        start_time = time.time()
-        while time.time() - start_time < timeout:
+        Args:
+            prompt: Text description for image generation
+            
+        Returns:
+            Dictionary with image information
+        """
+        try:
+            logging.info(f"Starting image generation for prompt: '{prompt}'")
+            
+            # Create a unique ID for this generation
+            generation_id = str(uuid.uuid4())[:8]
+            logging.debug(f"Generation ID: {generation_id}")
+            
+            # Create workflow with the prompt
+            logging.debug(f"Creating workflow with prompt: '{prompt}'")
+            workflow = self._create_workflow(prompt, generation_id)
+            logging.debug(f"Workflow created successfully")
+            
+            # Queue the prompt and get prompt ID
+            logging.info(f"Queuing workflow to ComfyUI")
+            queue_response = self._queue_prompt(workflow)
+            if not queue_response or "prompt_id" not in queue_response:
+                logging.error(f"Failed to queue prompt. Response: {queue_response}")
+                return {"success": False, "error": "Failed to queue prompt", "imagePath": ""}
+                
+            prompt_id = queue_response["prompt_id"]
+            logging.info(f"Prompt queued with ID: {prompt_id}")
+            
+            # Track progress until completion
+            logging.info(f"Tracking generation progress...")
+            self._track_progress(prompt_id, 
+                               on_progress=lambda value, max_value: 
+                                   logging.info(f"Generation progress: {value}/{max_value}"))
+            
+            logging.info(f"Generation complete, retrieving history")
+            
+            # Get history to find output image
+            history = self._get_history(prompt_id)
+            if not history:
+                logging.error("Failed to get generation history - empty response")
+                return {"success": False, "error": "Failed to get generation history", "imagePath": ""}
+                
+            logging.debug(f"History data: {json.dumps(history, indent=2)}")
+            
+            # Extract image filename from history
             try:
-                response = requests.get(f"{self.comfy_url}/history/{prompt_id}")
+                logging.debug("Parsing history to find output image")
                 
-                if response.status_code == 200:
-                    history = response.json()
+                # Get outputs from the prompt history
+                prompt_outputs = history.get(prompt_id, {}).get("outputs", {})
+                if not prompt_outputs:
+                    logging.error(f"No outputs found in history for prompt ID: {prompt_id}")
+                    return {"success": False, "error": "No outputs in history", "imagePath": ""}
+                
+                # Find the first node with images
+                image_data = None
+                for node_id, node_output in prompt_outputs.items():
+                    if "images" in node_output and node_output["images"]:
+                        image_data = node_output["images"][0]
+                        break
+                
+                if not image_data:
+                    logging.error("No images found in history")
+                    return {"success": False, "error": "No images found in history", "imagePath": ""}
                     
-                    # Check if the task is completed
-                    if prompt_id in history and "outputs" in history[prompt_id]:
-                        outputs = history[prompt_id]["outputs"]
-                        image_paths = []
-                        
-                        # Process all generated images
-                        for node_id, node_output in outputs.items():
-                            if "images" in node_output:
-                                for img in node_output["images"]:
-                                    filename = img.get("filename")
-                                    if filename:
-                                        # Full path to file in ComfyUI output folder
-                                        source_path = os.path.join(comfyui_output_dir, filename)
-                                        
-                                        # Target path in our project
-                                        target_path = os.path.join(str(target_dir), os.path.basename(filename))
-                                        
-                                        # Copy file to our directory
-                                        if os.path.exists(source_path):
-                                            shutil.copy2(source_path, target_path)
-                                            image_paths.append(os.path.basename(filename))
-                        
-                        if image_paths:
-                            return image_paths
+                filename = image_data.get("filename")
+                subfolder = image_data.get("subfolder", "")
                 
-                # If no results found, wait and try again
-                time.sleep(polling_interval)
+                if not filename:
+                    logging.error("Image filename not found in history")
+                    return {"success": False, "error": "Image filename not found", "imagePath": ""}
                 
-            except Exception as e:
-                logging.error(f"Error while checking ComfyUI status: {str(e)}")
-                time.sleep(polling_interval)
-        
-        # After timeout, raise error
-        raise TimeoutError(f"Timeout waiting for image generation after {timeout} seconds")
+                logging.info(f"Found image: {filename} in folder: {subfolder}")
+                    
+                # Get the image data
+                logging.info(f"Downloading image from ComfyUI")
+                image_bytes = self._get_image(filename, subfolder)
+                if not image_bytes:
+                    logging.error("Failed to download image - empty response")
+                    return {"success": False, "error": "Failed to download image", "imagePath": ""}
+                
+                logging.debug(f"Downloaded image size: {len(image_bytes)} bytes")
+                    
+                # Save the image locally
+                local_filename = f"{generation_id}_{filename}"
+                logging.info(f"Saving image as: {local_filename}")
+                file_path = self.save_image_bytes(image_bytes, local_filename)
+                
+                if not file_path:
+                    logging.error("Failed to save image locally")
+                    return {"success": False, "error": "Failed to save image locally", "imagePath": ""}
+                
+                # Create relative path for frontend
+                relative_path = f"/media/comfyui/{os.path.basename(file_path)}"
+                
+                logging.info(f"Image generation complete. Saved to: {file_path}")
+                return {
+                    "success": True,
+                    "imagePath": relative_path,
+                    "promptId": prompt_id,
+                    "imagePaths": {
+                        "base": f"/media/comfyui",
+                        "images": [os.path.basename(file_path)]
+                    }
+                }
+                
+            except (KeyError, IndexError) as e:
+                logging.error(f"Error parsing history: {str(e)}")
+                logging.debug(f"History structure: {history}")
+                return {"success": False, "error": f"Error parsing history: {str(e)}", "imagePath": ""}
+                
+        except Exception as e:
+            logging.error(f"Error generating image: {str(e)}")
+            import traceback
+            logging.error(traceback.format_exc())
+            return {"success": False, "error": f"Error generating image: {str(e)}", "imagePath": ""}
