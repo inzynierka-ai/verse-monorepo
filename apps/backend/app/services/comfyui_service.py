@@ -4,13 +4,13 @@ import requests
 import uuid
 import random
 import time
-import shutil
 import websocket
 import threading
-from typing import Dict, Any, List, Optional, Callable
+from typing import Dict, Any, Optional, Callable
 from pathlib import Path
 from app.core.config import settings
 import logging
+from app.services.image_generation import WorkflowLoaderFactory
 
 
 class ComfyUIService:
@@ -109,78 +109,21 @@ class ComfyUIService:
 
         return True
 
-    def _create_workflow(self, prompt: str, generation_id: str) -> Dict:
-        """Create ComfyUI workflow JSON with the given prompt"""
-        # Generate random seed for unique images
-        random_seed = random.randint(1, 2147483647)
-        random_steps = random.randint(20, 40)
-        random_cfg = round(random.uniform(6.5, 8.5), 1)
-
-        # Choose random sampler for variation
-        samplers = ["euler", "euler_ancestral", "heun",
-                    "dpm_2", "dpm_2_ancestral", "lms", "ddim"]
-        random_sampler = random.choice(samplers)
-
-        # Workflow with random parameters for unique generation
-        return {
-            "1": {
-                "class_type": "CheckpointLoaderSimple",
-                "inputs": {
-                    "ckpt_name": "dreamshaper_8.safetensors"
-                }
-            },
-            "2": {
-                "class_type": "CLIPTextEncode",
-                "inputs": {
-                    "text": prompt,
-                    "clip": ["1", 1]
-                }
-            },
-            "3": {
-                "class_type": "CLIPTextEncode",
-                "inputs": {
-                    "text": "bad quality, blurry, deformed, ugly, low resolution",
-                    "clip": ["1", 1]
-                }
-            },
-            "4": {
-                "class_type": "EmptyLatentImage",
-                "inputs": {
-                    "width": 512,
-                    "height": 512,
-                    "batch_size": 1
-                }
-            },
-            "5": {
-                "class_type": "KSampler",
-                "inputs": {
-                    "seed": random_seed,
-                    "steps": random_steps,
-                    "cfg": random_cfg,
-                    "sampler_name": random_sampler,
-                    "scheduler": "normal",
-                    "denoise": 1,
-                    "model": ["1", 0],
-                    "positive": ["2", 0],
-                    "negative": ["3", 0],
-                    "latent_image": ["4", 0]
-                }
-            },
-            "6": {
-                "class_type": "VAEDecode",
-                "inputs": {
-                    "samples": ["5", 0],
-                    "vae": ["1", 2]
-                }
-            },
-            "7": {
-                "class_type": "SaveImage",
-                "inputs": {
-                    "filename_prefix": f"generated_{generation_id}_{str(random_seed)}",
-                    "images": ["6", 0]
-                }
-            }
-        }
+    def _create_workflow(self, prompt: str, generation_id: str, context_type: str = "character") -> Dict[str, Any]:
+        """
+        Create ComfyUI workflow JSON with the given prompt and context
+        
+        Args:
+            prompt: Text prompt for image generation
+            generation_id: Unique ID for the generation
+            context_type: Type of context ('character' or 'location')
+            
+        Returns:
+            Workflow dictionary ready to be sent to ComfyUI
+        """
+        # Use the factory to create the appropriate loader
+        loader = WorkflowLoaderFactory.create_loader(context_type)
+        return loader.load_workflow(prompt, generation_id)
 
     def _get_history(self, prompt_id: str) -> Dict[str, Any]:
         """Get generation history from ComfyUI"""
@@ -252,26 +195,27 @@ class ComfyUIService:
             logging.error(f"Error saving image: {str(e)}")
             return ""
 
-    def generate_image(self, prompt: str) -> Dict[str, Any]:
+    def generate_image(self, prompt: str, context_type: str = "character") -> Dict[str, Any]:
         """
         Generate an image from a text prompt and save it to disk
         
         Args:
             prompt: Text description for image generation
+            context_type: Type of context ('character' or 'location')
             
         Returns:
             Dictionary with image information
         """
         try:
-            logging.info(f"Starting image generation for prompt: '{prompt}'")
+            logging.info(f"Starting image generation for prompt: '{prompt}' (context: {context_type})")
             
             # Create a unique ID for this generation
             generation_id = str(uuid.uuid4())[:8]
             logging.debug(f"Generation ID: {generation_id}")
             
-            # Create workflow with the prompt
+            # Create workflow with the prompt and context
             logging.debug(f"Creating workflow with prompt: '{prompt}'")
-            workflow = self._create_workflow(prompt, generation_id)
+            workflow = self._create_workflow(prompt, generation_id, context_type)
             logging.debug(f"Workflow created successfully")
             
             # Queue the prompt and get prompt ID
@@ -312,7 +256,7 @@ class ComfyUIService:
                 
                 # Find the first node with images
                 image_data = None
-                for node_id, node_output in prompt_outputs.items():
+                for _, node_output in prompt_outputs.items():
                     if "images" in node_output and node_output["images"]:
                         image_data = node_output["images"][0]
                         break

@@ -1,22 +1,24 @@
-from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect, BackgroundTasks
+from fastapi import APIRouter, HTTPException
 from typing import Dict, Any, List, Optional
 from app.services.comfyui_service import ComfyUIService
 from pydantic import BaseModel
-import asyncio
-import json
 
 router = APIRouter(tags=["comfyui"])
 
 class ImageGenerationRequest(BaseModel):
     prompt: str
+    context_type: str = "character"  # Default to character if not specified
 
 class ImagePathsModel(BaseModel):
     base: str
     images: List[str]  # Adding images field as a list of paths
 
 class ImageGenerationResponse(BaseModel):
-    imagePaths: ImagePathsModel
+    success: bool
+    imagePath: str
     promptId: Optional[str] = None
+    error: Optional[str] = None
+    imagePaths: Optional[Dict[str, Any]] = None
 
 class GenerationProgressResponse(BaseModel):
     promptId: str
@@ -29,7 +31,7 @@ async def generate_image(request: ImageGenerationRequest):
     """Generate image using ComfyUI based on text prompt"""
     comfyui_service = ComfyUIService()
     try:
-        result = comfyui_service.generate_image(request.prompt)
+        result = comfyui_service.generate_image(request.prompt, request.context_type)
         return result
     except TimeoutError as e:
         raise HTTPException(status_code=504, detail=f"Generation timed out: {str(e)}")
