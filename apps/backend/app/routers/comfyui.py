@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from typing import Dict, Any, List, Optional
-from app.services.comfyui_service import ComfyUIService
+from app.services.image_generation.comfyui_service import ComfyUIService
 from pydantic import BaseModel
 
 router = APIRouter(tags=["comfyui"])
