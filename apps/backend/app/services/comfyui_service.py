@@ -151,16 +151,21 @@ class ComfyUIService:
                 "type": folder_type
             }
 
+            logging.info(f"Fetching image from ComfyUI: {self.comfy_url}/view with params {params}")
             response = requests.get(
                 f"{self.comfy_url}/view", params=params, timeout=10)
 
             if response.status_code == 200:
+                logging.info(f"Image downloaded successfully: {len(response.content)} bytes")
                 return response.content
             else:
                 logging.error(
-                    f"Failed to get image, status code: {response.status_code}")
+                    f"Failed to get image, status code: {response.status_code}, response: {response.text}")
                 return b""
 
+        except requests.exceptions.ConnectionError as e:
+            logging.error(f"Connection error getting image: {str(e)}. Check if ComfyUI is running at {self.comfy_url}")
+            return b""
         except Exception as e:
             logging.error(f"Error getting image: {str(e)}")
             return b""
@@ -208,6 +213,7 @@ class ComfyUIService:
         """
         try:
             logging.info(f"Starting image generation for prompt: '{prompt}' (context: {context_type})")
+            
             
             # Create a unique ID for this generation
             generation_id = str(uuid.uuid4())[:8]
@@ -267,6 +273,7 @@ class ComfyUIService:
                     
                 filename = image_data.get("filename")
                 subfolder = image_data.get("subfolder", "")
+                type = image_data.get("type", "")
                 
                 if not filename:
                     logging.error("Image filename not found in history")
@@ -276,7 +283,7 @@ class ComfyUIService:
                     
                 # Get the image data
                 logging.info(f"Downloading image from ComfyUI")
-                image_bytes = self._get_image(filename, subfolder)
+                image_bytes = self._get_image(filename, subfolder, type)
                 if not image_bytes:
                     logging.error("Failed to download image - empty response")
                     return {"success": False, "error": "Failed to download image", "imagePath": ""}
