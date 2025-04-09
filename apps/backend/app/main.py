@@ -1,47 +1,44 @@
-import os
-from fastapi import FastAPI, WebSocket
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.security import OAuth2PasswordBearer
-from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
-from app.routers.api import api_router
-from app.db.session import engine, Base
-from app.models import *
-from app.db.seed import seed_database
+import logging
 
-app = FastAPI(title="Verse", description="Create your own story", version="0.1.0")
-# Base.metadata.create_all(bind=engine)
+# Configure logging
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[logging.StreamHandler()]
+)
+
+import os
+from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
+
+from app.routers.api import api_router
+from app.core.config import settings
+
+
+app = FastAPI(title=settings.PROJECT_NAME, description="Create your own story", version="0.1.0")
 
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, replace with specific origins
+    allow_origins=settings.BACKEND_CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Include the aggregated router
-app.include_router(api_router)
-
+# Include API router
+app.include_router(api_router, prefix="/api")
 
 # Mount media directory for serving generated images
-os.makedirs("./media", exist_ok=True)
-app.mount("/media", StaticFiles(directory="./media"), name="media")
+os.makedirs(settings.MEDIA_ROOT, exist_ok=True)
+app.mount(settings.MEDIA_ROOT, StaticFiles(directory=settings.MEDIA_ROOT), name="media")
 
-class ChatMessage(BaseModel):
-    type: str
-    content: str
-    sceneId: str
 
-# @app.on_event("startup")
-# def startup_event():
-#     # seed_database()
-#     pass
 
 @app.get("/")
-async def root():
-    return {"message": "Welcome to My FastAPI App"}
+def read_root():
+    return {"message": "Welcome to Verse API"}
 
 @app.get("/health")
 async def health_check():
