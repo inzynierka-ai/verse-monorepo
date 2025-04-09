@@ -10,7 +10,7 @@ import { useAuth } from '@/common/hooks';
 
 const LoginView = () => {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { saveCredentials } = useAuth();
   const [formData, setFormData] = useState<LoginCredentials>({
     username: '',
     password: '',
@@ -59,22 +59,20 @@ const LoginView = () => {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-  
+
     if (!validateForm()) {
       return;
     }
-  
+
     setLoginError(null);
-  
+
     loginMutation(formData, {
       onSuccess: (data) => {
-        login(data.token);
+        saveCredentials(data.token);
         navigate({ to: '/stories' });
       },
       onError: (error) => {
-        setLoginError(
-          error instanceof Error ? error.message : 'Invalid username or password. Please try again.',
-        );
+        setLoginError(error instanceof Error ? error.message : 'Invalid username or password. Please try again.');
       },
     });
   };

@@ -8,7 +8,7 @@ from app.schemas.auth import Token
 from app.schemas.user import UserCreate, User as UserSchema
 from app.services.auth import get_password_hash, authenticate_user, create_access_token, get_current_user
 
-router = APIRouter(tags=["authentication"])
+router = APIRouter(prefix="/auth", tags=["auth"])
 
 # Define request models
 class LoginRequest(BaseModel):

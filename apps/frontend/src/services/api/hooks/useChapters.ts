@@ -14,8 +14,8 @@ export const useChapters = (storyId: string | number) => {
   return useQuery({
     queryKey: ['chapters', storyId],
     queryFn: async () => {
-      return apiClient.get<Chapter[]>(`/api/stories/${storyId}/chapters`);
-    }
+      return apiClient.get<Chapter[]>(`/stories/${storyId}/chapters`);
+    },
   });
 };
 
@@ -24,8 +24,8 @@ export const useChapter = (storyId: string | number, chapterId: string | number)
   return useQuery({
     queryKey: ['chapters', storyId, chapterId],
     queryFn: async () => {
-      return apiClient.get<Chapter>(`/api/stories/${storyId}/chapters/${chapterId}`);
-    }
+      return apiClient.get<Chapter>(`/stories/${storyId}/chapters/${chapterId}`);
+    },
   });
 };
 
@@ -35,11 +35,11 @@ export const useCreateChapter = (storyId: string | number) => {
 
   return useMutation({
     mutationFn: (newChapter: Omit<Chapter, 'id'>) => {
-      return apiClient.post<Chapter>(`/api/stories/${storyId}/chapters`, newChapter);
+      return apiClient.post<Chapter>(`/stories/${storyId}/chapters`, newChapter);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['chapters', storyId] });
-    }
+    },
   });
 };
 
@@ -49,12 +49,12 @@ export const useUpdateChapter = (storyId: string | number) => {
 
   return useMutation({
     mutationFn: (chapter: Chapter) => {
-      return apiClient.put<Chapter>(`/api/stories/${storyId}/chapters/${chapter.id}`, chapter);
+      return apiClient.put<Chapter>(`/stories/${storyId}/chapters/${chapter.id}`, chapter);
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['chapters', storyId] });
       queryClient.invalidateQueries({ queryKey: ['chapters', storyId, variables.id] });
-    }
+    },
   });
 };
 

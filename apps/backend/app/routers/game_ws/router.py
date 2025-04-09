@@ -12,7 +12,7 @@ from app.services.auth import SECRET_KEY, ALGORITHM  # Import your security cons
 logger = logging.getLogger(__name__)
 
 # Create router
-router = APIRouter()
+router = APIRouter(prefix="/game", tags=["game"])
 
 
 class AuthenticationHandler(BaseMessageHandler):
@@ -174,7 +174,7 @@ class GameMessageHandler:
 game_handler = GameMessageHandler()
 
 
-@router.websocket("/ws/game")
+@router.websocket("/ws")
 async def game_websocket(websocket: WebSocket):
     """WebSocket endpoint for game communication"""
     # Initialize user state

@@ -5,7 +5,7 @@ import { Scene } from './useScene';
 export const useLatestScene = (storyId: string) => {
   return useQuery<Scene>({
     queryKey: ['latest-scene', storyId],
-    queryFn: async () => await apiClient.get(`/api/stories/${storyId}/latest-scene`),
+    queryFn: async () => await apiClient.get(`/stories/${storyId}/latest-scene`),
     enabled: !!storyId,
   });
 };

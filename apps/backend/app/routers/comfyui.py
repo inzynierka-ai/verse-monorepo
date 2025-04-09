@@ -3,7 +3,7 @@ from typing import Dict, Any, List, Optional
 from app.services.image_generation.comfyui_service import ComfyUIService
 from pydantic import BaseModel
 
-router = APIRouter(tags=["comfyui"])
+router = APIRouter(prefix="/comfyui", tags=["comfyui"])
 
 class ImageGenerationRequest(BaseModel):
     prompt: str

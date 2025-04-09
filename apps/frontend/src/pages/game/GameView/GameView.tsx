@@ -67,111 +67,103 @@ const GameView = () => {
   
   if (isLoadingScene) {
     return (
-      <Container>
-        <div className={styles.loading}>
-          <div className={styles.loadingSpinner}></div>
-          <p>Loading your adventure...</p>
-        </div>
-      </Container>
+      <div className={styles.loading}>
+        <div className={styles.loadingSpinner}></div>
+        <p>Loading your adventure...</p>
+      </div>
     );
   }
-  
+
   if (error || !scene) {
     return (
-      <Container>
-        <div className={styles.error}>
-          <h2>Error loading scene</h2>
-          <p>{error?.message || 'Unknown error'}</p>
-          <Button onClick={() => navigate({ to: '/' })}>Return to Home</Button>
-        </div>
-      </Container>
+      <div className={styles.error}>
+        <h2>Error loading scene</h2>
+        <p>{error?.message || 'Unknown error'}</p>
+        <Button onClick={() => navigate({ to: '/' })}>Return to Home</Button>
+      </div>
     );
   }
 
   return (
-    <div 
+    <div
       className={styles.gameView}
-      style={scene.location?.background ? { 
-        backgroundImage: `url(${scene.location.background})` 
-      } : undefined}
+      style={
+        scene.location?.background
+          ? {
+              backgroundImage: `url(${scene.location.background})`,
+            }
+          : undefined
+      }
     >
-      <Container>
-        <div className={styles.gameContainer}>
-          {/* Location information */}
-          <div className={styles.locationInfo}>
-            <Card>
-              <h2>{scene.location?.name || 'Unknown Location'}</h2>
-              <p>{scene.location?.description || 'No description available'}</p>
-            </Card>
-          </div>
-          
-          {/* Character information */}
-          <div className={styles.characterInfo}>
-            <Card>
-              {selectedCharacter ? (
-                <>
-                  <div className={styles.characterHeader}>
-                    <img 
-                      src={selectedCharacter.avatar} 
-                      alt={selectedCharacter.name} 
-                      className={styles.avatar}
-                    />
-                    <h2>{selectedCharacter.name}</h2>
-                  </div>
-                  <p>{selectedCharacter.description || 'No description available'}</p>
-                </>
-              ) : (
-                <p>No character information available</p>
-              )}
-            </Card>
-          </div>
-          
-          {/* Message display area */}
-          <div className={styles.messagesContainer}>
-            {messages.length > 0 ? (
-              <div className={styles.messages}>
-                {messages.map((msg, index) => (
-                  <div 
-                    key={index} 
-                    className={`${styles.message} ${msg.role === 'user' ? styles.userMessage : styles.assistantMessage}`}
-                  >
-                    <div className={styles.messageContent}>{msg.content}</div>
-                  </div>
-                ))}
-              </div>
+      <div className={styles.gameContainer}>
+        {/* Location information */}
+        <div className={styles.locationInfo}>
+          <Card>
+            <h2>{scene.location?.name || 'Unknown Location'}</h2>
+            <p>{scene.location?.description || 'No description available'}</p>
+          </Card>
+        </div>
+
+        {/* Character information */}
+        <div className={styles.characterInfo}>
+          <Card>
+            {selectedCharacter ? (
+              <>
+                <div className={styles.characterHeader}>
+                  <img src={selectedCharacter.avatar} alt={selectedCharacter.name} className={styles.avatar} />
+                  <h2>{selectedCharacter.name}</h2>
+                </div>
+                <p>{selectedCharacter.description || 'No description available'}</p>
+              </>
             ) : (
-              <div className={styles.emptyMessages}>
-                <p>Your adventure awaits. Send a message to begin...</p>
-              </div>
+              <p>No character information available</p>
+            )}
+          </Card>
+        </div>
+
+        {/* Message display area */}
+        <div className={styles.messagesContainer}>
+          {messages.length > 0 ? (
+            <div className={styles.messages}>
+              {messages.map((msg, index) => (
+                <div
+                  key={index}
+                  className={`${styles.message} ${msg.role === 'user' ? styles.userMessage : styles.assistantMessage}`}
+                >
+                  <div className={styles.messageContent}>{msg.content}</div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className={styles.emptyMessages}>
+              <p>Your adventure awaits. Send a message to begin...</p>
+            </div>
+          )}
+        </div>
+
+        {/* Message input area */}
+        <div className={styles.inputContainer}>
+          <div className={styles.connectionStatus}>
+            {isConnected ? (
+              <span className={styles.connected}>Connected</span>
+            ) : (
+              <span className={styles.disconnected}>Disconnected</span>
             )}
           </div>
-          
-          {/* Message input area */}
-          <div className={styles.inputContainer}>
-            <div className={styles.connectionStatus}>
-              {isConnected ? 
-                <span className={styles.connected}>Connected</span> : 
-                <span className={styles.disconnected}>Disconnected</span>
-              }
-            </div>
-            <div className={styles.inputWrapper}>
-              <Input
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Type your message..."
-                fullWidth
-              />
-              <Button 
-                onClick={handleSendMessage} 
-                disabled={!isConnected || !message.trim()}
-              >
-                Send
-              </Button>
-            </div>
+          <div className={styles.inputWrapper}>
+            <Input
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Type your message..."
+              fullWidth
+            />
+            <Button onClick={handleSendMessage} disabled={!isConnected || !message.trim()}>
+              Send
+            </Button>
           </div>
         </div>
-      </Container>
+      </div>
     </div>
   );
 };

@@ -20,7 +20,7 @@ interface CreateStoryResponse {
 export const useCreateStory = () => {
   return useMutation({
     mutationFn: async (data: CreateStoryRequest) => {
-      const response = await apiClient.post<CreateStoryResponse>('/api/stories', data);
+      const response = await apiClient.post<CreateStoryResponse>('/stories', data);
       return response;
     }
   });

@@ -21,6 +21,7 @@ const StoryGenerationCompleted = ({ world, character, onReset }: StoryGeneration
     };
     
     const handleBeginAdventure = async () => {
+      console.log(world, character);
       if (!world || !character) return;
       
       try {

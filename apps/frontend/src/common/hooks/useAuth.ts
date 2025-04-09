@@ -13,20 +13,20 @@ export const useAuth = () => {
     setIsLoggedIn(!!token);
   }, []);
 
-  const login = (token: string) => {
+  const saveCredentials = (token: string) => {
     localStorage.setItem('authToken', token);
     setIsLoggedIn(true);
   };
 
-  const logout = () => {
+  const removeCredentials = () => {
     localStorage.removeItem('authToken');
     setIsLoggedIn(false);
   };
 
   return {
     isLoggedIn,
-    login,
-    logout
+    saveCredentials,
+    removeCredentials,
   };
 };
 

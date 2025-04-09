@@ -7,7 +7,7 @@ import { apiClient } from '../client';
 export const useLocation = (locationId: string) => {
   return useQuery({
     queryKey: ['locations', locationId],
-    queryFn: async () => await apiClient.get(`/api/locations/${locationId}`),
+    queryFn: async () => await apiClient.get(`/locations/${locationId}`),
     enabled: !!locationId,
   });
 };

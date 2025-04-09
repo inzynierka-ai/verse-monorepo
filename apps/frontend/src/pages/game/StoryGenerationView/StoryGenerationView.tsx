@@ -31,7 +31,7 @@ const StoryGenerationView = (): ReactElement => {
   }, [isLoggedIn, navigate]);
   
   const { state: generationState, generateStory, reset } = useStoryGeneration();
-  
+  console.log(generationState);
   const handleGenerateStory = (data: StoryGenerationRequest) => {
     generateStory(data);
   };
