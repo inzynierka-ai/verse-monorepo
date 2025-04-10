@@ -1,14 +1,11 @@
 import json
 import logging
 import os
-import threading
-import time
 import uuid
 from pathlib import Path
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Dict, Optional
 
 import requests
-import websocket
 from app.core.config import settings
 from app.services.image_generation import WorkflowLoaderFactory
 
@@ -24,7 +21,7 @@ class ComfyUIService:
         self.comfy_url = f"http://{self.hostname}:{self.port}"
         self.ws_url = f"ws://{self.hostname}:{self.port}/ws?clientId={self.client_id}"
 
-    def _queue_prompt(self, prompt: str, client_id: Optional[str] = None, timeout: int = 30) -> Dict[str, Any]:
+    def _queue_prompt(self, prompt: Dict[str, Any], client_id: Optional[str] = None, timeout: int = 30) -> Dict[str, Any]:
         """Send a workflow prompt to ComfyUI's queue"""
         if client_id is None:
             client_id = self.client_id
@@ -53,61 +50,6 @@ class ComfyUIService:
             raise ConnectionError(f"Failed to queue prompt: {str(e)}")
         except Exception as e:
             raise Exception(f"Failed to queue prompt: {str(e)}")
-
-    def _track_progress(self, prompt_id: str, on_progress: Optional[Callable[[int, int], None]] = None):
-        """
-        Track generation progress via WebSocket
-
-        Args:
-            prompt_id: The ID of the prompt to track
-            on_progress: Optional callback function that receives (current_step, total_steps)
-
-        Returns:
-            True when generation is complete
-        """
-        def on_message(ws, message):
-            data = json.loads(message)
-            if data["type"] == "progress":
-                if on_progress:
-                    value = data["data"]["value"]
-                    max_value = data["data"]["max"]
-                    on_progress(value, max_value)
-
-            elif data["type"] == "executed" and data["data"]["prompt_id"] == prompt_id:
-                ws.close()
-
-        def on_error(_, error):
-            logging.error(f"WebSocket error: {error}")
-
-        def on_close(_, close_status_code, close_msg):
-            logging.info(
-                f"WebSocket connection closed: {close_status_code}, {close_msg}")
-
-        def on_open():
-            logging.info("WebSocket connection established")
-
-        ws = websocket.WebSocketApp(self.ws_url,
-                                    on_message=on_message,
-                                    on_error=on_error,
-                                    on_close=on_close,
-                                    on_open=on_open)
-
-        # Start WebSocket connection in a separate thread
-        wst = threading.Thread(target=ws.run_forever)
-        wst.daemon = True
-        wst.start()
-
-        # Wait for the thread to complete (when ws.close() is called in on_message)
-        max_wait_time = 300  # 5 minutes timeout
-        start_time = time.time()
-        while wst.is_alive():
-            if time.time() - start_time > max_wait_time:
-                ws.close()
-                raise TimeoutError(
-                    f"Timeout waiting for generation after {max_wait_time} seconds")
-            time.sleep(1)
-
-        return True
 
     def _create_workflow(self, prompt: str, generation_id: str, context_type: str = "character") -> Dict[str, Any]:
         """
@@ -213,6 +155,7 @@ class ComfyUIService:
             Dictionary with image information
         """
         try:
+            import time
             logging.info(
                 f"Starting image generation for prompt: '{prompt}' (context: {context_type})")
 
@@ -235,14 +178,34 @@ class ComfyUIService:
             prompt_id = queue_response["prompt_id"]
             logging.info(f"Prompt queued with ID: {prompt_id}")
 
-            # Track progress until completion
-            logging.info(f"Tracking generation progress...")
-            self._track_progress(prompt_id,
-                                 on_progress=lambda value, max_value:
-                                 logging.info(f"Generation progress: {value}/{max_value}"))
+            # Poll for job completion instead of using WebSockets
+            max_wait_time = 300  # 5 minutes timeout
+            start_time = time.time()
+            poll_interval = 2  # Check every 2 seconds
+            
+            # Poll until job is complete or timeout occurs
+            while time.time() - start_time < max_wait_time:
+                # Check if the job is complete by getting history
+                history = self._get_history(prompt_id)
+                prompt_outputs = history.get(prompt_id, {}).get("outputs", {})
+                
+                if prompt_outputs:
+                    logging.info(f"Generation complete after {int(time.time() - start_time)} seconds")
+                    break
+                    
+                # Log progress periodically
+                if int((time.time() - start_time) % 10) == 0:
+                    logging.info(f"Still waiting for image generation... ({int(time.time() - start_time)}s elapsed)")
+                
+                # Wait before polling again
+                time.sleep(poll_interval)
+            else:
+                # Loop completed without breaking - timeout occurred
+                logging.error(f"Timeout waiting for image generation after {max_wait_time} seconds")
+                return {"success": False, "error": "Timeout waiting for image generation", "imagePath": ""}
 
-            logging.info(f"Generation complete, retrieving history")
-
+            logging.info(f"Generation complete, processing results")
+            
             # Get history to find output image
             history = self._get_history(prompt_id)
             if not history:

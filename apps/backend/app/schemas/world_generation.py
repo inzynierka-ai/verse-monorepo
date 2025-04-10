@@ -97,8 +97,8 @@ class LocationFromLLM(BaseModel):
 
 class Location(LocationFromLLM):
     """Final location output structure"""
-    imagePrompt: str = Field(...,
-                             description="Image generation prompt for this location")
+    imageUrl: str = Field(...,
+                         description="URL of the generated image for this location")
 
 
 # Narrator models
