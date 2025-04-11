@@ -25,7 +25,7 @@ const StoryGenerationView = (): ReactElement => {
       console.log('Not logged in, redirecting to login page...');
       const timer = setTimeout(() => {
         navigate({ to: '/login' });
-      }, 100); // Small delay to prevent flashing
+      }, 1000); // Small delay to prevent flashing
       return () => clearTimeout(timer);
     }
   }, [isLoggedIn, navigate]);

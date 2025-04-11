@@ -3,6 +3,7 @@ import { apiClient } from '@/services/api/client';
 import { WorldCreated, Character } from '@/services/api/hooks';
 
 interface CreateStoryRequest {
+  user_id: number;
   title: string;
   description: string;
   rules: string;
@@ -10,7 +11,7 @@ interface CreateStoryRequest {
 }
 
 interface CreateStoryResponse {
-  id: number;
+  user_id: number;
   title: string;
   description: string;
   rules: string;
@@ -33,6 +34,8 @@ export const createStoryFromGeneration = (
 ): CreateStoryRequest => {
   // Create a title based on the character and world
   const title = `${character.name}'s Adventure`;
+
+  const user_id = 1; // Placeholder for user ID, replace with actual user ID from auth token
   
   // Use the world description
   const description = world.description;
@@ -44,6 +47,7 @@ export const createStoryFromGeneration = (
   const uuid = crypto.randomUUID();
   
   return {
+    user_id,
     title,
     description,
     rules,

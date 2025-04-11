@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Box, Container, Paper, Typography, CircularProgress, List, ListItem, ListItemButton, ListItemText } from '@mui/material';
 import { useNavigate } from '@tanstack/react-router';
-import { useStories } from '@/hooks/useStory';
+import { useStories } from '@/services/api/hooks/useStory';
 
 const StoriesView = () => {
   const { data: stories = [], isLoading, error } = useStories();

@@ -37,7 +37,7 @@ def list_chapters(story_id: int, current_user: User = Depends(get_current_user),
     chapters = story.chapters
     return chapters
 
-@router.post("", response_model=story_schema.Story)
+@router.post("/", response_model=story_schema.Story)
 def create_story(
     story: story_schema.StoryCreate, 
     db: Session = Depends(get_db),
