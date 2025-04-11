@@ -14,7 +14,8 @@ from app.prompts.location_generator import (
     CREATE_LOCATION_JSON_USER_PROMPT_TEMPLATE
 )
 from app.utils.json_service import JSONService
-
+from app.services.image_generation.comfyui_service import ComfyUIService
+from app.core.config import settings
 
 class LocationGenerator:
     """
@@ -40,9 +41,11 @@ class LocationGenerator:
 
         image_prompt = await self._generate_image_prompt(location_from_llm, world.description)
 
+        image_url = await self._generate_image(image_prompt)
+
         location = Location(
             **location_from_llm.model_dump(),
-            imagePrompt=image_prompt
+            imageUrl=image_url
         )
         
         return location
@@ -110,6 +113,15 @@ class LocationGenerator:
 
         return await self.llm_service.extract_content(response)
 
+    async def _generate_image(self, image_prompt: str) -> str:
+        """
+        Generate an image for a character.
+        """
+
+        comfyui_service = ComfyUIService()
+        result = comfyui_service.generate_image(image_prompt, "location")
+        return f"{settings.BACKEND_URL}{result['imagePath']}"
+    
     async def _create_location_json(
         self,
         location_description: str,
