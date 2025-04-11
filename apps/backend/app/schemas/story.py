@@ -8,8 +8,12 @@ class StoryBase(BaseModel):
     rules: Optional[str] = None
     uuid: str
 
-class StoryCreate(StoryBase):
-    pass
+class StoryCreate(BaseModel):
+    title: str
+    description: str = None
+    rules: str = None
+    uuid: str = None
+    user_id: Optional[int] = None
 
 class Story(StoryBase):
     id: int

@@ -3,7 +3,6 @@ import { apiClient } from '@/services/api/client';
 import { WorldCreated, Character } from '@/services/api/hooks';
 
 interface CreateStoryRequest {
-  user_id: number;
   title: string;
   description: string;
   rules: string;
@@ -47,7 +46,6 @@ export const createStoryFromGeneration = (
   const uuid = crypto.randomUUID();
   
   return {
-    user_id,
     title,
     description,
     rules,

@@ -53,6 +53,13 @@ def create_story(
     
     return create_story_service(db, story_with_user)
 
+@router.get("/{story_id}/characters", response_model=List[scene_schema.Character])
+def list_characters(story_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Get all characters for a specific story"""
+    story = get_story(db, story_id, current_user.id)
+    characters = story.characters
+    return characters
+
 @router.get("/{story_id}/latest-scene", response_model=scene_schema.SceneDetail)
 def get_latest_scene(
     story_id: int, 
