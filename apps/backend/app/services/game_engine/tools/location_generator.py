@@ -11,7 +11,7 @@ from app.prompts.location_generator import (
     LOCATION_IMAGE_PROMPT_SYSTEM_PROMPT,
     LOCATION_IMAGE_PROMPT_USER_TEMPLATE,
     CREATE_LOCATION_JSON_SYSTEM_PROMPT,
-    CREATE_LOCATION_JSON_USER_PROMPT_TEMPLATE
+    CREATE_LOCATION_JSON_USER_PROMPT_TEMPLATE,
 )
 from app.utils.json_service import JSONService
 from app.services.image_generation.comfyui_service import ComfyUIService
@@ -24,25 +24,27 @@ class LocationGenerator:
     def __init__(self, llm_service: Optional[LLMService] = None):
         self.llm_service = llm_service or LLMService()
     
-    async def generate_location(self, story: Story) -> Location:
+    async def generate_location(self, story: Story, description: str) -> Location:
         """
-        Orchestrates the entire location generation process.
-        
+        Generate a complete location.
+
         Args:
             story: Story object containing description and other details
-            
+            description: Optional description to guide location generation
+
         Returns:
-            Fully generated Location object with description and image prompt
+            Location object containing location details and image URL
         """
         # 1. Generate detailed location description
-        location_description = await self._describe_location(story)
+        location_description = await self._describe_location(story, description)
         # 2. Create location JSON from description
         location_from_llm = await self._create_location_json(location_description)
 
         image_prompt = await self._generate_image_prompt(location_from_llm, story.description)
 
         image_url = await self._generate_image(image_prompt)
-
+        
+        # Create the final location with image URL
         location = Location(
             **location_from_llm.model_dump(),
             imageUrl=image_url
@@ -51,17 +53,18 @@ class LocationGenerator:
         return location
 
     
-    async def _describe_location(self, story: Story) -> str:
+    async def _describe_location(self, story: Story, description: str) -> str:
         """
         Generate a detailed narrative description of a location based on story description.
 
         Args:
             story: Story object containing description and other details
+            description: Optional description to guide location generation
 
         Returns:
             A detailed narrative description of a single location
         """
-        user_prompt = self._create_location_prompt(story)
+        user_prompt = self._create_location_prompt(story, description)
 
         messages = [
             self.llm_service.create_message("system", LOCATION_GENERATOR_SYSTEM_PROMPT),
@@ -172,17 +175,19 @@ class LocationGenerator:
             raise ValueError(
                 f"Failed to parse location data: {str(e)}, raw response: {response_text}") from e
 
-    def _create_location_prompt(self, story: Story) -> str:
+    def _create_location_prompt(self, story: Story, description: str) -> str:
         """
         Create a formatted prompt for location generation.
 
         Args:
             story: Story object containing description and other details
+            description: description to guide location generation
 
         Returns:
             Formatted prompt string
         """
         return LOCATION_GENERATOR_USER_PROMPT_TEMPLATE.format(
             story_description=story.description,
-            story_rules=story.rules
+            story_rules=story.rules,
+            description=description
         )

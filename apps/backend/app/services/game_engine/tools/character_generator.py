@@ -14,7 +14,9 @@ from app.prompts import (
     CREATE_CHARACTER_JSON_SYSTEM_PROMPT,
     CREATE_CHARACTER_JSON_USER_PROMPT_TEMPLATE,
     CHARACTER_IMAGE_PROMPT_SYSTEM_PROMPT,
-    CHARACTER_IMAGE_PROMPT_USER_TEMPLATE
+    CHARACTER_IMAGE_PROMPT_USER_TEMPLATE,
+    CREATE_CHARACTER_DRAFT_SYSTEM_PROMPT,
+    CREATE_CHARACTER_DRAFT_USER_PROMPT_TEMPLATE
 )
 from app.utils.json_service import JSONService
 from app.services.image_generation.comfyui_service import ComfyUIService
@@ -32,15 +34,87 @@ class CharacterGenerator:
         self.llm_service = llm_service or LLMService()
         self.db_session = db_session
 
-    async def generate_character(self, character_draft: CharacterDraft, story: Story, is_player: bool) -> CharacterModel | None:
+    async def create_character_draft_from_description(
+        self,
+        description: str,
+        story: Story
+    ) -> CharacterDraft:
+        """
+        Create a basic character draft from a simple description.
+        
+        Args:
+            description: A simple description of the character
+            story: Story object for context
+            
+        Returns:
+            A CharacterDraft object that can be used for further character generation
+        """
+        user_prompt = CREATE_CHARACTER_DRAFT_USER_PROMPT_TEMPLATE.format(
+            story_description=story.description,
+            story_rules=story.rules,
+            description=description
+        )
+        
+        messages = [
+            self.llm_service.create_message("system", CREATE_CHARACTER_DRAFT_SYSTEM_PROMPT),
+            self.llm_service.create_message("user", user_prompt)
+        ]
+        
+        response = await self.llm_service.generate_completion(
+            messages=messages,
+            model=ModelName.GEMINI_2_FLASH_LITE,
+            temperature=0.7,
+            stream=False
+        )
+        
+        response_text = await self.llm_service.extract_content(response)
+        
+        
+        # Parse the JSON response into a CharacterDraft object
+        character_draft = JSONService.parse_and_validate_json_response(
+            response_text, CharacterDraft)
+            
+        if not character_draft:
+            raise ValueError("No character draft data found in response")
+            
+        return character_draft
+            
+        
+
+    async def generate_character_from_description(
+        self,
+        description: str,
+        story: Story,
+        is_player: bool = False
+    ) -> Character:
+        """
+        Generate a complete character from a simple description.
+        
+        Args:
+            description: A simple description of the character
+            story: Story object for context
+            is_player: Whether this character is the player character
+            
+        Returns:
+            A fully generated Character object
+        """
+        # First create a character draft from the description
+        character_draft = await self.create_character_draft_from_description(
+            description, story)
+            
+        # Then use the existing process to generate the full character
+        return await self.generate_character(
+            character_draft, story, is_player)
+
+    async def generate_character(self, character_draft: CharacterDraft, story: Story, is_player: bool) -> Character:
         """
         Orchestrates the entire character generation process.
 
         Args:
             character_draft: Character draft to be used for character generation
             story: Story object containing description and other details
-            is_player: Whether this is a player character
-            story_id: ID of the story to associate the character with
+            is_player: Whether this character is the player character
+            description: Optional description to guide character generation
 
         Returns:
             Fully generated Character object with description and image prompt

@@ -23,6 +23,38 @@ Ensure all details are consistent with the provided story setting and with other
 Your narrative should be comprehensive enough to later extract structured data for all elements of the character.
 """
 
+# Create character draft from description
+CREATE_CHARACTER_DRAFT_SYSTEM_PROMPT = """
+You are a Character Designer creating character drafts for interactive narrative worlds.
+Your task is to develop a basic character template based on a simple description provided.
+
+Generate a minimal character draft with the following elements:
+1. A unique and appropriate name for the character
+2. An appropriate age for the character (numeric value only)
+3. A brief physical appearance description (1-2 sentences)
+4. A short background summary (1-2 sentences)
+
+Ensure the character is cohesive, engaging, and fits the world description provided.
+
+IMPORTANT: Return ONLY valid JSON in the following format and nothing else:
+```json
+{
+  "name": "Character Name",
+  "age": 30,
+  "appearance": "Brief physical description",
+  "background": "Brief background summary"
+}
+```
+"""
+
+CREATE_CHARACTER_DRAFT_USER_PROMPT_TEMPLATE = """
+World Description: {world_description}
+World Rules: {world_rules}
+Character Description: {description}
+
+Generate a character draft based on this description.
+"""
+
 # Second step: Convert narrative to JSON structure
 CREATE_CHARACTER_JSON_SYSTEM_PROMPT = """
 Create a structured JSON representation of character based on the detailed narrative descriptions.
