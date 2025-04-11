@@ -34,8 +34,6 @@ export const createStoryFromGeneration = (
   // Create a title based on the character and world
   const title = `${character.name}'s Adventure`;
 
-  const user_id = 1; // Placeholder for user ID, replace with actual user ID from auth token
-  
   // Use the world description
   const description = world.description;
   
