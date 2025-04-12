@@ -42,7 +42,7 @@ class LLMService:
     async def generate_completion(
         self,
         messages: List[ChatCompletionMessageParam],
-        model: ModelName = ModelName.GEMINI_2_PRO,
+        model: ModelName = ModelName.GPT4O_MINI,
         temperature: float = 0.7,
         max_tokens: Optional[int] = None,
         stream: bool = False,

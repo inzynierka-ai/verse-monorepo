@@ -16,7 +16,7 @@ export interface Scene {
 export const useScene = (sceneId: string) => {
   return useQuery<Scene>({
     queryKey: ['scenes', sceneId],
-    queryFn: async () => await apiClient.get(`/api/scenes/${sceneId}?resource_id=${sceneId}`),
+    queryFn: async () => await apiClient.get(`/scenes/${sceneId}?resource_id=${sceneId}`),
     enabled: !!sceneId,
   });
 }; 

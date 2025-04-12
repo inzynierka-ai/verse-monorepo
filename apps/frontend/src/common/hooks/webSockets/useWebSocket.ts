@@ -9,6 +9,7 @@ interface WebSocketConfig {
   initialDelay?: number;
   maxDelay?: number;
   enabled?: boolean;
+  headers?: Record<string, string>;
 }
 
 interface WebSocketHookReturn {
@@ -16,6 +17,9 @@ interface WebSocketHookReturn {
   isConnected: boolean;
   reconnect: () => void;
 }
+
+// Keep track of active connections globally to prevent duplicates
+const activeConnections = new Map<string, WebSocket>();
 
 export const useWebSocket = ({
   url,
@@ -26,10 +30,21 @@ export const useWebSocket = ({
   initialDelay = 1000,
   maxDelay = 30000,
   enabled = true,
+  headers,
 }: WebSocketConfig): WebSocketHookReturn => {
   const socket = useRef<WebSocket | null>(null);
   const attempts = useRef(0);
   const [isConnected, setIsConnected] = useState(false);
+  const connectTimeoutRef = useRef<number | null>(null);
+  const instanceIdRef = useRef<string>(Math.random().toString(36).substring(2, 9));
+  
+  // Store headers in a ref to prevent unnecessary reconnections
+  const headersRef = useRef(headers);
+  
+  // Update headers ref when headers change
+  useEffect(() => {
+    headersRef.current = headers;
+  }, [headers]);
 
   // Add refs for callbacks
   const onMessageRef = useRef(onMessage);
@@ -57,57 +72,153 @@ export const useWebSocket = ({
     [initialDelay, maxDelay],
   );
 
+  // Clear any pending connection timeouts
+  const clearConnectionTimeout = useCallback(() => {
+    if (connectTimeoutRef.current !== null) {
+      window.clearTimeout(connectTimeoutRef.current);
+      connectTimeoutRef.current = null;
+    }
+  }, []);
+
   const connect = useCallback(() => {
-    // Don't connect if not enabled
+    // Don't connect if not enabled or URL is missing
     if (!enabled || !url) {
       if (socket.current) {
         socket.current.close();
         socket.current = null;
         setIsConnected(false);
+        activeConnections.delete(`${url}-${instanceIdRef.current}`);
       }
       return;
     }
 
-    // if (socket.current) {
-    //   socket.current.close();
-    // }
-    console.log(url)
-    socket.current = new WebSocket(url);
+    // Check if we already have an active connection
+    if (socket.current?.readyState === WebSocket.OPEN || 
+        socket.current?.readyState === WebSocket.CONNECTING) {
+      console.log('WebSocket connection already exists, not creating a new one');
+      return;
+    }
 
-    socket.current.onopen = () => {
+    // Check if there's already an active connection for this URL globally
+    const connectionKey = `${url}-${instanceIdRef.current}`;
+    const existingConnection = activeConnections.get(connectionKey);
+    
+    if (existingConnection && 
+        (existingConnection.readyState === WebSocket.OPEN || 
+         existingConnection.readyState === WebSocket.CONNECTING)) {
+      console.log('Using existing WebSocket connection');
+      socket.current = existingConnection;
+      
+      // If it's already open, trigger the onOpen handler
+      if (existingConnection.readyState === WebSocket.OPEN) {
+        setIsConnected(true);
+        onOpenRef.current?.();
+      }
+      return;
+    }
+
+    console.log(`Creating new WebSocket connection to ${url}`);
+    
+    // Create a new connection
+    const newSocket = new WebSocket(url);
+    socket.current = newSocket;
+    activeConnections.set(connectionKey, newSocket);
+
+    newSocket.onopen = () => {
+      console.log(`WebSocket connected to ${url}`);
       setIsConnected(true);
       attempts.current = 0;
+      
+      // Send authentication headers if provided
+      if (headersRef.current && Object.keys(headersRef.current).length > 0) {
+        console.log('Sending authentication message');
+        const authMessage = {
+          type: 'AUTHENTICATE',
+          payload: headersRef.current
+        };
+        
+        if (newSocket.readyState === WebSocket.OPEN) {
+          newSocket.send(JSON.stringify(authMessage));
+        }
+      }
+      
       onOpenRef.current?.();
     };
 
-    socket.current.onclose = () => {
+    newSocket.onclose = (event) => {
+      console.log(`WebSocket closed: ${event.code} ${event.reason}`);
       setIsConnected(false);
       onCloseRef.current?.();
+      
+      activeConnections.delete(connectionKey);
 
-      if (enabled && attempts.current < reconnectAttempts) {
+      // Only attempt reconnection if this was an abnormal closure 
+      // and we haven't exceeded attempts
+      if (enabled && 
+          attempts.current < reconnectAttempts && 
+          event.code !== 1000 && // Normal closure
+          event.code !== 1001) { // Going away (page navigation) 
+          
         const delay = getBackoffDelay(attempts.current);
-
         attempts.current++;
-        setTimeout(() => connect(), delay);
+        
+        console.log(`Attempting reconnect in ${delay}ms (attempt ${attempts.current}/${reconnectAttempts})`);
+        
+        clearConnectionTimeout();
+        connectTimeoutRef.current = window.setTimeout(() => {
+          connectTimeoutRef.current = null;
+          connect();
+        }, delay);
       }
     };
 
-    socket.current.onmessage = (event) => {
+    newSocket.onmessage = (event) => {
       onMessageRef.current(event);
     };
 
-    socket.current.onerror = (error) => {
+    newSocket.onerror = (error) => {
       console.error('WebSocket error:', error);
     };
-  }, [url, reconnectAttempts, getBackoffDelay, enabled]);
+  }, [url, enabled, getBackoffDelay, reconnectAttempts, clearConnectionTimeout]);
 
   const reconnect = useCallback(() => {
-    if (enabled) {
+    // Only reconnect if we're not already connected/connecting
+    if (enabled && 
+        (!socket.current || 
+         (socket.current.readyState !== WebSocket.OPEN && 
+          socket.current.readyState !== WebSocket.CONNECTING))) {
+      
+      console.log('Manual reconnection triggered');
+      
+      // Close existing socket if any
+      if (socket.current) {
+        const oldSocket = socket.current;
+        socket.current = null;
+        
+        try {
+          oldSocket.close();
+        } catch (e) {
+          console.error('Error closing socket during reconnect:', e);
+        }
+      }
+      
+      // Reset attempts for manual reconnection
       attempts.current = 0;
-      connect();
+      
+      // Clear any pending reconnection attempt
+      clearConnectionTimeout();
+      
+      // Trigger connection with small delay to avoid rapid reconnects
+      connectTimeoutRef.current = window.setTimeout(() => {
+        connectTimeoutRef.current = null;
+        connect();
+      }, 100);
+    } else {
+      console.log('Reconnect ignored - already connected or connecting');
     }
-  }, [connect, enabled]);
+  }, [connect, enabled, clearConnectionTimeout]);
 
+  // Effect for initial connection and cleanup
   useEffect(() => {
     if (enabled) {
       connect();
@@ -115,14 +226,28 @@ export const useWebSocket = ({
       socket.current.close();
       socket.current = null;
       setIsConnected(false);
+      activeConnections.delete(`${url}-${instanceIdRef.current}`);
     }
     
+    // Cleanup on unmount or url/enabled change
     return () => {
+      clearConnectionTimeout();
+      
       if (socket.current) {
-        socket.current.close();
+        const connectionKey = `${url}-${instanceIdRef.current}`;
+        activeConnections.delete(connectionKey);
+        
+        const oldSocket = socket.current;
+        socket.current = null;
+        
+        try {
+          oldSocket.close();
+        } catch (e) {
+          console.error('Error during socket cleanup:', e);
+        }
       }
     };
-  }, [connect, enabled]);
+  }, [url, enabled, connect, clearConnectionTimeout]);
 
   return {
     socket: socket.current,

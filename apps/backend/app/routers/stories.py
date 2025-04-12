@@ -37,7 +37,7 @@ def list_chapters(story_id: int, current_user: User = Depends(get_current_user),
     chapters = story.chapters
     return chapters
 
-@router.post("", response_model=story_schema.Story)
+@router.post("/", response_model=story_schema.Story)
 def create_story(
     story: story_schema.StoryCreate, 
     db: Session = Depends(get_db),
@@ -52,6 +52,13 @@ def create_story(
     story_with_user = story_schema.StoryCreate(**story_data)
     
     return create_story_service(db, story_with_user)
+
+@router.get("/{story_id}/characters", response_model=List[scene_schema.Character])
+def list_characters(story_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Get all characters for a specific story"""
+    story = get_story(db, story_id, current_user.id)
+    characters = story.characters
+    return characters
 
 @router.get("/{story_id}/latest-scene", response_model=scene_schema.SceneDetail)
 def get_latest_scene(

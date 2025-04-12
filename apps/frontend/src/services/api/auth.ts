@@ -43,20 +43,12 @@ export const forgotPassword = async (data: ForgotPasswordRequest): Promise<{ mes
 export const useLogin = () => {
   return useMutation({
     mutationFn: login,
-    onSuccess: (data) => {
-      // Store the token in localStorage on successful login
-      localStorage.setItem('auth-token', data.token);
-    },
   });
 };
 
 export const useRegister = () => {
   return useMutation({
     mutationFn: register,
-    onSuccess: (data) => {
-      // Store the token in localStorage on successful registration
-      localStorage.setItem('auth-token', data.token);
-    },
   });
 };
 

@@ -16,7 +16,7 @@ from app.routers.api import api_router
 from app.core.config import settings
 
 
-app = FastAPI(title=settings.PROJECT_NAME, description="Create your own story", version="0.1.0")
+app = FastAPI(title=settings.PROJECT_NAME, description="Create your own story", version="0.1.0", redirect_slashes=True)
 
 # Configure CORS
 app.add_middleware(

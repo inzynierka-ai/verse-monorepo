@@ -81,7 +81,7 @@ class CharacterGenerator:
 
         response = await self.llm_service.generate_completion(
             messages=messages,
-            model=ModelName.GEMINI_25_PRO,
+            model=ModelName.GPT4O_MINI,
             temperature=0.7,
             stream=False
         )
@@ -135,7 +135,7 @@ class CharacterGenerator:
 
         response = await self.llm_service.generate_completion(
             messages=messages,
-            model=ModelName.GEMINI_25_PRO,
+            model=ModelName.GPT4O_MINI,
             temperature=0.7,
             stream=False
         )
@@ -166,7 +166,7 @@ class CharacterGenerator:
 
         response = await self.llm_service.generate_completion(
             messages=messages,
-            model=ModelName.GEMINI_2_FLASH_LITE,
+            model=ModelName.GPT4O_MINI,
             temperature=0.7,
             stream=False
         )

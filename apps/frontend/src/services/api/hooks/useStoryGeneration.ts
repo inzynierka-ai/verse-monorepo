@@ -56,7 +56,6 @@ export interface StoryGenerationState {
 }
 
 interface UseStoryGenerationProps {
-  onStateChange?: (state: StoryGenerationState) => void;
   onConnectionChange?: (isConnected: boolean) => void;
   enabled?: boolean;
 }
@@ -69,10 +68,7 @@ interface UseStoryGenerationReturn {
   reconnect: () => void;
 }
 
-export const useStoryGeneration = ({
-  onStateChange,
-  onConnectionChange,
-}: UseStoryGenerationProps = {}): UseStoryGenerationReturn => {
+export const useStoryGeneration = ({ onConnectionChange }: UseStoryGenerationProps = {}): UseStoryGenerationReturn => {
   // Track internal state
   const [internalState, setInternalState] = useState<StoryGenerationState>({
     status: 'idle',
@@ -80,63 +76,63 @@ export const useStoryGeneration = ({
   });
 
   // Create a callback to update state
-  const updateState = useCallback((newState: Partial<StoryGenerationState>) => {
-    const updatedState = {
-      ...internalState,
+  const updateState = (newState: Partial<StoryGenerationState>) => {
+    setInternalState((prevState) => ({
+      ...prevState,
       ...newState,
-    };
-    
-    setInternalState(updatedState);
-    onStateChange?.(updatedState);
-    return updatedState;
-  }, [internalState, onStateChange]);
+    }));
+  };
 
   // Handle incoming WebSocket messages
-  const handleMessage = useCallback((event: MessageEvent) => {
-    try {
-      const data: StoryGenerationMessage = JSON.parse(event.data);
-      
-      switch (data.type) {
-        case 'STATUS_UPDATE':
-          updateState({
-            status: 'generating',
-            statusMessage: data.payload.message,
-          });
-          break;
-          
-        case 'WORLD_CREATED':
-          updateState({
-            world: data.payload,
-          });
-          break;
-          
-        case 'CHARACTER_CREATED':
-          updateState({
-            character: data.payload,
-          });
-          break;
-          
-        case 'INITIALIZATION_COMPLETE':
-          updateState({
-            status: 'complete',
-            statusMessage: data.payload.message,
-          });
-          break;
-          
-        case 'ERROR':
-          updateState({
-            status: 'error',
-            errorMessage: data.payload.message,
-          });
-          break;
+  const handleMessage = useCallback(
+    (event: MessageEvent) => {
+      try {
+        const data: StoryGenerationMessage = JSON.parse(event.data);
+        console.log(data);
+
+        switch (data.type) {
+          case 'STATUS_UPDATE':
+            updateState({
+              status: 'generating',
+              statusMessage: data.payload.message,
+            });
+            break;
+
+          case 'WORLD_CREATED':
+            updateState({
+              world: data.payload,
+            });
+            break;
+
+          case 'CHARACTER_CREATED':
+            updateState({
+              character: data.payload,
+            });
+            break;
+
+          case 'INITIALIZATION_COMPLETE':
+            updateState({
+              status: 'complete',
+              statusMessage: data.payload.message,
+            });
+            break;
+
+          case 'ERROR':
+            updateState({
+              status: 'error',
+              errorMessage: data.payload.message,
+            });
+            break;
+        }
+      } catch (error) {
+        updateState({
+          status: 'error',
+          errorMessage: 'Error processing server message',
+        });
       }
-    } catch (error) {
-      updateState({
-        status: 'error',
-        errorMessage: 'Error processing server message',
-      });
-    }
-  }, [updateState]);
+    },
+    [updateState],
+  );
 
   // Handle WebSocket open event
   const handleOpen = useCallback(() => {
@@ -150,30 +146,36 @@ export const useStoryGeneration = ({
 
   // Initialize WebSocket connection
   const { socket, isConnected, reconnect } = useWebSocket({
-    url: `${import.meta.env.VITE_BACKEND_URL}/ws/game`,
+    url: `${import.meta.env.VITE_BACKEND_URL}/api/game/ws`,
     onMessage: handleMessage,
     onOpen: handleOpen,
     onClose: handleClose,
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem('authToken')}`,
+    },
   });
 
   // Generate story handler
-  const generateStory = useCallback((data: StoryGenerationRequest): boolean => {
-    console.log(socket)
-    if (!socket) {
-      reconnect();
-      return false;
-    }
-    
-    updateState({
-      status: 'generating',
-      statusMessage: 'Sending story details...',
-    });
-    
-    return sendWebSocketMessage(socket, {
-      type: 'INITIALIZE_GAME',
-      payload: data
-    });
-  }, [socket, reconnect, updateState]);
+  const generateStory = useCallback(
+    (data: StoryGenerationRequest): boolean => {
+      console.log(socket);
+      if (!socket) {
+        reconnect();
+        return false;
+      }
+
+      updateState({
+        status: 'generating',
+        statusMessage: 'Sending story details...',
+      });
+
+      return sendWebSocketMessage(socket, {
+        type: 'INITIALIZE_GAME',
+        payload: data,
+      });
+    },
+    [socket, reconnect, updateState],
+  );
 
   // Reset state handler
   const reset = useCallback(() => {
@@ -182,7 +184,7 @@ export const useStoryGeneration = ({
       statusMessage: 'Ready to generate story',
       world: undefined,
       character: undefined,
-      errorMessage: undefined
+      errorMessage: undefined,
     });
   }, [updateState]);
 
@@ -191,6 +193,6 @@ export const useStoryGeneration = ({
     generateStory,
     reset,
     isConnected,
-    reconnect
+    reconnect,
   };
 }; 

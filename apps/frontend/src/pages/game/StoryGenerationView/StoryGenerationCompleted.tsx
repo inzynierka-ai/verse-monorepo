@@ -2,6 +2,8 @@ import { useNavigate } from '@tanstack/react-router';
 import styles from './StoryGenerationView.module.scss';
 import Button from '@/common/components/Button';
 import { WorldCreated, Character } from '@/services/api/hooks';
+import { useCreateStory, createStoryFromGeneration } from '@/services/api/hooks/useCreateStory';
+import { useState } from 'react';
 
 interface StoryGenerationCompletedProps {
   world?: WorldCreated;
@@ -10,11 +12,30 @@ interface StoryGenerationCompletedProps {
 }
 
 const StoryGenerationCompleted = ({ world, character, onReset }: StoryGenerationCompletedProps) => {
-  const navigate = useNavigate();
-  
-  const handleExploreStories = () => {
-    navigate({ to: '/stories' });
-  };
+    const navigate = useNavigate();
+    const [isCreating, setIsCreating] = useState(false);
+    const createStoryMutation = useCreateStory();
+    
+    const handleExploreStories = () => {
+      navigate({ to: '/stories' });
+    };
+    
+    const handleBeginAdventure = async () => {
+      console.log(world, character);
+      if (!world || !character) return;
+      
+      try {
+        setIsCreating(true);
+        const storyData = createStoryFromGeneration(world, character);
+        const response = await createStoryMutation.mutateAsync(storyData);
+        
+        // Navigate to the play page with the new story ID
+        navigate({ to: `/play/${response.id}` });
+      } catch (error) {
+        console.error('Failed to create story:', error);
+        setIsCreating(false);
+      }
+    };
   
   return (
     <div className={styles.content}>
@@ -91,6 +112,7 @@ const StoryGenerationCompleted = ({ world, character, onReset }: StoryGeneration
 
       <div className={styles.buttonContainer}>
         <Button onClick={handleExploreStories}>Explore Stories</Button>
+        <Button onClick={handleBeginAdventure}>Begin adventure</Button>
         <Button onClick={onReset} variant="secondary">
           Create Another Story
         </Button>

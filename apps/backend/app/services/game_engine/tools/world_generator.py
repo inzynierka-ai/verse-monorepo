@@ -73,7 +73,7 @@ class WorldGenerator:
         
         response = await self.llm_service.generate_completion(
             messages=messages,
-            model=ModelName.GEMINI_25_PRO,
+            model=ModelName.GPT4O_MINI,
             temperature=0.7,
             stream=False
         )
