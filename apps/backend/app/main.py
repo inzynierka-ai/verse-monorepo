@@ -1,5 +1,7 @@
 import logging
 
+from app.db.seed import seed_database
+
 # Configure logging
 logging.basicConfig(
     level=logging.DEBUG,
@@ -34,6 +36,10 @@ app.include_router(api_router, prefix="/api")
 os.makedirs(settings.MEDIA_ROOT, exist_ok=True)
 app.mount(settings.MEDIA_ROOT, StaticFiles(directory=settings.MEDIA_ROOT), name="media")
 
+@app.on_event("startup")
+def startup_event():
+    seed_database()
+    pass
 
 
 @app.get("/")

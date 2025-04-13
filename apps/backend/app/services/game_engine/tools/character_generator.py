@@ -1,4 +1,5 @@
 import logging
+import uuid
 from typing import Optional
 from app.services.llm import LLMService, ModelName
 from app.schemas.world_generation import (
@@ -18,6 +19,8 @@ from app.prompts import (
 from app.utils.json_service import JSONService
 from app.services.image_generation.comfyui_service import ComfyUIService
 from app.core.config import settings
+from sqlalchemy.orm import Session
+from app.models.character import Character as CharacterModel
 
 
 class CharacterGenerator:
@@ -25,16 +28,19 @@ class CharacterGenerator:
     Service for generating characters.        
     """
 
-    def __init__(self, llm_service: Optional[LLMService] = None):
+    def __init__(self, llm_service: Optional[LLMService] = None, db_session: Optional[Session] = None):
         self.llm_service = llm_service or LLMService()
+        self.db_session = db_session
 
-    async def generate_character(self, character_draft: CharacterDraft, world: World, is_player: bool) -> Character:
+    async def generate_character(self, character_draft: CharacterDraft, world: World, is_player: bool, story_id: Optional[int] = None) -> Character:
         """
         Orchestrates the entire character generation process.
 
         Args:
             character_draft: Character draft to be used for character generation
             world: World object containing description and other details
+            is_player: Whether this is a player character
+            story_id: ID of the story to associate the character with
 
         Returns:
             Fully generated Character object with description and image prompt
@@ -54,8 +60,67 @@ class CharacterGenerator:
             imageUrl=image_url,
             role="player" if is_player else "npc"
         )
+        logging.info(self.db_session , story_id)
+        # Save to database if session is provided and story_id is available
+        if self.db_session and story_id:
+            self._save_character_to_db(character, story_id, image_prompt, is_player)
 
         return character
+        
+    def _save_character_to_db(self, character: Character, story_id: int, image_prompt: str, is_player: bool) -> None:
+        """
+        Save the generated character to the database.
+        
+        Args:
+            character: The generated character object
+            story_id: ID of the story to associate with
+            image_prompt: The image prompt used to generate the character image
+            is_player: Whether this is a player character
+        """
+        try:
+            # Safely get character attributes
+            personality_traits = ""
+            if hasattr(character, 'personalityTraits') and character.personalityTraits is not None:
+                personality_traits = ", ".join(character.personalityTraits)
+                
+            # For relationships, serialize to string if it exists
+            relationships_str = ""
+            if hasattr(character, 'relationships') and character.relationships:
+                # Convert relationships to JSON string
+                import json
+                try:
+                    relationships_str = json.dumps(character.relationships)
+                except Exception as e:
+                    logging.warning(f"Failed to convert relationships to JSON: {str(e)}")
+                    relationships_str = ""
+            
+            # Create a database model from the character schema
+            db_character = CharacterModel(
+                name=character.name,
+                role="player" if is_player else "npc",
+                description=character.description,
+                personality_traits=personality_traits,
+                backstory=character.backstory,
+                goals=", ".join(character.goals) if hasattr(character, 'goals') and character.goals else "",
+                speaking_style="", # Not in schema, add if needed
+                relationships=relationships_str,
+                image_dir=character.imageUrl,  # Default directory
+                image_prompt=image_prompt,
+                relationship_level=0,  # Default starting level
+                story_id=story_id,
+                uuid=str(uuid.uuid4())  # Generate a new UUID
+            )
+            
+            # Add to database session if available
+            if self.db_session is not None:
+                self.db_session.add(db_character)
+                self.db_session.commit()
+                logging.info(f"Character {character.name} saved to database with ID {db_character.id}")
+        except Exception as e:
+            logging.exception(f"Failed to save character to database: {str(e)}")
+            # Don't raise the exception, just log it, to avoid breaking the game flow
+            if self.db_session is not None and hasattr(self.db_session, 'is_active') and self.db_session.is_active:
+                self.db_session.rollback()
 
     async def _describe_character(
         self,

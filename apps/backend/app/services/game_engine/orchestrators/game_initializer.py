@@ -1,5 +1,6 @@
 from typing import Optional, Callable, Awaitable
 from pydantic import BaseModel
+from sqlalchemy.orm import Session
 
 from app.services.game_engine.tools.world_generator import WorldGenerator
 from app.services.game_engine.tools.character_generator import CharacterGenerator
@@ -48,16 +49,19 @@ class GameInitializer:
     def __init__(
         self,
         world_generator: Optional[WorldGenerator] = None,
-        character_generator: Optional[CharacterGenerator] = None
+        character_generator: Optional[CharacterGenerator] = None,
+        db_session: Optional[Session] = None
     ):
         self.world_generator = world_generator or WorldGenerator()
-        self.character_generator = character_generator or CharacterGenerator()
+        self.character_generator = character_generator or CharacterGenerator(db_session=db_session)
+        self.db_session = db_session
     
     async def initialize_game(
         self, 
         user_input: WorldGenerationInput,
         on_world_generated: Optional[Callable[[World], Awaitable[None]]] = None,
-        on_character_generated: Optional[Callable[[Character], Awaitable[None]]] = None
+        on_character_generated: Optional[Callable[[Character], Awaitable[None]]] = None,
+        story_id: Optional[int] = None
     ) -> InitialGameState:
         """
         Creates the initial game state from user input.
@@ -66,6 +70,7 @@ class GameInitializer:
             user_input: User input containing world parameters and player character draft
             on_world_generated: Optional callback called immediately after world generation
             on_character_generated: Optional callback called immediately after character generation
+            story_id: Optional ID of the story to associate characters with
             
         Returns:
             InitialGameState with generated world and player character
@@ -81,7 +86,8 @@ class GameInitializer:
         player_character = await self.character_generator.generate_character(
             user_input.playerCharacter,
             world,
-            is_player=True
+            is_player=True,
+            story_id=story_id
         )
         
         # Call the callback if provided

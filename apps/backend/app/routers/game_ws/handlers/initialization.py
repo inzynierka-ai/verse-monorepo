@@ -3,6 +3,7 @@ import logging
 
 from fastapi import WebSocket
 from pydantic import ValidationError
+from sqlalchemy.orm import Session
 
 from app.schemas.world_generation import WorldGenerationInput, World, Character
 from app.services.game_engine.orchestrators.game_initializer import GameInitializer
@@ -16,14 +17,16 @@ class GameInitializationHandler(BaseMessageHandler):
     """
     Handles game initialization messages.
     """
-    def __init__(self, game_initializer: Optional[GameInitializer] = None):
+    def __init__(self, game_initializer: Optional[GameInitializer] = None, db_session: Optional[Session] = None):
         """
         Initialize the handler with explicit dependency injection.
         
         Args:
             game_initializer: GameInitializer instance to use. If None, a new instance will be created.
+            db_session: SQLAlchemy Session for database operations
         """
-        self.game_initializer = game_initializer or GameInitializer()
+        super().__init__(db_session=db_session)
+        self.game_initializer = game_initializer or GameInitializer(db_session=db_session)
         self.message_types: Set[str] = {"INITIALIZE_GAME"}
     
     async def handle(self, message: Dict[str, Any], websocket: WebSocket) -> bool:
@@ -49,6 +52,9 @@ class GameInitializationHandler(BaseMessageHandler):
             payload = message.get("payload", {})
             input_data = WorldGenerationInput(**payload)
             
+            # Get user ID if authenticated
+            user_id = getattr(websocket.state, "user_id", None)
+            
             # Send status update
             await websocket.send_json({
                 "type": "STATUS_UPDATE",
@@ -73,11 +79,18 @@ class GameInitializationHandler(BaseMessageHandler):
                 })
             
             print("Initializing game", input_data)
-            # Start game initialization with callbacks
+            
+            # Find or create a story for this game session
+            story_id = 1
+            
+                    # Continue even if story creation fails
+            
+            # Start game initialization with callbacks and story_id
             await self.game_initializer.initialize_game(
                 input_data,
                 on_world_generated=on_world_generated,
-                on_character_generated=on_character_generated
+                on_character_generated=on_character_generated,
+                story_id=story_id
             )
             
             # Send initialization complete message
