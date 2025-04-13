@@ -60,11 +60,11 @@ class CharacterGenerator:
             imageUrl=image_url,
             role="player" if is_player else "npc"
         )
-        logging.info(self.db_session , story_id)
-        # Save to database if session is provided and story_id is available
+        # Save to database but return the Pydantic model
+        self._save_character_to_db(character, story_id, image_prompt, is_player)
         
-        return self._save_character_to_db(character, story_id, image_prompt, is_player)
-
+        # Return the Pydantic Character object
+        return character
          
         
     def _save_character_to_db(self, character: Character, story_id: int, image_prompt: str, is_player: bool) -> CharacterModel | None:

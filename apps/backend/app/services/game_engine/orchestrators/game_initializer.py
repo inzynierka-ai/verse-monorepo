@@ -52,13 +52,14 @@ class GameInitializer:
         character_generator: Optional[CharacterGenerator] = None,
         db_session: Optional[Session] = None
     ):
-        self.story_generator = story_generator or StoryGenerator()
+        self.story_generator = story_generator or StoryGenerator(db_session=db_session)
         self.character_generator = character_generator or CharacterGenerator(db_session=db_session)
         self.db_session = db_session
     
     async def initialize_game(
         self, 
         user_input: StoryGenerationInput,
+        user_id: int,
         on_story_generated: Optional[Callable[[Story], Awaitable[None]]] = None,
         on_character_generated: Optional[Callable[[Character], Awaitable[None]]] = None,
         story_id: Optional[int] = None
@@ -76,7 +77,7 @@ class GameInitializer:
             InitialGameState with generated story and player character
         """
         # 1. Generate the story first
-        story = await self.story_generator.generate_story(user_input.story)
+        story = await self.story_generator.generate_story(user_id, user_input.story)
         
         # Call the callback if provided
         if on_story_generated:

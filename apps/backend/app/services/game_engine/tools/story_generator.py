@@ -1,43 +1,94 @@
+import logging
+import uuid
 from typing import Optional, List
+from sqlalchemy.orm import Session
+
 from app.services.llm import LLMService, ModelName
 from app.schemas.story_generation import (
     Story,
     StoryInput
 )
 from app.utils.json_service import JSONService
-
+from app.models.story import Story as StoryModel
 
 class StoryGenerator:
     """
     Service for generating story description and rules.
     """
-    def __init__(self, llm_service: Optional[LLMService] = None):
+    def __init__(self, llm_service: Optional[LLMService] = None, db_session: Optional[Session] = None):
         self.llm_service = llm_service or LLMService()
-    
-    async def generate_story(self, story_input: StoryInput) -> Story:
+        self.db_session = db_session
+
+    async def generate_story(self, user_id: int, story_input: StoryInput) -> Story:
         """
         Generates a detailed story from user input.
-        
-        Args:
-            story_input: Basic story parameters provided by user
-            
-        Returns:
-            A fully detailed Story object with description and rules
         """
         # Generate story description
-        print("Generating story description", story_input)
         description = await self._generate_story_description(story_input)
         
         # Generate story rules
         rules = await self._generate_story_rules(description)
-    
+
+        # Create title from input
+        title = f"{story_input.theme}, {story_input.genre}, {story_input.year}"
         
-        # Construct and return Story object
-        return Story(
-            description=description,
-            rules=rules,
-        )
+        # Generate UUID
+        story_uuid = str(uuid.uuid4())
+        
+        # Construct story object with all required fields
+        story_data = {
+            "user_id": user_id,
+            "title": title,
+            "description": description,
+            "rules": rules,
+            "uuid": story_uuid,
+            "id": None  # Default value
+        }
+        
+        # Save to database if session is available
+        if self.db_session:
+            db_story = self._save_story_to_db(Story(**story_data))
+            if db_story:
+                # Update with database ID
+                story_data["id"] = db_story.id
+        
+        # Always return a Story object with all required fields
+        return Story(**story_data)
     
+    def _save_story_to_db(self, story: Story) -> StoryModel:
+        """
+        Save the generated story to the database.
+        
+        Args:
+            story: The generated Story object
+            story_input: Basic story parameters provided by user
+            
+        Returns:
+            The saved Story object with its ID
+        """
+        try:
+            db_story = StoryModel(
+                user_id=story.user_id,
+                title=story.title,
+                description=story.description,
+                rules=", ".join(story.rules),
+                uuid=story.uuid
+            )
+            
+            if self.db_session is not None:
+                self.db_session.add(db_story)
+                self.db_session.commit()
+                logging.info(f"Story {story.title} saved to database with ID {db_story.id}")
+                return db_story
+            else:
+                logging.warning("No database session available, story not saved")
+                return None
+        except Exception as e:
+            logging.exception(f"Failed to save story to database: {str(e)}")
+            if self.db_session is not None and hasattr(self.db_session, 'is_active') and self.db_session.is_active:
+                self.db_session.rollback()
+            return None
+
     async def _generate_story_description(self, story_input: StoryInput) -> str:
         """
         Generate a detailed description of the story.

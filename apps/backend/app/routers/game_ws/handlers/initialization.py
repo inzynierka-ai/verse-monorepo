@@ -53,8 +53,29 @@ class GameInitializationHandler(BaseMessageHandler):
             input_data = StoryGenerationInput(**payload)
             
             # Get user ID if authenticated
-            user_id = getattr(websocket.state, "user_id", None)
-            
+            user_id = None
+            auth_header = websocket.headers.get("authorization")
+            if auth_header and auth_header.startswith("Bearer "):
+                token = auth_header.split("Bearer ")[1]
+                try:
+                    from app.services.auth import get_current_user_from_token
+                    from app.db.session import SessionLocal
+                    
+                    # Create a new DB session for WebSocket connection
+                    db = SessionLocal()
+                    try:
+                        user = get_current_user_from_token(token, db)
+                        user_id = user.id
+                        logger.info(f"Authenticated user ID: {user_id}")
+                    finally:
+                        db.close()
+                except Exception as e:
+                    logger.warning(f"Failed to authenticate WebSocket connection: {str(e)}")
+
+            if user_id is None:
+            # Use a default user ID for testing or raise an error
+                user_id = 1  # For testing only; in production, reject unauthenticated requests
+                logger.warning("User not authenticated, using default user_id=1 (TESTING ONLY)")
             # Send status update
             await websocket.send_json({
                 "type": "STATUS_UPDATE",
@@ -87,6 +108,7 @@ class GameInitializationHandler(BaseMessageHandler):
             # Start game initialization with callbacks and story_id
             await self.game_initializer.initialize_game(
                 input_data,
+                user_id=user_id,
                 on_story_generated=on_story_generated,
                 on_character_generated=on_character_generated,
             )

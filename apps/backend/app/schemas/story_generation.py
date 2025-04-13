@@ -25,12 +25,12 @@ class StoryInput(BaseModel):
 
 
 class Story(BaseModel):
-    """Story information generated from user input"""
-    description: str = Field(...,
-                             description="Detailed description of the story")
-    rules: List[str] = Field(...,
-                             description="Rules or principles of the story")
-
+    description: str
+    rules: List[str]
+    user_id: Optional[int] = None
+    title: str
+    uuid: Optional[str] = None
+    id: Optional[int] = None  # Add this field
 
 class StoryGenerationInput(BaseModel):
     """Input for generating a story"""
