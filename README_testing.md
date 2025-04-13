@@ -42,7 +42,7 @@ Both tests will:
 
 To create additional tests:
 
-1. **Test with different inputs**: Modify the `world` and `character_draft` objects in either test file
+1. **Test with different inputs**: Modify the `story` and `character_draft` objects in either test file
 2. **Add more assertions**: Add additional validation checks for the character fields
 3. **Test specific edge cases**: Create versions that test specific scenarios or boundary conditions
 

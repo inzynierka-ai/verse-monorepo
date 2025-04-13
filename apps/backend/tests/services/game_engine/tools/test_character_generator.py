@@ -2,9 +2,9 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from app.services.game_engine.tools.character_generator import CharacterGenerator
-from app.schemas.world_generation import (
+from app.schemas.story_generation import (
     CharacterDraft, 
-    World, 
+    Story, 
     Character, 
     CharacterFromLLM,
     CharacterRelationship
@@ -40,10 +40,10 @@ def test_character_draft():
 
 
 @pytest.fixture
-def test_world():
-    """Create a test world."""
-    return World(
-        description="A test world description",
+def test_story():
+    """Create a test story."""
+    return Story(
+        description="A test story description",
         rules=["Rule 1", "Rule 2"],
     )
 
@@ -52,7 +52,7 @@ def test_world():
 async def test_generate_character(
     character_generator: CharacterGenerator, 
     test_character_draft: CharacterDraft, 
-    test_world: World, 
+    test_story: Story, 
     mock_llm_service: MagicMock
 ):
     """Test the generate_character method."""
@@ -94,7 +94,7 @@ async def test_generate_character(
               return_value=character_from_llm):
         
         # Call the method
-        result = await character_generator.generate_character(test_character_draft, test_world, is_player=False)
+        result = await character_generator.generate_character(test_character_draft, test_story, is_player=False)
     
     # Assertions
     assert isinstance(result, Character)

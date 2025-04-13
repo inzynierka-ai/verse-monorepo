@@ -2,9 +2,9 @@ import logging
 import uuid
 from typing import Optional
 from app.services.llm import LLMService, ModelName
-from app.schemas.world_generation import (
+from app.schemas.story_generation import (
     CharacterFromLLM,
-    World,
+    Story,
     Character,
     CharacterDraft
 )
@@ -32,13 +32,13 @@ class CharacterGenerator:
         self.llm_service = llm_service or LLMService()
         self.db_session = db_session
 
-    async def generate_character(self, character_draft: CharacterDraft, world: World, is_player: bool, story_id: Optional[int] = None) -> Character:
+    async def generate_character(self, character_draft: CharacterDraft, story: Story, is_player: bool, story_id: int) -> CharacterModel | None:
         """
         Orchestrates the entire character generation process.
 
         Args:
             character_draft: Character draft to be used for character generation
-            world: World object containing description and other details
+            story: Story object containing description and other details
             is_player: Whether this is a player character
             story_id: ID of the story to associate the character with
 
@@ -46,11 +46,11 @@ class CharacterGenerator:
             Fully generated Character object with description and image prompt
         """
         # 1. Generate detailed character description
-        character_description = await self._describe_character(character_draft, world)
+        character_description = await self._describe_character(character_draft, story)
         # 2. Create character JSON from description
         character_from_llm = await self._create_character_json(character_description)
         # 3. Generate image prompt for the character
-        image_prompt = await self._generate_image_prompt(character_from_llm, world.description)
+        image_prompt = await self._generate_image_prompt(character_from_llm, story.description)
         # 4. Generate image for the character
         image_url = await self._generate_image(image_prompt)
 
@@ -62,12 +62,12 @@ class CharacterGenerator:
         )
         logging.info(self.db_session , story_id)
         # Save to database if session is provided and story_id is available
-        if self.db_session and story_id:
-            self._save_character_to_db(character, story_id, image_prompt, is_player)
-
-        return character
         
-    def _save_character_to_db(self, character: Character, story_id: int, image_prompt: str, is_player: bool) -> None:
+        return self._save_character_to_db(character, story_id, image_prompt, is_player)
+
+         
+        
+    def _save_character_to_db(self, character: Character, story_id: int, image_prompt: str, is_player: bool) -> CharacterModel | None:
         """
         Save the generated character to the database.
         
@@ -116,6 +116,7 @@ class CharacterGenerator:
                 self.db_session.add(db_character)
                 self.db_session.commit()
                 logging.info(f"Character {character.name} saved to database with ID {db_character.id}")
+                return db_character
         except Exception as e:
             logging.exception(f"Failed to save character to database: {str(e)}")
             # Don't raise the exception, just log it, to avoid breaking the game flow
@@ -125,19 +126,19 @@ class CharacterGenerator:
     async def _describe_character(
         self,
         character: CharacterDraft,
-        world: World
+        story: Story
     ) -> str:
         """
-        Generate a detailed narrative description of a character based on character draft and world description.
+        Generate a detailed narrative description of a character based on character draft and story description.
 
         Args:
             character: Character draft to be used for character generation
-            world: World object containing description and other details
+            story: Story object containing description and other details
 
         Returns:
             A detailed narrative description of a single character
         """
-        user_prompt = self._create_character_prompt(character, world)
+        user_prompt = self._create_character_prompt(character, story)
 
         messages = [
             self.llm_service.create_message("system", DESCRIBE_CHARACTER_SYSTEM_PROMPT),
@@ -175,14 +176,14 @@ class CharacterGenerator:
     async def _generate_image_prompt(
         self,
         character: CharacterFromLLM,
-        world_description: str
+        story_description: str
     ) -> str:
         """
         Generate a detailed image prompt for a character.
 
         Args:
             character: The detailed character to generate an image prompt for
-            world_description: The world description for context
+            story_description: The story description for context
 
         Returns:
             A detailed image prompt for the character
@@ -190,7 +191,7 @@ class CharacterGenerator:
         user_prompt = CHARACTER_IMAGE_PROMPT_USER_TEMPLATE.format(
             character_name=character.name,
             character_description=character.description,
-            world_description=world_description
+            story_description=story_description
         )
 
         messages = [
@@ -254,20 +255,20 @@ class CharacterGenerator:
     def _create_character_prompt(
         self,
         character: CharacterDraft,
-        world: World
+        story: Story
     ) -> str:
         """
         Create a formatted prompt for character generation.
 
         Args:
             character: The character draft to be used for character generation
-            world: The world description
+            story: The story description
 
         Returns:
             Formatted prompt string
         """
         return CHARACTER_GENERATOR_USER_PROMPT_TEMPLATE.format(
             character_draft=character,
-            world_description=world.description,
-            world_rules=world.rules
+            story_description=story.description,
+            story_rules=story.rules
         )

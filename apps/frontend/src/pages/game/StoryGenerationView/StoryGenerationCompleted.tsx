@@ -1,56 +1,56 @@
 import { useNavigate } from '@tanstack/react-router';
 import styles from './StoryGenerationView.module.scss';
 import Button from '@/common/components/Button';
-import { WorldCreated, Character } from '@/services/api/hooks';
+import { StoryCreated, Character } from '@/services/api/hooks';
 import { useCreateStory, createStoryFromGeneration } from '@/services/api/hooks/useCreateStory';
 import { useState } from 'react';
 
 interface StoryGenerationCompletedProps {
-  world?: WorldCreated;
+  story?: StoryCreated;
   character?: Character;
   onReset: () => void;
 }
 
-const StoryGenerationCompleted = ({ world, character, onReset }: StoryGenerationCompletedProps) => {
-    const navigate = useNavigate();
-    const [isCreating, setIsCreating] = useState(false);
-    const createStoryMutation = useCreateStory();
-    
-    const handleExploreStories = () => {
-      navigate({ to: '/stories' });
-    };
-    
-    const handleBeginAdventure = async () => {
-      console.log(world, character);
-      if (!world || !character) return;
-      
-      try {
-        setIsCreating(true);
-        const storyData = createStoryFromGeneration(world, character);
-        const response = await createStoryMutation.mutateAsync(storyData);
-        
-        // Navigate to the play page with the new story ID
-        navigate({ to: `/play/${response.id}` });
-      } catch (error) {
-        console.error('Failed to create story:', error);
-        setIsCreating(false);
-      }
-    };
-  
+const StoryGenerationCompleted = ({ story, character, onReset }: StoryGenerationCompletedProps) => {
+  const navigate = useNavigate();
+  const [isCreating, setIsCreating] = useState(false);
+  const createStoryMutation = useCreateStory();
+
+  const handleExploreStories = () => {
+    navigate({ to: '/stories' });
+  };
+
+  const handleBeginAdventure = async () => {
+    console.log(story, character);
+    if (!story || !character) return;
+
+    try {
+      setIsCreating(true);
+      const storyData = createStoryFromGeneration(story, character);
+      const response = await createStoryMutation.mutateAsync(storyData);
+
+      // Navigate to the play page with the new story ID
+      navigate({ to: `/play/${response.id}` });
+    } catch (error) {
+      console.error('Failed to create story:', error);
+      setIsCreating(false);
+    }
+  };
+
   return (
     <div className={styles.content}>
       <h1 className={styles.title}>Your Story Awaits</h1>
 
-      {world && (
+      {story && (
         <div className={styles.section}>
-          <h2 className={styles.sectionTitle}>World</h2>
-          <p className={styles.worldDescription}>{world.description}</p>
+          <h2 className={styles.sectionTitle}>Story</h2>
+          <p className={styles.storyDescription}>{story.description}</p>
 
-          {world.rules.length > 0 && (
+          {story.rules.length > 0 && (
             <>
-              <h3>World Rules</h3>
-              <ul className={styles.worldRules}>
-                {world.rules.map((rule, index) => (
+              <h3>Story Rules</h3>
+              <ul className={styles.storyRules}>
+                {story.rules.map((rule, index) => (
                   <li key={index}>{rule}</li>
                 ))}
               </ul>

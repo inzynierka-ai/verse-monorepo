@@ -10,7 +10,7 @@ from fastapi.testclient import TestClient
 from fastapi.websockets import WebSocket
 
 from app.main import app
-from app.schemas.world_generation import World, Character
+from app.schemas.story_generation import Story, Character
 from app.routers.game_ws.router import game_handler as app_game_handler
 
 
@@ -26,7 +26,7 @@ def sample_initialization_message() -> Dict[str, Any]:
     return {
         "type": "INITIALIZE_GAME",
         "payload": {
-            "world": {
+            "story": {
                 "theme": "fantasy",
                 "genre": "medieval",
                 "year": 1200,
@@ -43,9 +43,9 @@ def sample_initialization_message() -> Dict[str, Any]:
 
 
 @pytest.fixture
-def sample_world() -> World:
-    """Create a sample world for testing"""
-    return World(
+def sample_story() -> Story:
+    """Create a sample story for testing"""
+    return Story(
         description="A medieval kingdom with castles and villages",
         rules=["Magic is rare", "Politics are dangerous"]
     )
@@ -110,7 +110,7 @@ def test_websocket_unknown_type(test_client: TestClient) -> None:
 async def test_websocket_initialization_flow(
     test_client: TestClient,
     sample_initialization_message: Dict[str, Any],
-    sample_world: World,
+    sample_story: Story,
     sample_character: Character
 ) -> None:
     """Test the complete game initialization flow through WebSocket"""
@@ -122,12 +122,12 @@ async def test_websocket_initialization_flow(
             # Send the sequence of messages that would be sent during initialization
             await websocket.send_json({
                 "type": "STATUS_UPDATE",
-                "payload": {"status": "GENERATING_WORLD", "message": "Generating game world..."}
+                "payload": {"status": "GENERATING_STORY", "message": "Generating game story..."}
             })
             
             await websocket.send_json({
-                "type": "WORLD_CREATED",
-                "payload": sample_world.model_dump()
+                "type": "STORY_CREATED",
+                "payload": sample_story.model_dump()
             })
             
             await websocket.send_json({
@@ -160,10 +160,10 @@ async def test_websocket_initialization_flow(
             # Verify expected message sequence
             response1 = websocket.receive_json()  # STATUS_UPDATE
             assert response1["type"] == "STATUS_UPDATE"
-            assert response1["payload"]["status"] == "GENERATING_WORLD"
+            assert response1["payload"]["status"] == "GENERATING_STORY"
             
-            response2 = websocket.receive_json()  # WORLD_CREATED
-            assert response2["type"] == "WORLD_CREATED"
+            response2 = websocket.receive_json()  # STORY_CREATED
+            assert response2["type"] == "STORY_CREATED"
             assert "description" in response2["payload"]
             
             response3 = websocket.receive_json()  # STATUS_UPDATE

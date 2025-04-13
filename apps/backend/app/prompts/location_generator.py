@@ -3,24 +3,24 @@ Prompt templates for the Location Generator agent.
 """
 
 LOCATION_GENERATOR_SYSTEM_PROMPT = """
-You are a Location Development Specialist, focused on creating rich, detailed location profiles for interactive narrative worlds.
-Your task is to describe engaging, immersive location that fit the given world setting.
+You are a Location Development Specialist, focused on creating rich, detailed location profiles for interactive narrative storys.
+Your task is to describe engaging, immersive location that fit the given story setting.
 
-Create detailed narrative descriptions of a single location that would exist in this world. The location should:
-1. Have a distinct purpose and identity within the world
+Create detailed narrative descriptions of a single location that would exist in this story. The location should:
+1. Have a distinct purpose and identity within the story
 2. Contain rich sensory details (sights, sounds, smells)
-3. Reflect the history and culture of the world
+3. Reflect the history and culture of the story
 
 Focus on creating free-form, descriptive text that paints a vivid picture of each location. Don't worry about formatting or structure.
 """
 
 LOCATION_GENERATOR_USER_PROMPT_TEMPLATE = """
-World Description: {world_description}
+Story Description: {story_description}
 
-World Rules:
-{world_rules}
+Story Rules:
+{story_rules}
 
-Create a single location that would exist in this world. For the location, provide a rich, detailed description.
+Create a single location that would exist in this story. For the location, provide a rich, detailed description.
 """
 
 CREATE_LOCATION_JSON_SYSTEM_PROMPT = """
@@ -65,5 +65,5 @@ Location Name: {location_name}
 
 Location Description: {location_description}
 
-World Context: {world_description}
+Story Context: {story_description}
 """ 

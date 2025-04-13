@@ -1,6 +1,6 @@
 # Game Engine
 
-This directory contains services responsible for generating and managing the game world, characters, locations, scenes, and narrative flow.
+This directory contains services responsible for generating and managing the game story, characters, locations, scenes, and narrative flow.
 
 ## Architecture Overview
 
@@ -8,19 +8,19 @@ This directory contains services responsible for generating and managing the gam
 
 Located in the `tools/` directory, these are reusable components used by orchestrators:
 
-1. **WorldGenerator**
-   - Generates detailed world description and rules
-   - Takes WorldInput (theme, genre, year, setting)
-   - Produces complete World object
+1. **StoryGenerator**
+   - Generates detailed story description and rules
+   - Takes StoryInput (theme, genre, year, setting)
+   - Produces complete Story object
 
 2. **CharacterGenerator**
    - Generates detailed characters with personalities, backstories, and goals
-   - Takes CharacterDraft and World context
+   - Takes CharacterDraft and Story context
    - Produces Character objects with image prompts
    
 3. **LocationGenerator**
    - Generates detailed locations with descriptions and features
-   - Takes World context
+   - Takes Story context
    - Produces Location objects with image prompts
 
 4. **Narrator** (planned)
@@ -34,14 +34,14 @@ Located in the `tools/` directory, these are reusable components used by orchest
 Located in the `orchestrators/` directory, these are services that coordinate the game flow:
 
 1. **GameInitializer**
-   - Coordinates the generation of World and Player Character
-   - Takes WorldGenerationInput from the user
-   - Produces InitialGameState with World and PlayerCharacter
+   - Coordinates the generation of Story and Player Character
+   - Takes StoryGenerationInput from the user
+   - Produces InitialGameState with Story and PlayerCharacter
    - Entry point for starting a new game
 
 2. **StoryController** (planned)
    - Maintains the game state, including:
-   - World facts and rules
+   - Story facts and rules
    - Character relationships and memories
    - Game history and important events
    - Current narrative state

@@ -15,35 +15,35 @@ class CharacterDraft(BaseModel):
         ..., description="Character background story")
 
 
-class WorldInput(BaseModel):
-    """World input provided by the user"""
+class StoryInput(BaseModel):
+    """Story input provided by the user"""
     theme: str = Field(..., description="The emotional or philosophical core concept (e.g., isolation, rebellion, discovery)")
     genre: str = Field(..., description="The storytelling approach or style (e.g., hard sci-fi, fantasy, horror)")
     year: int = Field(...,
-                      description="The time period in which the world is set")
+                      description="The time period in which the story is set")
     setting: str = Field(..., description="The physical environment specifics (e.g., space station, underwater city, desert outpost)")
 
 
-class World(BaseModel):
-    """World information generated from user input"""
+class Story(BaseModel):
+    """Story information generated from user input"""
     description: str = Field(...,
-                             description="Detailed description of the world")
+                             description="Detailed description of the story")
     rules: List[str] = Field(...,
-                             description="Rules or principles of the world")
+                             description="Rules or principles of the story")
 
 
-class WorldGenerationInput(BaseModel):
-    """Input for generating a world and chapter"""
-    world: WorldInput = Field(
-        ..., description="World information including theme, genre, year, setting")
+class StoryGenerationInput(BaseModel):
+    """Input for generating a story"""
+    story: StoryInput = Field(
+        ..., description="Story information including theme, genre, year, setting")
     playerCharacter: CharacterDraft = Field(...,
                                             description="Player character information")
 
 
-class WorldOutput(BaseModel):
-    """World output structure"""
-    world: World = Field(...,
-                         description="Generated world information")
+class StoryOutput(BaseModel):
+    """Story output structure"""
+    story: Story = Field(...,
+                         description="Generated story information")
 
 
 # Character models
@@ -60,7 +60,7 @@ class CharacterRelationship(BaseModel):
 
 
 class CharacterFromLLM(BaseModel):
-    """Character in the generated world"""
+    """Character in the generated story"""
     name: str = Field(...,
                       description="Character name")
     description: str = Field(...,
@@ -86,7 +86,7 @@ class Character(CharacterFromLLM):
 # Location models
 
 class LocationFromLLM(BaseModel):
-    """Location in the generated world"""
+    """Location in the generated story"""
     name: str = Field(...,
                       description="Location name")
     description: str = Field(...,

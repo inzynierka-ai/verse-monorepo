@@ -1,9 +1,9 @@
 from typing import Optional
 from app.services.llm import LLMService, ModelName
-from app.schemas.world_generation import (
+from app.schemas.story_generation import (
     Location,
     LocationFromLLM,
-    World
+    Story
 )
 from app.prompts.location_generator import (
     LOCATION_GENERATOR_SYSTEM_PROMPT,
@@ -24,22 +24,22 @@ class LocationGenerator:
     def __init__(self, llm_service: Optional[LLMService] = None):
         self.llm_service = llm_service or LLMService()
     
-    async def generate_location(self, world: World) -> Location:
+    async def generate_location(self, story: Story) -> Location:
         """
         Orchestrates the entire location generation process.
         
         Args:
-            world: World object containing description and other details
+            story: Story object containing description and other details
             
         Returns:
             Fully generated Location object with description and image prompt
         """
         # 1. Generate detailed location description
-        location_description = await self._describe_location(world)
+        location_description = await self._describe_location(story)
         # 2. Create location JSON from description
         location_from_llm = await self._create_location_json(location_description)
 
-        image_prompt = await self._generate_image_prompt(location_from_llm, world.description)
+        image_prompt = await self._generate_image_prompt(location_from_llm, story.description)
 
         image_url = await self._generate_image(image_prompt)
 
@@ -51,17 +51,17 @@ class LocationGenerator:
         return location
 
     
-    async def _describe_location(self, world: World) -> str:
+    async def _describe_location(self, story: Story) -> str:
         """
-        Generate a detailed narrative description of a location based on world description.
+        Generate a detailed narrative description of a location based on story description.
 
         Args:
-            world: World object containing description and other details
+            story: Story object containing description and other details
 
         Returns:
             A detailed narrative description of a single location
         """
-        user_prompt = self._create_location_prompt(world)
+        user_prompt = self._create_location_prompt(story)
 
         messages = [
             self.llm_service.create_message("system", LOCATION_GENERATOR_SYSTEM_PROMPT),
@@ -80,14 +80,14 @@ class LocationGenerator:
     async def _generate_image_prompt(
         self,
         location: LocationFromLLM,
-        world_description: str
+        story_description: str
     ) -> str:
         """
         Generate a detailed image prompt for a location.
 
         Args:
             location: The detailed location to generate an image prompt for
-            world_description: The world description for context
+            story_description: The story description for context
 
         Returns:
             A detailed image prompt for the location
@@ -95,7 +95,7 @@ class LocationGenerator:
         user_prompt = LOCATION_IMAGE_PROMPT_USER_TEMPLATE.format(
             location_name=location.name,
             location_description=location.description,
-            world_description=world_description
+            story_description=story_description
         )
 
         messages = [
@@ -172,17 +172,17 @@ class LocationGenerator:
             raise ValueError(
                 f"Failed to parse location data: {str(e)}, raw response: {response_text}") from e
 
-    def _create_location_prompt(self, world: World) -> str:
+    def _create_location_prompt(self, story: Story) -> str:
         """
         Create a formatted prompt for location generation.
 
         Args:
-            world: World object containing description and other details
+            story: Story object containing description and other details
 
         Returns:
             Formatted prompt string
         """
         return LOCATION_GENERATOR_USER_PROMPT_TEMPLATE.format(
-            world_description=world.description,
-            world_rules=world.rules
+            story_description=story.description,
+            story_rules=story.rules
         )

@@ -9,7 +9,7 @@ const StoryGenerationLoading = ({ message }: StoryGenerationLoadingProps) => {
     <div className={styles.content}>
       <div className={styles.loadingContainer}>
         <div className={styles.loadingIndicator} />
-        <h2>Generating Your World</h2>
+        <h2>Generating Your Story</h2>
         <p>{message}</p>
       </div>
     </div>

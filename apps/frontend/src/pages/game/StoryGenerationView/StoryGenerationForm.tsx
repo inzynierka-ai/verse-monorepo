@@ -10,20 +10,21 @@ interface StoryGenerationFormProps {
 
 const StoryGenerationForm = ({ onSubmit }: StoryGenerationFormProps) => {
   const [formData, setFormData] = useState<StoryGenerationRequest>({
-    world: {
+    story: {
       theme: 'Love',
       genre: 'Fantasy',
       year: 2023,
-      setting: 'Medieval village'
+      setting: 'Medieval village',
     },
     playerCharacter: {
       name: 'John Doe',
       age: 25,
       appearance: 'A tall, dark-haired man with a kind face',
-      background: 'John grew up in a small village where he learned to be a blacksmith. He was a skilled blacksmith and was able to make weapons and armor for the village. He was also a good friend to the villagers and was always willing to help them.'
-    }
+      background:
+        'John grew up in a small village where he learned to be a blacksmith. He was a skilled blacksmith and was able to make weapons and armor for the village. He was also a good friend to the villagers and was always willing to help them.',
+    },
   });
-  
+
   const [errors, setErrors] = useState<{
     theme?: string;
     genre?: string;
@@ -34,101 +35,101 @@ const StoryGenerationForm = ({ onSubmit }: StoryGenerationFormProps) => {
     appearance?: string;
     background?: string;
   }>({});
-  
+
   const validateForm = (): boolean => {
     const newErrors: typeof errors = {};
     let isValid = true;
-    
-    // Validate world settings
-    if (!formData.world.theme.trim()) {
+
+    // Validate story settings
+    if (!formData.story.theme.trim()) {
       newErrors.theme = 'Theme is required';
       isValid = false;
     }
-    
-    if (!formData.world.genre.trim()) {
+
+    if (!formData.story.genre.trim()) {
       newErrors.genre = 'Genre is required';
       isValid = false;
     }
-    
-    if (!formData.world.setting.trim()) {
+
+    if (!formData.story.setting.trim()) {
       newErrors.setting = 'Setting is required';
       isValid = false;
     }
-    
+
     // Validate character
     if (!formData.playerCharacter.name.trim()) {
       newErrors.name = 'Character name is required';
       isValid = false;
     }
-    
+
     if (!formData.playerCharacter.appearance.trim()) {
       newErrors.appearance = 'Character appearance is required';
       isValid = false;
     }
-    
+
     if (!formData.playerCharacter.background.trim()) {
       newErrors.background = 'Character background is required';
       isValid = false;
     }
-    
+
     setErrors(newErrors);
     return isValid;
   };
-  
+
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (validateForm()) {
       onSubmit(formData);
     }
   };
-  
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    
+
     // Clear validation error when user types
     if (errors[name as keyof typeof errors]) {
       setErrors({ ...errors, [name]: undefined });
     }
-    
-    // Handle nested properties for world and playerCharacter
+
+    // Handle nested properties for story and playerCharacter
     if (name.includes('.')) {
       const [parent, child] = name.split('.');
-      if (parent === 'world') {
+      if (parent === 'story') {
         setFormData({
           ...formData,
-          world: {
-            ...formData.world,
-            [child]: child === 'year' ? parseInt(value, 10) || 0 : value
-          }
+          story: {
+            ...formData.story,
+            [child]: child === 'year' ? parseInt(value, 10) || 0 : value,
+          },
         });
       } else if (parent === 'playerCharacter') {
         setFormData({
           ...formData,
           playerCharacter: {
             ...formData.playerCharacter,
-            [child]: child === 'age' ? parseInt(value, 10) || 0 : value
-          }
+            [child]: child === 'age' ? parseInt(value, 10) || 0 : value,
+          },
         });
       }
     }
   };
-  
+
   return (
     <div className={styles.content}>
       <h1 className={styles.title}>Create Your Story</h1>
-      <p className={styles.subtitle}>Define your world and character to begin an AI-generated adventure</p>
+      <p className={styles.subtitle}>Define your story and character to begin an AI-generated adventure</p>
 
       <form className={styles.form} onSubmit={handleSubmit}>
-        {/* World Settings Section */}
+        {/* Story Settings Section */}
         <div className={styles.section}>
-          <h2 className={styles.sectionTitle}>World Settings</h2>
+          <h2 className={styles.sectionTitle}>Story Settings</h2>
 
           <div className={styles.formRow}>
             <Input
               label="Theme"
-              name="world.theme"
+              name="story.theme"
               placeholder="Love, Betrayal, Redemption, etc."
-              value={formData.world.theme}
+              value={formData.story.theme}
               onChange={handleChange}
               error={errors.theme}
               fullWidth
@@ -138,9 +139,9 @@ const StoryGenerationForm = ({ onSubmit }: StoryGenerationFormProps) => {
           <div className={styles.formRow}>
             <Input
               label="Genre"
-              name="world.genre"
+              name="story.genre"
               placeholder="Fantasy, Sci-Fi, Mystery, etc."
-              value={formData.world.genre}
+              value={formData.story.genre}
               onChange={handleChange}
               error={errors.genre}
               fullWidth
@@ -150,10 +151,10 @@ const StoryGenerationForm = ({ onSubmit }: StoryGenerationFormProps) => {
           <div className={styles.formRow}>
             <Input
               label="Year"
-              name="world.year"
+              name="story.year"
               type="number"
               placeholder="Year the story takes place"
-              value={formData.world.year}
+              value={formData.story.year}
               onChange={handleChange}
               error={errors.year}
               fullWidth
@@ -163,9 +164,9 @@ const StoryGenerationForm = ({ onSubmit }: StoryGenerationFormProps) => {
           <div className={styles.formRow}>
             <Input
               label="Setting"
-              name="world.setting"
+              name="story.setting"
               placeholder="Medieval village, Space station, etc."
-              value={formData.world.setting}
+              value={formData.story.setting}
               onChange={handleChange}
               error={errors.setting}
               fullWidth

@@ -10,13 +10,13 @@ Implementation of the initial scene generation system to create a working interf
 
 #### Requirements
 - Implement basic state management for a single scene
-- Create initial world context setup functionality
+- Create initial story context setup functionality
 - Build simple player character state tracking
 
 #### Acceptance Criteria
 - Controller provides adequate context for Scene Director to generate first scene
 - Tracks basic character relationships in-memory for duration of scene
-- Maintains simple world facts during scene interaction
+- Maintains simple story facts during scene interaction
 
 ### 2. Scene Director Agent
 
@@ -85,10 +85,10 @@ Implementation of the initial scene generation system to create a working interf
 # Summary: Story Controller & Scene Director Architecture
 
 ## Story Controller
-- **Primary Role**: Maintains world state and game history
+- **Primary Role**: Maintains story state and game history
 - **Responsibilities**:
   - Tracks hero's journey progression
-  - Manages global state (world facts, relationships, past events)
+  - Manages global state (story facts, relationships, past events)
   - Records scene outcomes
   - Provides context for scene generation
 - **Data Management**:
@@ -107,7 +107,7 @@ Implementation of the initial scene generation system to create a working interf
   - Character tools: select/create/modify characters
   - Location tools: select/create/modify locations
   - Narrative tools: generate goals, retrieve memories
-  - State management tools: update world state and relationships
+  - State management tools: update story state and relationships
   - Narrator tool: generate narration and NPC guidance
 
 ## Narrator (as Scene Director Tool)
@@ -143,7 +143,7 @@ flowchart TB
     PLAYER[Player Interface]
     
     %% Data Stores
-    DS_WORLD[(World State)]
+    DS_STORY[(Story State)]
     DS_CHARS[(Character Repository)]
     DS_LOCS[(Location Repository)]
     DS_HISTORY[(Game History)]
@@ -158,7 +158,7 @@ flowchart TB
     
     %% Flow for Scene Creation
     SC -->|Provides context| DO_CONTEXT
-    DS_WORLD -->|Current state| SC
+    DS_STORY -->|Current state| SC
     DS_CHARS -->|Available characters| SC
     DS_LOCS -->|Available locations| SC
     DS_HISTORY -->|Past events| SC
@@ -202,7 +202,7 @@ flowchart TB
     %% Scene Completion
     SDA -->|Scene results| DO_OUTCOME
     DO_OUTCOME -->|Updates state| SC
-    SC -.->|Updates world state| DS_WORLD
+    SC -.->|Updates story state| DS_STORY
     SC -.->|Records history| DS_HISTORY
     SC -.->|Updates characters| DS_CHARS
     
@@ -220,7 +220,7 @@ flowchart TB
     class SC controller
     class SDA agent
     class NT tool
-    class DS_WORLD,DS_CHARS,DS_LOCS,DS_HISTORY datastore
+    class DS_STORY,DS_CHARS,DS_LOCS,DS_HISTORY datastore
     class DO_CONTEXT,DO_SCENE,DO_CHAR_GUIDANCE,DO_NARRATION,DO_PLAYER_ACTION,DO_OUTCOME dataobject
     class PLAYER player
 ```
@@ -234,6 +234,6 @@ This diagram shows:
    - Assembles complete scene object
 3. **Narrator Tool**: Transforms structured scene data into natural language and NPC guidance
 4. **Player Interaction**: Receives narration and interacts with the scene 
-5. **Outcome Processing**: Results update world state and history, then trigger the next scene cycle
+5. **Outcome Processing**: Results update story state and history, then trigger the next scene cycle
 
 The dotted lines represent conditional flows (like creating new characters/locations when needed) while solid lines show the primary data flow path.

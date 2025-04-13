@@ -1,8 +1,8 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from app.services.game_engine.tools.world_generator import WorldGenerator
-from app.schemas.world_generation import World, WorldInput
+from app.services.game_engine.tools.story_generator import StoryGenerator
+from app.schemas.story_generation import Story, StoryInput
 from app.services.llm import LLMService
 
 
@@ -17,15 +17,15 @@ def mock_llm_service() -> MagicMock:
 
 
 @pytest.fixture
-def world_generator(mock_llm_service: MagicMock) -> WorldGenerator:
-    """Create a WorldGenerator instance with a mock LLM service."""
-    return WorldGenerator(llm_service=mock_llm_service)
+def story_generator(mock_llm_service: MagicMock) -> StoryGenerator:
+    """Create a StoryGenerator instance with a mock LLM service."""
+    return StoryGenerator(llm_service=mock_llm_service)
 
 
 @pytest.fixture
-def test_world_input() -> WorldInput:
-    """Create a test world input."""
-    return WorldInput(
+def test_story_input() -> StoryInput:
+    """Create a test story input."""
+    return StoryInput(
         theme="Fantasy",
         genre="Adventure",
         year=1200,  # Medieval period as an integer year
@@ -33,33 +33,33 @@ def test_world_input() -> WorldInput:
     )
 
 
-class TestWorldGenerator:
-    """Test cases for the WorldGenerator class."""
+class TestStoryGenerator:
+    """Test cases for the StoryGenerator class."""
     
     @pytest.mark.asyncio
-    async def test_generate_world(
+    async def test_generate_story(
         self,
-        world_generator: WorldGenerator,
-        test_world_input: WorldInput,
+        story_generator: StoryGenerator,
+        test_story_input: StoryInput,
         mock_llm_service: MagicMock
     ):
-        """Test the generate_world method."""
+        """Test the generate_story method."""
         # Mock the LLM service responses
-        world_description = "This is a detailed fantasy world description."
-        world_rules = """
+        story_description = "This is a detailed fantasy story description."
+        story_rules = """
         [
             "Magic requires years of study and only 1% of the population has the aptitude to master it.",
             "The kingdom is divided into five distinct regions, each ruled by a duke who answers to the High King.",
             "Technology is limited to medieval standards, with rare magical artifacts enhancing capabilities.",
             "Dragons exist but are extremely rare, with fewer than ten known to be alive in the entire realm.",
-            "The boundary between the mortal realm and the spirit world weakens during the winter solstice."
+            "The boundary between the mortal realm and the spirit story weakens during the winter solstice."
         ]
         """
         
         # Configure the mock for extract_content
         mock_llm_service.extract_content.side_effect = [
-            world_description,
-            world_rules
+            story_description,
+            story_rules
         ]
         
         # Mock the JSONService.parse_and_validate_string_list
@@ -68,7 +68,7 @@ class TestWorldGenerator:
             "The kingdom is divided into five distinct regions, each ruled by a duke who answers to the High King.",
             "Technology is limited to medieval standards, with rare magical artifacts enhancing capabilities.",
             "Dragons exist but are extremely rare, with fewer than ten known to be alive in the entire realm.",
-            "The boundary between the mortal realm and the spirit world weakens during the winter solstice."
+            "The boundary between the mortal realm and the spirit story weakens during the winter solstice."
         ]
         
         # Use patch instead of monkeypatch.context
@@ -76,11 +76,11 @@ class TestWorldGenerator:
                   return_value=rules_list):
             
             # Call the method
-            result = await world_generator.generate_world(test_world_input)
+            result = await story_generator.generate_story(test_story_input)
         
         # Assertions
-        assert isinstance(result, World)
-        assert result.description == world_description
+        assert isinstance(result, Story)
+        assert result.description == story_description
         assert len(result.rules) == 5
         assert result.rules[0] == rules_list[0]
         

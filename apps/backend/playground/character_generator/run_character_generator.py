@@ -9,15 +9,15 @@ backend_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
 sys.path.insert(0, backend_dir)
 
 from app.services.game_engine.tools.character_generator import CharacterGenerator
-from app.schemas.world_generation import CharacterDraft, World
+from app.schemas.story_generation import CharacterDraft, Story
 from app.services.llm import LLMService
 
 async def main():
     # Create example data
-    world = World(
-        description="A cyberpunk world set in 2077, where corporations control society and cybernetic enhancements are common.",
+    story = Story(
+        description="A cyberpunk story set in 2077, where corporations control society and cybernetic enhancements are common.",
         rules=["Characters should have cybernetic enhancements.", 
-               "The world is divided between corporate elites and struggling lower classes.",
+               "The story is divided between corporate elites and struggling lower classes.",
                "Technology is advanced but unevenly distributed."]
     )
     
@@ -34,7 +34,7 @@ async def main():
     
     # Generate character
     print("Generating character...")
-    character = await character_generator.generate_character(character_draft, world, is_player=True)
+    character = await character_generator.generate_character(character_draft, story, is_player=True)
     
     # Save to JSON file
     output_path = Path(__file__).parent / "generated_character.json"

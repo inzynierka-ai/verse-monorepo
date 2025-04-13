@@ -5,7 +5,7 @@ from fastapi import WebSocket
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
-from app.schemas.world_generation import WorldGenerationInput, World, Character
+from app.schemas.story_generation import StoryGenerationInput, Story, Character
 from app.services.game_engine.orchestrators.game_initializer import GameInitializer
 from app.routers.game_ws.base import BaseMessageHandler
 
@@ -43,14 +43,14 @@ class GameInitializationHandler(BaseMessageHandler):
     async def _handle_initialize_game(self, message: Dict[str, Any], websocket: WebSocket):
         """
         Handle game initialization request
-        1. Validate the WorldGenerationInput
-        2. Generate world and send it to client
+        1. Validate the StoryGenerationInput
+        2. Generate story and send it to client
         3. Generate character and send it to client
         """
         try:
             # Validate input
             payload = message.get("payload", {})
-            input_data = WorldGenerationInput(**payload)
+            input_data = StoryGenerationInput(**payload)
             
             # Get user ID if authenticated
             user_id = getattr(websocket.state, "user_id", None)
@@ -58,14 +58,14 @@ class GameInitializationHandler(BaseMessageHandler):
             # Send status update
             await websocket.send_json({
                 "type": "STATUS_UPDATE",
-                "payload": {"status": "GENERATING_WORLD", "message": "Generating game world..."}
+                "payload": {"status": "GENERATING_STORY", "message": "Generating game story..."}
             })
             
             # Define callbacks for real-time updates
-            async def on_world_generated(world: World):
+            async def on_story_generated(story: Story):
                 await websocket.send_json({
-                    "type": "WORLD_CREATED",
-                    "payload": world.model_dump()
+                    "type": "STORY_CREATED",
+                    "payload": story.model_dump()
                 })
                 await websocket.send_json({
                     "type": "STATUS_UPDATE",
@@ -81,16 +81,14 @@ class GameInitializationHandler(BaseMessageHandler):
             print("Initializing game", input_data)
             
             # Find or create a story for this game session
-            story_id = 1
             
                     # Continue even if story creation fails
             
             # Start game initialization with callbacks and story_id
             await self.game_initializer.initialize_game(
                 input_data,
-                on_world_generated=on_world_generated,
+                on_story_generated=on_story_generated,
                 on_character_generated=on_character_generated,
-                story_id=story_id
             )
             
             # Send initialization complete message
