@@ -8,22 +8,22 @@ class PlayerCharacter(BaseModel):
     appearance: str = Field(..., description="Physical appearance description")
     background: str = Field(..., description="Background story or history")
 
-# World Settings model
-class WorldInfo(BaseModel):
-    theme: str = Field(..., description="Primary theme of the world")
+# Story Settings model
+class StoryInfo(BaseModel):
+    theme: str = Field(..., description="Primary theme of the story")
     genre: str = Field(..., description="Genre of the setting (fantasy, sci-fi, etc.)")
     year: int = Field(..., description="Year or time period")
     setting: str = Field(..., description="General setting description")
 
-# Input model for world generation
-class WorldGenerationInput(BaseModel):
-    world: WorldInfo
+# Input model for story generation
+class StoryGenerationInput(BaseModel):
+    story: StoryInfo
     playerCharacter: Optional[PlayerCharacter] = None
 
 # Client messages
-class WorldGenerationRequest(BaseModel):
-    type: Literal["generate_world"]
-    world: WorldInfo
+class StoryGenerationRequest(BaseModel):
+    type: Literal["generate_story"]
+    story: StoryInfo
     playerCharacter: Optional[PlayerCharacter] = None
 
 # Base message class
@@ -38,7 +38,7 @@ class StepUpdate(WebSocketMessage):
     data: Optional[Dict[str, Any]] = None
 
 # Completion messages
-class WorldTemplateComplete(WebSocketMessage):
+class StoryTemplateComplete(WebSocketMessage):
     data: Dict[str, Any]
 
 class ChapterComplete(WebSocketMessage):
@@ -56,7 +56,7 @@ class ConflictComplete(WebSocketMessage):
 class PossibleEndingsComplete(WebSocketMessage):
     data: Dict[str, Any]
 
-class WorldComplete(WebSocketMessage):
+class StoryComplete(WebSocketMessage):
     data: Dict[str, Any]
 
 # Image prompt update
@@ -81,11 +81,11 @@ class ErrorMessage(WebSocketMessage):
 # Union type for all possible server messages
 ServerMessage = Union[
     StepUpdate, 
-    WorldTemplateComplete,
+    StoryTemplateComplete,
     CharactersComplete,
     LocationsComplete,
     ConflictComplete,
-    WorldComplete,
+    StoryComplete,
     NarrationUpdate,
     NarrationComplete,
     ErrorMessage

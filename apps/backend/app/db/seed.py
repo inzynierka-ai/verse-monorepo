@@ -87,7 +87,7 @@ def seed_database(force_reseed=False):
         # Create stories for user1
         story1 = Story(
             title="The Lost Kingdom",
-            description="An epic adventure in a forgotten realm. A fantasy world where an ancient kingdom has been rediscovered after centuries.",
+            description="An epic adventure in a forgotten realm. A fantasy story where an ancient kingdom has been rediscovered after centuries.",
             rules="1. Medieval fantasy setting with limited magic. 2. Characters should speak in a somewhat formal, medieval style. 3. Technology is limited to medieval levels. 4. Supernatural elements should follow established magical laws. 5. Politics and intrigue are important aspects of the story.",
             uuid=generate_uuid(),
             user_id=user1.id
@@ -354,7 +354,7 @@ def seed_database(force_reseed=False):
                 role="npc",
                 description="An ancient tree spirit with wisdom of ages. Massive humanoid made of bark and wood with a face formed from knots in the wood. Moves slowly and speaks deliberately. Wise and patient but can be inflexible. Has watched over the forest for centuries. Remembers the ancient pact between humans and the forest that has been forgotten.",
                 personality_traits="Wise, Patient, Protective, Traditional, Occasionally rigid",
-                backstory="One of the oldest beings in the forest, sprouted in the age when humans and forest dwellers lived in harmony. Witnessed the breakdown of the ancient pact and the growing separation between the natural and human worlds.",
+                backstory="One of the oldest beings in the forest, sprouted in the age when humans and forest dwellers lived in harmony. Witnessed the breakdown of the ancient pact and the growing separation between the natural and human stories.",
                 goals="Maintain the forest's magical balance. Prepare Willow for her role in renewing the ancient pact. Guard against the darkness growing at the forest's edge.",
                 speaking_style="Slow and deliberate, often using plural 'we' instead of 'I'. Speaks in deep, resonant tones with natural metaphors. Can remain silent for long periods during conversation.",
                 relationships="Sees Willow as the potential savior of the forest based on ancient prophecies. Tolerates Flicker's antics with patient amusement.",

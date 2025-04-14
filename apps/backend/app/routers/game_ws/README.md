@@ -39,12 +39,12 @@ All messages follow this JSON format:
 
 ### INITIALIZE_GAME
 
-Initializes a new game world and character.
+Initializes a new game story and character.
 
 **Payload**:
 ```json
 {
-  "world": {
+  "story": {
     "theme": "String - emotional/philosophical concept",
     "genre": "String - storytelling style",
     "year": "Integer - time period",
@@ -74,18 +74,18 @@ Provides status updates during processing.
 ```
 
 **Status codes include**:
-- `GENERATING_WORLD`
+- `GENERATING_STORY`
 - `GENERATING_CHARACTER`
 
-### WORLD_CREATED
+### STORY_CREATED
 
-Sent when the world has been generated.
+Sent when the story has been generated.
 
 **Payload**:
 ```json
 {
-  "description": "String - detailed world description",
-  "rules": ["String - world rule 1", "String - world rule 2", ...]
+  "description": "String - detailed story description",
+  "rules": ["String - story rule 1", "String - story rule 2", ...]
 }
 ```
 

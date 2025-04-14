@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react';
 import { useWebSocket } from '@/common/hooks/webSockets/useWebSocket';
 import { sendWebSocketMessage } from '@/utils/webSocket';
 
-export interface WorldSettings {
+export interface StorySettings {
   theme: string;
   genre: string;
   year: number;
@@ -17,11 +17,11 @@ export interface PlayerCharacter {
 }
 
 export interface StoryGenerationRequest {
-  world: WorldSettings;
+  story: StorySettings;
   playerCharacter: PlayerCharacter;
 }
 
-export interface WorldCreated {
+export interface StoryCreated {
   description: string;
   rules: string[];
 }
@@ -43,14 +43,14 @@ export interface Character {
 }
 
 export interface StoryGenerationMessage {
-  type: 'STATUS_UPDATE' | 'WORLD_CREATED' | 'CHARACTER_CREATED' | 'INITIALIZATION_COMPLETE' | 'ERROR';
+  type: 'STATUS_UPDATE' | 'STORY_CREATED' | 'CHARACTER_CREATED' | 'INITIALIZATION_COMPLETE' | 'ERROR';
   payload: any;
 }
 
 export interface StoryGenerationState {
   status: 'idle' | 'connecting' | 'generating' | 'complete' | 'error';
   statusMessage: string;
-  world?: WorldCreated;
+  story?: StoryCreated;
   character?: Character;
   errorMessage?: string;
 }
@@ -98,9 +98,9 @@ export const useStoryGeneration = ({ onConnectionChange }: UseStoryGenerationPro
             });
             break;
 
-          case 'WORLD_CREATED':
+          case 'STORY_CREATED':
             updateState({
-              world: data.payload,
+              story: data.payload,
             });
             break;
 
@@ -182,7 +182,7 @@ export const useStoryGeneration = ({ onConnectionChange }: UseStoryGenerationPro
     updateState({
       status: 'idle',
       statusMessage: 'Ready to generate story',
-      world: undefined,
+      story: undefined,
       character: undefined,
       errorMessage: undefined,
     });

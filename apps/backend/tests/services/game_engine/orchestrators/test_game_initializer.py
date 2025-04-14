@@ -2,23 +2,23 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock
 
 from app.services.game_engine.orchestrators.game_initializer import GameInitializer, InitialGameState
-from app.services.game_engine.tools.world_generator import WorldGenerator
+from app.services.game_engine.tools.story_generator import StoryGenerator
 from app.services.game_engine.tools.character_generator import CharacterGenerator
-from app.schemas.world_generation import (
-    WorldGenerationInput,
-    WorldInput,
+from app.schemas.story_generation import (
+    StoryGenerationInput,
+    StoryInput,
     CharacterDraft,
-    World,
+    Story,
     Character
 )
 
 
 @pytest.fixture
-def mock_world_generator():
-    """Create a mock WorldGenerator for testing."""
-    world_generator = MagicMock(spec=WorldGenerator)
-    world_generator.generate_world = AsyncMock()
-    return world_generator
+def mock_story_generator():
+    """Create a mock StoryGenerator for testing."""
+    story_generator = MagicMock(spec=StoryGenerator)
+    story_generator.generate_story = AsyncMock()
+    return story_generator
 
 
 @pytest.fixture
@@ -30,9 +30,9 @@ def mock_character_generator():
 
 
 @pytest.fixture
-def sample_world_input() -> WorldInput:
-    """Create a sample world input for testing."""
-    return WorldInput(
+def sample_story_input() -> StoryInput:
+    """Create a sample story input for testing."""
+    return StoryInput(
         theme="survival",
         genre="post-apocalyptic",
         year=2050,
@@ -52,19 +52,19 @@ def sample_character_draft() -> CharacterDraft:
 
 
 @pytest.fixture
-def sample_world_generation_input(sample_world_input: WorldInput, sample_character_draft: CharacterDraft) -> WorldGenerationInput:
-    """Create a sample world generation input for testing."""
-    return WorldGenerationInput(
-        world=sample_world_input,
+def sample_story_generation_input(sample_story_input: StoryInput, sample_character_draft: CharacterDraft) -> StoryGenerationInput:
+    """Create a sample story generation input for testing."""
+    return StoryGenerationInput(
+        story=sample_story_input,
         playerCharacter=sample_character_draft
     )
 
 
 @pytest.fixture
-def sample_world() -> World:
-    """Create a sample world for testing."""
-    return World(
-        description="A world devastated by climate change...",
+def sample_story() -> Story:
+    """Create a sample story for testing."""
+    return Story(
+        description="A story devastated by climate change...",
         rules=["Resources are scarce", "Technology is fragmented"]
     )
 
@@ -89,35 +89,35 @@ class TestGameInitializer:
     @pytest.mark.asyncio
     async def test_initialize_game(
         self,
-        mock_world_generator: MagicMock,
+        mock_story_generator: MagicMock,
         mock_character_generator: MagicMock,
-        sample_world_generation_input: WorldGenerationInput,
-        sample_world: World,
+        sample_story_generation_input: StoryGenerationInput,
+        sample_story: Story,
         sample_character: Character
     ):
         """Test the initialize_game method with mocked dependencies."""
         # Setup mocks
-        mock_world_generator.generate_world.return_value = sample_world
+        mock_story_generator.generate_story.return_value = sample_story
         mock_character_generator.generate_character.return_value = sample_character
         
         # Create initializer with mocks
         initializer = GameInitializer(
-            world_generator=mock_world_generator,
+            story_generator=mock_story_generator,
             character_generator=mock_character_generator
         )
         
         # Call the initialize_game method
-        result = await initializer.initialize_game(sample_world_generation_input)
+        result = await initializer.initialize_game(sample_story_generation_input)
         
         # Check that the result is correct
         assert isinstance(result, InitialGameState)
-        assert result.world == sample_world
+        assert result.story == sample_story
         assert result.playerCharacter == sample_character
         
         # Verify the generator methods were called correctly
-        mock_world_generator.generate_world.assert_called_once_with(sample_world_generation_input.world)
+        mock_story_generator.generate_story.assert_called_once_with(sample_story_generation_input.story)
         mock_character_generator.generate_character.assert_called_once_with(
-            sample_world_generation_input.playerCharacter,
-            sample_world,
+            sample_story_generation_input.playerCharacter,
+            sample_story,
             is_player=True
         )

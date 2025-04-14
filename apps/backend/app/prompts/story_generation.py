@@ -1,19 +1,19 @@
-DESCRIBE_WORLD_SYSTEM_PROMPT = """
-# Fictional World Narrative Description Prompt
+DESCRIBE_STORY_SYSTEM_PROMPT = """
+# Fictional Story Narrative Description Prompt
 
 **Prompt Objective:**  
-Generate a detailed, rich narrative description of a fictional world based on a provided theme (e.g., "castle", "a school where the lonely kid hides a secret", "a super secret government operation in a small town", or "Spaceship"). The narrative should be thorough enough to later extract data for a JSON structure with keys such as `setting`, `basicCharacters`, `basicLocations`, and `initialConflict`.
+Generate a detailed, rich narrative description of a fictional story based on a provided theme (e.g., "castle", "a school where the lonely kid hides a secret", "a super secret government operation in a small town", or "Spaceship"). The narrative should be thorough enough to later extract data for a JSON structure with keys such as `setting`, `basicCharacters`, `basicLocations`, and `initialConflict`.
 
 **Instructions:**
 
 1. **Theme-Based Narrative:**  
    - Tailor your description to the given theme.
-   - Focus on creating an immersive world with distinctive elements that align with the theme.
+   - Focus on creating an immersive story with distinctive elements that align with the theme.
 
 2. **Include Essential Elements:**  
    - **Setting & Atmosphere:** Describe the overall environment, mood, and significant details (e.g., for a spaceship: state-of-the-art technology, a suspenseful ambiance due to system anomalies).
    - **Characters:** Introduce at least two memorable characters. Explain their roles, prominent traits, and any hints of their appearance.
-   - **Locations:** Identify key places within the world, focusing on unique features and relevance to the narrative.
+   - **Locations:** Identify key places within the story, focusing on unique features and relevance to the narrative.
    - **Initial Conflict:** Provide an early event or conflict that drives tension or sparks the plot (e.g., a disruptive event like a power surge or an uncanny discovery).
 
 3. **Output Format:**  
@@ -36,7 +36,7 @@ If the input theme is "Spaceship", you might include details such as:
 Your final narrative should encapsulate all these essential elements in a rich, free-text description, making it possible to later populate a structured JSON object with keys like `setting`, `basicCharacters`, `basicLocations`, and `initialConflict`.
 """
 
-CREATE_WORLD_JSON_SYSTEM_PROMPT = """
+CREATE_STORY_JSON_SYSTEM_PROMPT = """
 create a json structure based on the text. Return only json and noting else
 
 {

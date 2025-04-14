@@ -2,7 +2,7 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from app.services.game_engine.tools.location_generator import LocationGenerator
-from app.schemas.world_generation import Location, World, LocationFromLLM
+from app.schemas.story_generation import Location, Story, LocationFromLLM
 from app.services.llm import LLMService
 
 
@@ -23,10 +23,10 @@ def location_generator(mock_llm_service: MagicMock) -> LocationGenerator:
 
 
 @pytest.fixture
-def test_world() -> World:
-    """Create a test world."""
-    return World(
-        description="A test world description",
+def test_story() -> Story:
+    """Create a test story."""
+    return Story(
+        description="A test story description",
         rules=["Rule 1", "Rule 2"],
     )
 
@@ -34,7 +34,7 @@ def test_world() -> World:
 @pytest.mark.asyncio
 async def test_generate_location(
     location_generator: LocationGenerator, 
-    test_world: World, 
+    test_story: Story, 
     mock_llm_service: MagicMock
 ):
     """Test the generate_location method."""
@@ -70,7 +70,7 @@ async def test_generate_location(
               return_value=location_from_llm):
         
         # Call the method
-        result = await location_generator.generate_location(test_world)
+        result = await location_generator.generate_location(test_story)
     
     # Assertions
     assert isinstance(result, Location)

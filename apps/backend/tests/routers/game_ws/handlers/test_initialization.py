@@ -8,7 +8,7 @@ from pydantic import ValidationError
 from typing import Dict, Any, List, cast
 
 from app.routers.game_ws.handlers.initialization import GameInitializationHandler
-from app.schemas.world_generation import World, Character
+from app.schemas.story_generation import Story, Character
 
 
 @pytest.fixture
@@ -24,10 +24,10 @@ def mock_websocket() -> AsyncMock:
 
 
 @pytest.fixture
-def sample_world() -> World:
-    """Create a sample world for testing"""
-    return World(
-        description="A post-apocalyptic world devastated by climate change",
+def sample_story() -> Story:
+    """Create a sample story for testing"""
+    return Story(
+        description="A post-apocalyptic story devastated by climate change",
         rules=["Resources are scarce", "Technology is rare"]
     )
 
@@ -100,7 +100,7 @@ async def test_handle_initialize_game_exception(
         valid_message: Dict[str, Any] = {
             "type": "INITIALIZE_GAME",
             "payload": {
-                "world": {
+                "story": {
                     "theme": "fantasy", 
                     "genre": "medieval",
                     "year": 1200,
@@ -129,15 +129,15 @@ async def test_handle_initialize_game_exception(
 async def test_handle_initialize_game_callbacks(
     handler: GameInitializationHandler,
     mock_websocket: AsyncMock,
-    sample_world: World,
+    sample_story: Story,
     sample_character: Character
 ) -> None:
     """Test that callbacks are executed properly during initialization"""
     # Mock GameInitializer
     with patch.object(handler, 'game_initializer') as mock_initializer:
         # Set up side effect to call the callbacks
-        async def simulate_callbacks(input_data, on_world_generated, on_character_generated):
-            await on_world_generated(sample_world)
+        async def simulate_callbacks(input_data, on_story_generated, on_character_generated):
+            await on_story_generated(sample_story)
             await on_character_generated(sample_character)
             return None
         
@@ -147,7 +147,7 @@ async def test_handle_initialize_game_callbacks(
         valid_message: Dict[str, Any] = {
             "type": "INITIALIZE_GAME",
             "payload": {
-                "world": {
+                "story": {
                     "theme": "fantasy", 
                     "genre": "medieval",
                     "year": 1200,
@@ -168,12 +168,12 @@ async def test_handle_initialize_game_callbacks(
         calls = mock_websocket.send_json.call_args_list
         assert len(calls) >= 4  # At least 4 messages should be sent
         
-        # First message: STATUS_UPDATE (GENERATING_WORLD)
+        # First message: STATUS_UPDATE (GENERATING_STORY)
         assert calls[0][0][0]["type"] == "STATUS_UPDATE"
-        assert calls[0][0][0]["payload"]["status"] == "GENERATING_WORLD"
+        assert calls[0][0][0]["payload"]["status"] == "GENERATING_STORY"
         
-        # Second message: WORLD_CREATED
-        assert calls[1][0][0]["type"] == "WORLD_CREATED"
+        # Second message: STORY_CREATED
+        assert calls[1][0][0]["type"] == "STORY_CREATED"
         assert "description" in calls[1][0][0]["payload"]
         
         # Third message: STATUS_UPDATE (GENERATING_CHARACTER)

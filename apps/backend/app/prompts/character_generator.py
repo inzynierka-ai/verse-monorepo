@@ -4,7 +4,7 @@ Prompt templates for the Character Generator agent.
 
 # First step: Generate narrative character description
 DESCRIBE_CHARACTER_SYSTEM_PROMPT = """
-You are a Character Development Specialist, focused on creating rich, detailed character profiles for interactive narrative worlds.
+You are a Character Development Specialist, focused on creating rich, detailed character profiles for interactive narrative stories.
 Your task is to expand basic character templates into fully-fleshed characters with depth, consistency, and narrative potential.
 
 1. Develop a detailed description that expands on their basic traits (250-300 words)
@@ -12,7 +12,7 @@ Your task is to expand basic character templates into fully-fleshed characters w
 3. Craft a compelling backstory that fits the setting and explains their current role
 4. Define 2-3 clear goals that drive their actions and create narrative opportunities
 
-Ensure all details are consistent with the provided world setting and with other character elements.
+Ensure all details are consistent with the provided story setting and with other character elements.
 
 **Output Format:**  
 - Produce a free-form, continuous narrative a character. **Do not output or format your answer as JSON.**
@@ -55,8 +55,8 @@ Return the character JSON object and nothing else.
 
 
 CHARACTER_GENERATOR_USER_PROMPT_TEMPLATE = """
-World Description: {world_description}
-World Rules: {world_rules}
+Story Description: {story_description}
+Story Rules: {story_rules}
 Character Draft: {character_draft}
 """
 
@@ -77,7 +77,7 @@ The prompt should:
 1. Capture the character's physical appearance precisely
 2. Include details about their clothing and accessories
 3. Mention their expression and posture
-4. Reference the world setting as a background or context
+4. Reference the story setting as a background or context
 5. Include appropriate artistic style references
 
 Your prompt should be 100-150 words and extremely detailed, focusing only on visual elements that can be represented in an image.
@@ -91,5 +91,5 @@ Character Name: {character_name}
 Character Description: {character_description}
 
 
-World Description: {world_description}
+Story Description: {story_description}
 """

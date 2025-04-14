@@ -7,6 +7,7 @@ from jose import jwt, JWTError  # Add JWT handling
 from app.routers.game_ws.base import BaseMessageHandler
 from app.routers.game_ws.handlers.initialization import GameInitializationHandler
 from app.services.auth import SECRET_KEY, ALGORITHM  # Import your security constants
+from app.db.session import get_db, Session  # Import synchronous database session
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -50,6 +51,11 @@ class AuthenticationHandler(BaseMessageHandler):
             websocket.state.user_id = user_id
             websocket.state.username = username
             
+            if self.db_session:
+                # Here you can perform database operations like checking if user exists,
+                # updating last login time, etc.
+                logger.info(f"Database available for user authentication: {user_id}")
+            
             logger.info(f"User authenticated: {username} (ID: {user_id})")
             print(f"WebSocket authenticated for user: {username} (ID: {user_id})")
             
@@ -79,7 +85,8 @@ class GameMessageHandler:
     def __init__(
         self, 
         handlers: Optional[List[BaseMessageHandler]] = None,
-        handler_factory: Optional[Callable[[], Dict[str, Type[BaseMessageHandler]]]] = None
+        handler_factory: Optional[Callable[[], Dict[str, Type[BaseMessageHandler]]]] = None,
+        db_session: Optional[Session] = None
     ):
         """
         Initialize the game message handler with explicit dependency injection.
@@ -87,8 +94,10 @@ class GameMessageHandler:
         Args:
             handlers: List of message handlers to use. If None, handlers will be created using handler_factory.
             handler_factory: Factory function that returns handler classes. If None, default handlers will be used.
+            db_session: SQLAlchemy Session for database operations
         """
         self.handler_factory = handler_factory or self._default_handler_factory
+        self.db_session = db_session
         
         # Initialize handlers
         self.handlers: List[BaseMessageHandler] = handlers or self._create_default_handlers()
@@ -118,8 +127,8 @@ class GameMessageHandler:
         """
         factory = self.handler_factory()
         return [
-            factory["authentication"](),  # Auth handler should be first
-            factory["initialization"](),
+            factory["authentication"](db_session=self.db_session),  # Auth handler should be first
+            factory["initialization"](db_session=self.db_session),
             # Add more handlers here as they're implemented
         ]
     
@@ -181,7 +190,14 @@ async def game_websocket(websocket: WebSocket):
     websocket.state.user_id = None
     websocket.state.username = "unknown"
     
-    await game_handler.connect(websocket)
+    # Get database session (synchronous)
+    db = next(get_db())
+    logger.info(f"Database session created: {db}")
+    
+    # Create a handler with the database session
+    handler = GameMessageHandler(db_session=db)
+    
+    await handler.connect(websocket)
     
     try:
         while True:
@@ -190,15 +206,18 @@ async def game_websocket(websocket: WebSocket):
             data = await websocket.receive_text()
             try:
                 message = json.loads(data)
-                await game_handler.handle_message(message, websocket)
+                await handler.handle_message(message, websocket)
             except json.JSONDecodeError:
                 await websocket.send_json({
                     "type": "ERROR",
                     "payload": {"message": "Invalid JSON"}
                 })
     except WebSocketDisconnect:
-        game_handler.disconnect(websocket)
+        handler.disconnect(websocket)
     except Exception:
         username = getattr(websocket.state, "username", "unknown")
         logger.exception(f"Unexpected error in WebSocket connection for user: {username}")
-        game_handler.disconnect(websocket)
+        handler.disconnect(websocket)
+    finally:
+        # Close the database session
+        db.close()
