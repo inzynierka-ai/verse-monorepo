@@ -87,8 +87,7 @@ class GameInitializer:
         player_character = await self.character_generator.generate_character(
             user_input.playerCharacter,
             story,
-            is_player=True,
-            story_id=story.id
+            is_player=True
         )
         
         # Call the callback if provided

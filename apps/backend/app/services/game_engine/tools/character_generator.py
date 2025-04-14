@@ -32,7 +32,7 @@ class CharacterGenerator:
         self.llm_service = llm_service or LLMService()
         self.db_session = db_session
 
-    async def generate_character(self, character_draft: CharacterDraft, story: Story, is_player: bool, story_id: int) -> CharacterModel | None:
+    async def generate_character(self, character_draft: CharacterDraft, story: Story, is_player: bool) -> CharacterModel | None:
         """
         Orchestrates the entire character generation process.
 
@@ -61,7 +61,7 @@ class CharacterGenerator:
             role="player" if is_player else "npc"
         )
         # Save to database but return the Pydantic model
-        self._save_character_to_db(character, story_id, image_prompt, is_player)
+        self._save_character_to_db(character, story.id, image_prompt, is_player)
         
         # Return the Pydantic Character object
         return character
