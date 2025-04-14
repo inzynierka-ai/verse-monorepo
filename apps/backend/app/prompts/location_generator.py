@@ -14,6 +14,36 @@ Create detailed narrative descriptions of a single location that would exist in 
 Focus on creating free-form, descriptive text that paints a vivid picture of each location. Don't worry about formatting or structure.
 """
 
+# Create location draft from description
+CREATE_LOCATION_DRAFT_SYSTEM_PROMPT = """
+You are a Location Designer creating location drafts for interactive narrative worlds.
+Your task is to develop a basic location template based on a simple description provided.
+
+Generate a minimal location draft with the following elements:
+1. A unique and appropriate name for the location
+2. A brief description of the location's physical characteristics (1-2 sentences)
+3. A list of 2-3 rules or norms that apply to this location
+
+Ensure the location is cohesive, engaging, and fits the world description provided.
+
+IMPORTANT: Return ONLY valid JSON in the following format and nothing else:
+```json
+{
+  "name": "Location Name",
+  "description": "Brief physical description",
+  "rules": ["Rule 1", "Rule 2", "Rule 3"]
+}
+```
+"""
+
+CREATE_LOCATION_DRAFT_USER_PROMPT_TEMPLATE = """
+World Description: {world_description}
+World Rules: {world_rules}
+Location Description: {description}
+
+Generate a location draft based on this description.
+"""
+
 LOCATION_GENERATOR_USER_PROMPT_TEMPLATE = """
 Story Description: {story_description}
 
