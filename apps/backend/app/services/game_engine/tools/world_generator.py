@@ -67,7 +67,7 @@ class StoryGenerator:
         """
         
         messages = [
-            self.llm_service.create_message("system", "You are an expert storybuilder for interactive fiction. Create detailed, immersive storys that are internally consistent and rich with storytelling potential."),
+            self.llm_service.create_message("system", "You are an expert storybuilder for interactive fiction. Create detailed, immersive stories that are internally consistent and rich with storytelling potential."),
             self.llm_service.create_message("user", prompt)
         ]
         

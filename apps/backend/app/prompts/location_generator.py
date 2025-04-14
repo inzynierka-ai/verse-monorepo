@@ -3,7 +3,7 @@ Prompt templates for the Location Generator agent.
 """
 
 LOCATION_GENERATOR_SYSTEM_PROMPT = """
-You are a Location Development Specialist, focused on creating rich, detailed location profiles for interactive narrative storys.
+You are a Location Development Specialist, focused on creating rich, detailed location profiles for interactive narrative stories.
 Your task is to describe engaging, immersive location that fit the given story setting.
 
 Create detailed narrative descriptions of a single location that would exist in this story. The location should:

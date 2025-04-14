@@ -4,7 +4,7 @@ Prompt templates for the Character Generator agent.
 
 # First step: Generate narrative character description
 DESCRIBE_CHARACTER_SYSTEM_PROMPT = """
-You are a Character Development Specialist, focused on creating rich, detailed character profiles for interactive narrative storys.
+You are a Character Development Specialist, focused on creating rich, detailed character profiles for interactive narrative stories.
 Your task is to expand basic character templates into fully-fleshed characters with depth, consistency, and narrative potential.
 
 1. Develop a detailed description that expands on their basic traits (250-300 words)

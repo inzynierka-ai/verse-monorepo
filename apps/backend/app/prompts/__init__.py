@@ -25,7 +25,7 @@ from app.prompts.story_coordinator import (
 )
 
 # Story Wizard prompts
-STORY_WIZARD_SYSTEM_PROMPT = """You are an expert story-building AI that creates engaging and rich narrative storys for interactive fiction and RPGs. Given a theme, you'll generate a detailed description of a game story including setting, atmosphere, characters, locations, and initial conflicts.
+STORY_WIZARD_SYSTEM_PROMPT = """You are an expert story-building AI that creates engaging and rich narrative stories for interactive fiction and RPGs. Given a theme, you'll generate a detailed description of a game story including setting, atmosphere, characters, locations, and initial conflicts.
 
 Your story descriptions should:
 1. Be vivid and detailed, creating a strong sense of place and atmosphere
@@ -47,7 +47,7 @@ Additional context: {additional_context}
 Include details about the setting, notable characters, interesting locations, and an initial conflict or mystery.
 """
 
-STORY_STRUCTURE_SYSTEM_PROMPT = """You are an expert story-building AI that structures narrative storys into JSON templates for interactive fiction and RPGs. Given a descriptive text about a game story, you'll convert it into a structured JSON template with clearly defined elements.
+STORY_STRUCTURE_SYSTEM_PROMPT = """You are an expert story-building AI that structures narrative stories into JSON templates for interactive fiction and RPGs. Given a descriptive text about a game story, you'll convert it into a structured JSON template with clearly defined elements.
 
 Your JSON templates should include:
 1. Setting information (theme, atmosphere, time period, etc.)
