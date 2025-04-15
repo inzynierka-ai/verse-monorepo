@@ -1,4 +1,7 @@
+import logging
+import uuid
 from typing import Optional
+from sqlalchemy.orm import Session
 from app.services.llm import LLMService, ModelName
 from app.schemas.story_generation import (
     Location,
@@ -16,15 +19,17 @@ from app.prompts.location_generator import (
 from app.utils.json_service import JSONService
 from app.services.image_generation.comfyui_service import ComfyUIService
 from app.core.config import settings
+from app.models.location import Location as LocationModel
 
 class LocationGenerator:
     """
     Service for generating locations.
     """
-    def __init__(self, llm_service: Optional[LLMService] = None):
+    def __init__(self, llm_service: Optional[LLMService] = None, db_session: Optional[Session] = None):
         self.llm_service = llm_service or LLMService()
+        self.db_session = db_session
     
-    async def generate_location(self, story: Story, description: str) -> Location:
+    async def generate_location(self, story: Story, description: Optional[str] = "") -> Location:
         """
         Generate a complete location.
 
@@ -44,15 +49,52 @@ class LocationGenerator:
 
         image_url = await self._generate_image(image_prompt)
         
-        # Create the final location with image URL
-        location = Location(
-            **location_from_llm.model_dump(),
-            imageUrl=image_url
-        )
-        
-        return location
+        location_uuid = str(uuid.uuid4())
 
-    
+        location_data = {
+            "name": "", #TODO
+            "description": location_description,
+            "image_prompt": image_prompt,
+            "rules": "", #TODO
+            "colors": "", #TODO
+            "image_dir": image_url,
+            "story_id": story.id,
+            "uuid": location_uuid
+        }
+
+        # Save the location to the database if session is available
+        if self.db_session:
+            db_location = self._save_location_to_db(Location(**location_data))  
+            if db_location:
+                location_data["id"] = db_location.id
+
+        return Location(**location_data)
+
+    def _save_location_to_db(self, location: Location) -> LocationModel:    
+        """
+        Save the generated location to the database.
+
+        Args:
+            location: The generated Location object
+
+        Returns:
+            The saved LocationModel object from the database
+        """
+        try:
+            db_location = LocationModel(**location.model_dump())
+            if self.db_session is None:
+                logging.warning("No database session available. Skipping save.")
+                return None
+            self.db_session.add(db_location)
+            self.db_session.commit()
+            return db_location
+        
+        except Exception as e: 
+            logging.exception(f"Failed to save location to database: {str(e)}")
+            if self.db_session is not None and hasattr(self.db_session, 'is_active') and self.db_session.is_active:
+                self.db_session.rollback()
+            return None
+        
     async def _describe_location(self, story: Story, description: str) -> str:
         """
         Generate a detailed narrative description of a location based on story description.
@@ -162,20 +204,17 @@ class LocationGenerator:
         try:
             # Parse the JSON response into a location object
             location = JSONService.parse_and_validate_json_response(
-                response_text, Location)
+                response_text, LocationFromLLM)
 
             if not location:
                 raise ValueError("No location data found in response")
-
-            # Generate image prompt for the location
-            
 
             return location
         except Exception as e:
             raise ValueError(
                 f"Failed to parse location data: {str(e)}, raw response: {response_text}") from e
 
-    def _create_location_prompt(self, story: Story, description: str) -> str:
+    def _create_location_prompt(self, story: Story, description: Optional[str] = "") -> str:
         """
         Create a formatted prompt for location generation.
 

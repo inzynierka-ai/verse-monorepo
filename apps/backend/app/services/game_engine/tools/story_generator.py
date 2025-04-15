@@ -75,14 +75,14 @@ class StoryGenerator:
                 uuid=story.uuid
             )
             
-            if self.db_session is not None:
-                self.db_session.add(db_story)
-                self.db_session.commit()
-                logging.info(f"Story {story.title} saved to database with ID {db_story.id}")
-                return db_story
-            else:
+            if self.db_session is None:
                 logging.warning("No database session available, story not saved")
                 return None
+            self.db_session.add(db_story)
+            self.db_session.commit()
+            logging.info(f"Story {story.title} saved to database with ID {db_story.id}")
+            return db_story
+            
         except Exception as e:
             logging.exception(f"Failed to save story to database: {str(e)}")
             if self.db_session is not None and hasattr(self.db_session, 'is_active') and self.db_session.is_active:

@@ -97,6 +97,8 @@ class LocationFromLLM(BaseModel):
 
 class Location(LocationFromLLM):
     """Final location output structure"""
+    id: Optional[int] = Field(None,
+                               description="Location ID in the database")
     imageUrl: str = Field(...,
                          description="URL of the generated image for this location")
 
