@@ -195,7 +195,7 @@ class LLMService:
             # Log to langfuse
             usage_data = response.usage if hasattr(response, "usage") else None
             langfuse_context.update_current_observation(
-                output=extracted_data.get("text", ""),
+                output=response.to_dict()["output"],
                 metadata={
                     "function_calls": extracted_data.get("function_calls", []),
                     "has_function_calls": bool(extracted_data.get("function_calls"))

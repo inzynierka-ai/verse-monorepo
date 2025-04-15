@@ -9,6 +9,8 @@ from app.schemas.location import Location
 from app.services.game_engine.tools.location_generator import LocationGenerator
 from app.services.game_engine.tools.character_generator import CharacterGenerator
 from app.schemas.story_generation import Story
+from langfuse.decorators import observe  # type: ignore
+from langfuse import Langfuse  # type: ignore
 
 class SceneGeneratorAgent:
     """Agent that generates scenes for the narrative adventure game"""
@@ -28,6 +30,7 @@ class SceneGeneratorAgent:
         self.location_generator = LocationGenerator(llm_service)
         self.character_generator = CharacterGenerator(llm_service)
         self.tools = self._register_tools()
+        self.langfuse = Langfuse()
         
         # Initialize with empty state
         self.state = SceneGeneratorState(
@@ -114,6 +117,7 @@ class SceneGeneratorAgent:
         
         return [location_generator, character_generator, finalize_scene]
         
+    @observe(name="generate_scene")
     async def generate_scene(
         self, 
         characters: List[Character], 
@@ -147,6 +151,7 @@ class SceneGeneratorAgent:
         # Run agent loop
         return await self._run_agent_loop()
         
+    @observe(name="agent_loop")
     async def _run_agent_loop(self) -> Dict[str, Any]:
         """Run the agent loop until the scene is complete"""
         
@@ -181,16 +186,22 @@ class SceneGeneratorAgent:
         step_count = 0
         max_steps = 10
         while not scene_complete and step_count < max_steps:
+            step_count += 1
+            
             # Generate response from LLM with tools
+            logging.info(f"Agent step {step_count}: Generating LLM response")
+            
+            # This will be traced by LLMService's @observe decorator
             response = await self.llm.generate_response(
                 input_text=user_prompt,
                 instructions=system_prompt,
                 model=ModelName.GPT_41,
                 tools=self.tools,
-                temperature=0.7
+                temperature=0.7,
+                metadata={"step": str(step_count), "max_steps": str(max_steps)}
             )
             
-            logging.info(f"Agent step {step_count+1}: Received response from LLM")
+            logging.info(f"Agent step {step_count}: Received response from LLM")
             
             # Extract function calls
             function_calls = await LLMService.extract_function_calls(response)
@@ -205,19 +216,19 @@ class SceneGeneratorAgent:
                     # Handle each tool call
                     if call["name"] == "generate_location":
                         await self._handle_location_generation(call["arguments"])
-                        logging.info(f"Agent step {step_count+1}: Generated/selected location: {self.state.selected_location.name if self.state.selected_location else 'None'}")
+                        location_name = self.state.selected_location.name if self.state.selected_location else "None"
+                        logging.info(f"Agent step {step_count}: Generated/selected location: {location_name}")
                     elif call["name"] == "generate_character":
                         await self._handle_character_generation(call["arguments"])
-                        logging.info(f"Agent step {step_count+1}: Character count: {len(self.state.selected_characters)}")
+                        logging.info(f"Agent step {step_count}: Character count: {len(self.state.selected_characters)}")
                     elif call["name"] == "finalize_scene":
                         self.state.scene_description = call["arguments"]["description"]
                         scene_complete = True
-                        logging.info(f"Agent step {step_count+1}: Scene finalized")
+                        logging.info(f"Agent step {step_count}: Scene finalized")
                         break
             
             # Update user prompt with new state
             user_prompt = self._create_user_prompt()
-            step_count += 1
         
         if step_count >= max_steps and not scene_complete:
             logging.warning(f"Scene generation hit maximum steps ({max_steps}) without completion")
@@ -228,9 +239,11 @@ class SceneGeneratorAgent:
         return {
             "location": self.state.selected_location.model_dump() if self.state.selected_location else None,
             "characters": [c.model_dump() for c in self.state.selected_characters],
-            "description": self.state.scene_description
+            "description": self.state.scene_description,
+            "steps_taken": step_count
         }
     
+    @observe(name="handle_location_generation")
     async def _handle_location_generation(self, args: Dict[str, Any]) -> None:
         """Handle location generation or selection tool call"""
         
@@ -275,6 +288,7 @@ class SceneGeneratorAgent:
                 uuid="fallback-location-id"
             )
     
+    @observe(name="handle_character_generation")
     async def _handle_character_generation(self, args: Dict[str, Any]) -> None:
         """Handle character generation or selection tool call"""
         
