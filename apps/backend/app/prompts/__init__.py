@@ -24,12 +24,7 @@ from app.prompts.story_coordinator import (
     STORY_COORDINATOR_SYSTEM_PROMPT,
     STORY_COORDINATOR_USER_PROMPT_TEMPLATE,
 )
-from app.prompts.scene_generator import (
-    SCENE_GENERATOR_SYSTEM_PROMPT,
-    SCENE_GENERATOR_USER_PROMPT_TEMPLATE,
-    SCENE_DESCRIPTION_SYSTEM_PROMPT,
-    SCENE_DESCRIPTION_USER_PROMPT_TEMPLATE,
-)
+
 
 # Story Wizard prompts
 STORY_WIZARD_SYSTEM_PROMPT = """You are an expert story-building AI that creates engaging and rich narrative stories for interactive fiction and RPGs. Given a theme, you'll generate a detailed description of a game story including setting, atmosphere, characters, locations, and initial conflicts.
@@ -96,9 +91,5 @@ __all__ = [
     'STORY_WIZARD_SYSTEM_PROMPT',
     'STORY_WIZARD_USER_PROMPT_TEMPLATE',
     'STORY_STRUCTURE_SYSTEM_PROMPT',
-    'STORY_STRUCTURE_USER_PROMPT_TEMPLATE',
-    'SCENE_GENERATOR_SYSTEM_PROMPT',
-    'SCENE_GENERATOR_USER_PROMPT_TEMPLATE',
-    'SCENE_DESCRIPTION_SYSTEM_PROMPT',
-    'SCENE_DESCRIPTION_USER_PROMPT_TEMPLATE',
+    'STORY_STRUCTURE_USER_PROMPT_TEMPLATE'
 ]
