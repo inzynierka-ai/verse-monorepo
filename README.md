@@ -1,6 +1,6 @@
-# Verse - Monorepo Project
+# Verse - Interactive Storytelling Platform
 
-This is a monorepo containing both the frontend and backend services for the Verse application.
+Verse is an AI-powered interactive storytelling platform that creates immersive narrative experiences with dynamic characters and branching storylines. The platform combines natural language processing with image generation to deliver personalized adventures that respond to player choices.
 
 ## Project Structure
 
