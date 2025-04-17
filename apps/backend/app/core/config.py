@@ -35,6 +35,8 @@ class Settings:
     # LLM settings
     OPENAI_API_KEY: Optional[str] = os.getenv("OPENAI_API_KEY")
     OPENAI_API_BASE: Optional[str] = os.getenv("OPENAI_API_BASE")
+    OPEN_ROUTER_API_KEY: Optional[str] = os.getenv("OPEN_ROUTER_API_KEY")
+    OPEN_ROUTER_API_BASE: Optional[str] = os.getenv("OPEN_ROUTER_API_BASE")
     ANTHROPIC_API_KEY: Optional[str] = os.getenv("ANTHROPIC_API_KEY")
     
     # Langfuse settings
