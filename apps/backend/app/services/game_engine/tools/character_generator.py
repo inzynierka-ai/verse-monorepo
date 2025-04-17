@@ -23,7 +23,7 @@ from app.services.image_generation.comfyui_service import ComfyUIService
 from app.core.config import settings
 from sqlalchemy.orm import Session
 from app.models.character import Character as CharacterModel
-
+from langfuse.decorators import observe  # type: ignore
 
 class CharacterGenerator:
     """
@@ -106,6 +106,7 @@ class CharacterGenerator:
         return await self.generate_character(
             character_draft, story, is_player)
 
+    @observe(name="generate_character")
     async def generate_character(self, character_draft: CharacterDraft, story: Story, is_player: bool) -> Character:
         """
         Orchestrates the entire character generation process.
@@ -114,42 +115,54 @@ class CharacterGenerator:
             character_draft: Character draft to be used for character generation
             story: Story object containing description and other details
             is_player: Whether this character is the player character
-            description: Optional description to guide character generation
 
         Returns:
             Fully generated Character object with description and image prompt
         """
-        # 1. Generate detailed character description
-        character_description = await self._describe_character(character_draft, story)
-        # 2. Create character JSON from description
-        character_from_llm = await self._create_character_json(character_description)
-        # 3. Generate image prompt for the character
-        image_prompt = await self._generate_image_prompt(character_from_llm, story.description)
-        # 4. Generate image for the character
+        # 1. Generate UUID first - we need it for the entire process
+        character_uuid = str(uuid.uuid4())
+        
+        # 2. Generate detailed character description
+        character_description = await self._describe_character(character_draft, story, character_uuid)
+        
+        # 3. Create character JSON from description
+        character_from_llm = await self._create_character_json(character_description, character_uuid)
+        
+        # 4. Generate image prompt for the character
+        image_prompt = await self._generate_image_prompt(character_from_llm, story.description, character_uuid)
+        
+        # 5. Generate image for the character
         image_url = await self._generate_image(image_prompt)
 
-        # Create Character object from CharacterFromLLM
+        # 6. Create complete Character object with UUID
         character = Character(
             **character_from_llm.model_dump(),
             imageUrl=image_url,
-            role="player" if is_player else "npc"
+            role="player" if is_player else "npc",
+            uuid=character_uuid
         )
-        # Save to database but return the Pydantic model
-        self._save_character_to_db(character, story.id, image_prompt, is_player)
         
-        # Return the Pydantic Character object
+        # 7. Save to database as a side effect
+        if story.id is not None:
+            await self._save_character_to_db(character, story.id, image_prompt)
+        else:
+            logging.warning("Story ID is None, skipping database save")
+        
+        # 8. Return the Pydantic Character object
         return character
          
         
-    def _save_character_to_db(self, character: Character, story_id: int, image_prompt: str, is_player: bool) -> CharacterModel | None:
+    async def _save_character_to_db(self, character: Character, story_id: int, image_prompt: str) -> CharacterModel:
         """
         Save the generated character to the database.
         
         Args:
-            character: The generated character object
+            character: The generated character object with UUID already set
             story_id: ID of the story to associate with
             image_prompt: The image prompt used to generate the character image
-            is_player: Whether this is a player character
+            
+        Returns:
+            The saved database model
         """
         try:
             # Safely get character attributes
@@ -171,18 +184,18 @@ class CharacterGenerator:
             # Create a database model from the character schema
             db_character = CharacterModel(
                 name=character.name,
-                role="player" if is_player else "npc",
+                role=character.role,
                 description=character.description,
                 personality_traits=personality_traits,
                 backstory=character.backstory,
                 goals=", ".join(character.goals) if hasattr(character, 'goals') and character.goals else "",
                 speaking_style="", # Not in schema, add if needed
                 relationships=relationships_str,
-                image_dir=character.imageUrl,  # Default directory
+                image_dir=character.imageUrl,
                 image_prompt=image_prompt,
                 relationship_level=0,  # Default starting level
                 story_id=story_id,
-                uuid=str(uuid.uuid4())  # Generate a new UUID
+                uuid=character.uuid  # Use the UUID from character object
             )
             
             # Add to database session if available
@@ -191,16 +204,22 @@ class CharacterGenerator:
                 self.db_session.commit()
                 logging.info(f"Character {character.name} saved to database with ID {db_character.id}")
                 return db_character
+            else:
+                logging.warning("No database session available, character not saved to database")
+                return db_character
         except Exception as e:
             logging.exception(f"Failed to save character to database: {str(e)}")
             # Don't raise the exception, just log it, to avoid breaking the game flow
             if self.db_session is not None and hasattr(self.db_session, 'is_active') and self.db_session.is_active:
                 self.db_session.rollback()
+            raise
 
+    @observe(name="describe_character")
     async def _describe_character(
         self,
         character: CharacterDraft,
-        story: Story
+        story: Story,
+        character_uuid: str
     ) -> str:
         """
         Generate a detailed narrative description of a character based on character draft and story description.
@@ -223,11 +242,15 @@ class CharacterGenerator:
             messages=messages,
             model=ModelName.GPT4O_MINI,
             temperature=0.7,
-            stream=False
+            stream=False,
+            metadata={
+                "character_uuid": character_uuid
+            }
         )
 
         return await self.llm_service.extract_content(response)
 
+    @observe(name="generate_image")
     async def _generate_image(self, image_prompt: str) -> str:
         """
         Generate an image for a character.
@@ -247,10 +270,12 @@ class CharacterGenerator:
         logging.info(f"Generated image: {result_dict}")
         return f"{settings.BACKEND_URL}{result_dict['imagePath']}"
 
+    @observe(name="generate_image_prompt")
     async def _generate_image_prompt(
         self,
         character: CharacterFromLLM,
-        story_description: str
+        story_description: str,
+        character_uuid: str
     ) -> str:
         """
         Generate a detailed image prompt for a character.
@@ -277,14 +302,19 @@ class CharacterGenerator:
             messages=messages,
             model=ModelName.GPT4O_MINI,
             temperature=0.7,
-            stream=False
+            stream=False,
+            metadata={
+                "character_uuid": character_uuid
+            }
         )
 
         return await self.llm_service.extract_content(response)
 
+    @observe(name="create_character_json")
     async def _create_character_json(
         self,
-        character_description: str
+        character_description: str,
+        character_uuid: str
     ) -> CharacterFromLLM:
         """
         Generate a detailed character profile based on character description.
@@ -308,7 +338,10 @@ class CharacterGenerator:
             messages=messages,
             model=ModelName.GPT4O_MINI,
             temperature=0.7,
-            stream=False
+            stream=False,
+            metadata={
+                "character_uuid": character_uuid
+            }
         )
 
         response_text = await self.llm_service.extract_content(response)

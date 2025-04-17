@@ -16,10 +16,7 @@ class ComfyUIService:
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.client_id = str(uuid.uuid4())
         # Define ComfyUI connection once
-        self.hostname = "host.docker.internal"
-        self.port = 8188
-        self.comfy_url = f"http://{self.hostname}:{self.port}"
-        self.ws_url = f"ws://{self.hostname}:{self.port}/ws?clientId={self.client_id}"
+        self.comfy_url = settings.COMFYUI_API_URL
 
     def _queue_prompt(self, prompt: Dict[str, Any], client_id: Optional[str] = None, timeout: int = 30) -> Dict[str, Any]:
         """Send a workflow prompt to ComfyUI's queue"""

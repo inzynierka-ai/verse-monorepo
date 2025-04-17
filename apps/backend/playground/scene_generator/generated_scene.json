@@ -1,0 +1,49 @@
+{
+  "location": {
+    "name": "Generated: The Main Engineering",
+    "description": "The Main Engineering Bay of the Martian space station\u2014filled with advanced technology, humming machinery, and massive viewports showing the red planet below.",
+    "story_id": 1,
+    "image_prompt": null,
+    "rules": null,
+    "colors": null,
+    "image_dir": null,
+    "uuid": "fallback-location-id",
+    "id": 999
+  },
+  "characters": [
+    {
+      "name": "Dr. Mira Patel",
+      "role": "NPC",
+      "description": "Short, with sharp features and dark hair pulled back into a bun. Wears a crisp blue engineering uniform.",
+      "story_id": 1,
+      "personality_traits": null,
+      "backstory": "A talented robotics specialist and Alex's trusted colleague. Known for her quick thinking under pressure.",
+      "goals": null,
+      "speaking_style": null,
+      "relationships": null,
+      "image_dir": null,
+      "image_prompt": null,
+      "relationship_level": null,
+      "uuid": "fallback-character-id",
+      "id": 999
+    },
+    {
+      "name": "Lt. Rhea Kim",
+      "role": "NPC",
+      "description": "Athletic build, short-cropped black hair, and piercing hazel eyes. Wears a matte-black security uniform with a sidearm at her hip.",
+      "story_id": 1,
+      "personality_traits": null,
+      "backstory": "Head of Security on the station. Known for her strict professionalism and sharp instincts, Rhea is respected and sometimes feared by the crew. Rumors suggest she was involved in a high-profile incident on Earth before her transfer.",
+      "goals": null,
+      "speaking_style": null,
+      "relationships": null,
+      "image_dir": null,
+      "image_prompt": null,
+      "relationship_level": null,
+      "uuid": "fallback-character-id",
+      "id": 999
+    }
+  ],
+  "description": "The Main Engineering Bay buzzes with activity, the air thick with the scent of ozone and the low hum of fusion reactors. Alex Morgan stands by a sprawling holo-console, reviewing the station\u2019s core systems, while Dr. Mira Patel hurriedly cross-references diagnostics on a secondary display. Suddenly, alarms blare\u2014a crimson warning flashes across every screen: \"Critical Power Fluctuation Detected in Sector 7.\" Lt. Rhea Kim, hand instinctively moving to her sidearm, scans the room for threats. Dr. Patel\u2019s voice strains with urgency: \"Alex, the reactor's output just spiked\u2014we\u2019re losing containment!\" Outside the massive viewports, Mars turns a deeper shade of red as emergency shutters begin to close. The team must act fast to diagnose the cause, restore stability, and prevent a catastrophic failure\u2014all while the source of the anomaly remains unknown.",
+  "steps_taken": 3
+}
