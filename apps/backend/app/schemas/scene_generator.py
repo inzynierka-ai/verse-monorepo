@@ -1,6 +1,6 @@
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field
-from app.schemas.story_generation import Story, Location, Character
+from app.schemas.story_generation import Story, Location, Character, Scene
 
 # Use CharacterDraft from the attached file
 class CharacterDraft(BaseModel):
@@ -16,7 +16,7 @@ class SceneGeneratorState(BaseModel):
     player: Character
     characters_pool: List[Character]  # All available characters
     locations_pool: List[Location]  # All available locations
-    previous_scene: Optional[Dict[str, Any]] = None
+    previous_scene: Optional[Scene] = None
     
     # Selected elements for the new scene
     selected_location: Optional[Location] = None

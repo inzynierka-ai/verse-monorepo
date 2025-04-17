@@ -112,3 +112,14 @@ class IntroductionOutput(BaseModel):
     """Complete narrative introduction output"""
     steps: List[str] = Field(...,
                              description="List of sequential introduction text steps")
+
+class Scene(BaseModel):
+    """Scene in the generated story"""
+    location: Location = Field(...,
+                              description="Location of the scene")
+    characters: List[Character] = Field(...,
+                                        description="Characters in the scene")
+    description: str = Field(...,
+                             description="Description of the scene")
+    summary: str = Field(...,
+                         description="Summary of the scene")

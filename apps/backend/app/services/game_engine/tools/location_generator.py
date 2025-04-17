@@ -21,7 +21,7 @@ from app.services.image_generation.comfyui_service import ComfyUIService
 from app.core.config import settings
 from sqlalchemy.orm import Session
 from app.models.location import Location as LocationModel
-
+from langfuse.decorators import observe  # type: ignore
 class LocationGenerator:
     """
     Service for generating locations.
@@ -29,8 +29,9 @@ class LocationGenerator:
     def __init__(self, llm_service: Optional[LLMService] = None, db_session: Optional[Session] = None):
         self.llm_service = llm_service or LLMService()
         self.db_session = db_session
-    
-    async def generate_location(self, story: Story, description: str = "") -> Location:
+
+    @observe(name="generate_location")
+    async def generate_location(self, story: Story, description: str) -> Location:
         """
         Generate a complete location.
 
@@ -73,6 +74,7 @@ class LocationGenerator:
         return location
 
     
+    @observe(name="describe_location")
     async def _describe_location(self, story: Story, description: str, location_uuid: str) -> str:
         """
         Generate a detailed narrative description of a location based on story description.
@@ -104,6 +106,7 @@ class LocationGenerator:
 
         return await self.llm_service.extract_content(response)
 
+    @observe(name="generate_image_prompt")
     async def _generate_image_prompt(
         self,
         location: LocationFromLLM,
@@ -145,6 +148,7 @@ class LocationGenerator:
 
         return await self.llm_service.extract_content(response)
 
+    @observe(name="generate_image")
     async def _generate_image(self, image_prompt: str) -> str:
         """
         Generate an image for a location.
@@ -164,6 +168,7 @@ class LocationGenerator:
         logging.info(f"Generated image: {result_dict}")
         return f"{settings.BACKEND_URL}{result_dict['imagePath']}"
     
+    @observe(name="create_location_json")
     async def _create_location_json(
         self,
         location_description: str,

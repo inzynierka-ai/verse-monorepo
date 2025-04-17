@@ -7,7 +7,7 @@ from app.services.llm import LLMService, ModelName
 from app.schemas.scene_generator import SceneGeneratorState
 from app.services.game_engine.tools.location_generator import LocationGenerator
 from app.services.game_engine.tools.character_generator import CharacterGenerator
-from app.schemas.story_generation import Story, Location, Character
+from app.schemas.story_generation import Story, Location, Character, Scene
 from langfuse.decorators import observe  # type: ignore
 from langfuse import Langfuse  # type: ignore
 
@@ -110,7 +110,7 @@ class SceneGeneratorAgent:
         self, 
         characters: List[Character], 
         locations: List[Location], 
-        previous_scene: Optional[Dict[str, Any]] = None,
+        previous_scene: Optional[Scene] = None,
         relevant_conversations: Optional[List[Dict[str, Any]]] = None
     ) -> Dict[str, Any]:
         """
@@ -331,19 +331,9 @@ class SceneGeneratorAgent:
                 return
                 
             try:
-                # Create a CharacterDraft object compatible with the character generator
-                from app.schemas.story_generation import CharacterDraft as StoryCharacterDraft
-                
-                draft = StoryCharacterDraft(
-                    name=draft_data["name"],
-                    age=draft_data["age"],
-                    appearance=draft_data["appearance"],
-                    background=draft_data["background"]
-                )
-                
                 # Generate a new character using the CharacterGenerator
                 new_character = await self.character_generator.generate_character(
-                    character_draft=draft,
+                    character_draft=draft_data,
                     story=self.story,
                     is_player=False
                 )
@@ -417,7 +407,32 @@ class SceneGeneratorAgent:
         # Format the previous scene if available
         previous_scene_str = "None"
         if self.state.previous_scene:
-            previous_scene_str = json.dumps(self.state.previous_scene)
+            scene = self.state.previous_scene
+            characters_xml = ""
+            for character in scene.characters:
+                characters_xml += f"""
+                <character>
+                    <name>{character.name}</name>
+                    <role>{character.role}</role>
+                    <description>{character.description}</description>
+                    <uuid>{character.uuid}</uuid>
+                </character>
+                """
+            
+            previous_scene_str = f"""
+            <scene>
+                <location>
+                    <name>{scene.location.name}</name>
+                    <description>{scene.location.description}</description>
+                    <uuid>{scene.location.uuid}</uuid>
+                </location>
+                <characters>
+                    {characters_xml}
+                </characters>
+                <description>{scene.description}</description>
+                <summary>{scene.summary}</summary>
+            </scene>
+            """
         
         # Format error messages
         error_messages = ""
