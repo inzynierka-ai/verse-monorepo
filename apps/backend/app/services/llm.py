@@ -7,33 +7,66 @@ from openai.types.chat.chat_completion_assistant_message_param import ChatComple
 import json
 
 
-import os
 from dotenv import load_dotenv
 from tenacity import retry, stop_after_attempt, wait_exponential
 import logging
 from enum import Enum
 from langfuse.decorators import observe, langfuse_context  # type: ignore
 
+from app.core.config import settings
+
 load_dotenv()
 
 
-class ModelName(str, Enum):
-    GPT4O = "gpt-4o"
-    GPT4O_MINI = "gpt-4o-mini"
-    GPT_41 = 'gpt-4.1-2025-04-14'
-    DEEPSEEK_V3 = 'deepseek/deepseek-chat'
-    GEMINI_2_PRO = 'google/gemini-2.0-pro-exp-02-05:free'
-    GEMINI_25_PRO = 'google/gemini-2.5-pro-exp-03-25:free'
-    GEMINI_2_FLASH_LITE = 'google/gemini-2.0-flash-lite-001',
+class ModelProvider(str, Enum):
+    OPENAI = "openai"
+    OPENROUTER = "openrouter"
+
+
+class ModelName(Enum):
+    GPT4O = ("gpt-4o", ModelProvider.OPENAI)
+    GPT4O_MINI = ("gpt-4o-mini", ModelProvider.OPENAI)
+    GPT41 = ('gpt-4.1-2025-04-14', ModelProvider.OPENAI)
+    GPT41_MINI = ("gpt-4.1-mini-2025-04-14", ModelProvider.OPENAI)
+    DEEPSEEK_V3 = ('deepseek/deepseek-chat', ModelProvider.OPENROUTER)
+    GEMINI_2_PRO = ('google/gemini-2.0-pro-exp-02-05:free', ModelProvider.OPENROUTER)
+    GEMINI_25_PRO = ('google/gemini-2.5-pro-exp-03-25:free', ModelProvider.OPENROUTER)
+    GEMINI_2_FLASH_LITE = ('google/gemini-2.0-flash-lite-001', ModelProvider.OPENROUTER)
+    
+    def __init__(self, model_id: str, provider: ModelProvider):
+        self.model_id = model_id
+        self.provider = provider
+        
+    @property
+    def value(self) -> str:
+        """For backwards compatibility with code expecting value to be the model ID"""
+        return self.model_id
 
 
 class LLMService:
-    def __init__(self, api_key: Optional[str] = None):
-        self.client = AsyncOpenAI(
-            api_key=api_key or os.getenv("OPENAI_API_KEY"),
-            base_url=os.getenv("OPENAI_API_BASE"),
+    def __init__(self, openai_api_key: Optional[str] = None, openrouter_api_key: Optional[str] = None):
+        # Initialize OpenAI client
+        self.openai_client = AsyncOpenAI(
+            api_key=openai_api_key or settings.OPENAI_API_KEY,
+            base_url=settings.OPENAI_API_BASE,
         )
+        
+        # Initialize OpenRouter client
+        self.openrouter_client = AsyncOpenAI(
+            api_key=openrouter_api_key or settings.OPEN_ROUTER_API_KEY,
+            base_url=settings.OPEN_ROUTER_API_BASE,
+        )
+        
         self.logger = logging.getLogger(__name__)
+    
+    def _get_client_for_model(self, model: ModelName):
+        """Get the appropriate client based on the model provider"""
+        if model.provider == ModelProvider.OPENAI:
+            return self.openai_client
+        elif model.provider == ModelProvider.OPENROUTER:
+            return self.openrouter_client
+        else:
+            raise ValueError(f"Unsupported model provider: {model.provider}")
 
     @retry(
         stop=stop_after_attempt(3),
@@ -44,7 +77,7 @@ class LLMService:
     async def generate_completion(
         self,
         messages: List[ChatCompletionMessageParam],
-        model: ModelName = ModelName.GPT4O_MINI,
+        model: ModelName = ModelName.GPT41_MINI,
         temperature: float = 0.7,
         max_tokens: Optional[int] = None,
         stream: bool = False,
@@ -56,7 +89,8 @@ class LLMService:
         # Add metadata to the current span
         langfuse_context.update_current_observation(
             metadata={
-                "model": model.value,
+                "model": model.model_id,
+                "provider": model.provider.value,
                 "temperature": temperature,
                 "max_tokens": max_tokens,
                 "stream": stream,
@@ -74,8 +108,11 @@ class LLMService:
             )
 
         try:
-            response = await self.client.chat.completions.create(
-                model=model.value,
+            # Get the appropriate client for this model
+            client = self._get_client_for_model(model)
+            
+            response = await client.chat.completions.create(
+                model=model.model_id,
                 messages=messages,
                 temperature=temperature,
                 max_tokens=max_tokens,
@@ -117,7 +154,7 @@ class LLMService:
     async def generate_response(
         self,
         input_text: str,
-        model: ModelName = ModelName.GPT_41,
+        model: ModelName = ModelName.GPT41,
         temperature: float = 0.7,
         instructions: Optional[str] = None,
         max_output_tokens: Optional[int] = None,
@@ -149,7 +186,8 @@ class LLMService:
         """
         # Add metadata to the current span
         langfuse_metadata: Dict[str, Any] = {
-            "model": model.value,
+            "model": model.model_id,
+            "provider": model.provider.value,
             "temperature": temperature,
             "stream": stream,
             "has_previous_response": previous_response_id is not None
@@ -164,9 +202,12 @@ class LLMService:
         langfuse_context.update_current_observation(metadata=langfuse_metadata)
         
         try:
+            # Get the appropriate client for this model
+            client = self._get_client_for_model(model)
+            
             # Build request parameters
             request_params: Dict[str, Any] = {
-                "model": model.value,
+                "model": model.model_id,
                 "input": input_text,
                 "temperature": temperature,
                 "stream": stream
@@ -189,7 +230,7 @@ class LLMService:
                 request_params["metadata"] = metadata
                 
             # Call the Responses API
-            response: Any = await self.client.responses.create(**request_params)
+            response: Any = await client.responses.create(**request_params)
             
             # Log the completion outcomes
             extracted_data = self._extract_response_data(response)
@@ -306,7 +347,8 @@ class LLMService:
             # Add metadata to the current span
             langfuse_context.update_current_observation(
                 metadata={
-                    "model": model.value,
+                    "model": model.model_id,
+                    "provider": model.provider.value,
                     "temperature": temperature,
                     "max_tokens": max_tokens,
                     "stream": True,
@@ -314,8 +356,11 @@ class LLMService:
                 }
             )
 
-            stream = await self.client.chat.completions.create(
-                model=model.value,
+            # Get the appropriate client for this model
+            client = self._get_client_for_model(model)
+            
+            stream = await client.chat.completions.create(
+                model=model.model_id,
                 messages=messages,
                 temperature=temperature,
                 max_tokens=max_tokens,

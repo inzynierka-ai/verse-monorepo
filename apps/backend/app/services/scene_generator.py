@@ -190,7 +190,7 @@ class SceneGeneratorAgent:
             response = await self.llm.generate_response(
                 input_text=user_prompt,
                 instructions=system_prompt,
-                model=ModelName.GPT_41,
+                model=ModelName.GPT41,
                 tools=self.tools,
                 temperature=0.7,
                 metadata={"step": str(step_count), "max_steps": str(max_steps)}

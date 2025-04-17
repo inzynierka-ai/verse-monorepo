@@ -240,7 +240,7 @@ class CharacterGenerator:
 
         response = await self.llm_service.generate_completion(
             messages=messages,
-            model=ModelName.GPT4O_MINI,
+            model=ModelName.GPT41_MINI,
             temperature=0.7,
             stream=False,
             metadata={
@@ -300,7 +300,7 @@ class CharacterGenerator:
 
         response = await self.llm_service.generate_completion(
             messages=messages,
-            model=ModelName.GPT4O_MINI,
+            model=ModelName.GPT41_MINI,
             temperature=0.7,
             stream=False,
             metadata={
@@ -336,7 +336,7 @@ class CharacterGenerator:
 
         response = await self.llm_service.generate_completion(
             messages=messages,
-            model=ModelName.GPT4O_MINI,
+            model=ModelName.GPT41_MINI,
             temperature=0.7,
             stream=False,
             metadata={
