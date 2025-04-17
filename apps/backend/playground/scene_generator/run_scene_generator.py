@@ -43,80 +43,14 @@ async def create_sample_data() -> Dict[str, Any]:
     )
     
     # Create a list of characters
-    characters: List[Character] = [
-        Character(
-            name="Thorin Ironheart",
-            role="npc",
-            description="A gruff dwarven blacksmith with a thick beard adorned with metal trinkets. His arms are covered in magical runes.",
-            backstory="Once a simple smith, Thorin discovered he could infuse his creations with magical properties when the arcane energies returned. Now he crafts enchanted weapons for adventurers.",
-            uuid=str(uuid.uuid4()),
-            personalityTraits=["stubborn", "loyal", "perfectionist"],
-            goals=["Create the most powerful enchanted weapon in the realm"],
-            relationships=[],
-            imageUrl=""
-        ),
-        Character(
-            name="Sylvia Nightshade",
-            role="npc",
-            description="A mysterious human woman dressed in dark robes with purple accents. Her eyes are deep black and seem to hold ancient secrets.",
-            backstory="Leader of the Shadow Conclave, a group that believes magic's return is a curse rather than a blessing. Secretly affected by wild magic that's slowly transforming her.",
-            uuid=str(uuid.uuid4()),
-            personalityTraits=["secretive", "calculating", "protective"],
-            goals=["Find a way to control wild magic", "Protect common folk from magical dangers"],
-            relationships=[],
-            imageUrl=""
-        ),
-        Character(
-            name="Zephyr",
-            role="npc",
-            description="A small air elemental that appears as a swirling vortex of wind and light. Often changes shape and size depending on mood.",
-            backstory="Born when magic returned to the world, Zephyr is a young elemental still learning about its existence. Follows Elara out of curiosity and friendship.",
-            uuid=str(uuid.uuid4()),
-            personalityTraits=["playful", "fickle", "loyal"],
-            goals=["Experience everything the material world has to offer"],
-            relationships=[],
-            imageUrl=""
-        )
-    ]
+    characters: List[Character] = []
     
     # Create a list of locations
     locations: List[Location] = [
-        Location(
-            name="Crystalspire Tower",
-            description="A tall, translucent tower made of crystalline material that changes color with the time of day. Home to various mages studying the return of magic.",
-            uuid=str(uuid.uuid4()),
-            rules=["Magic is amplified within these walls", "All visitors must register with the tower guardian"],
-            imageUrl=""
-        ),
-        Location(
-            name="Ironforge Market",
-            description="A bustling dwarven marketplace filled with stalls selling enchanted items. The air is thick with smoke from forges and the smell of magical reagents.",
-            uuid=str(uuid.uuid4()),
-            rules=["All trades must be witnessed by a market official", "No casting offensive spells"],
-            imageUrl=""
-        ),
-        Location(
-            name="Whispering Woods",
-            description="A dense forest where the trees seem to communicate with each other. Magical creatures have taken residence here, and strange lights can be seen at night.",
-            uuid=str(uuid.uuid4()),
-            rules=["Don't harm the trees", "Beware of will-o'-wisps after dark"],
-            imageUrl=""
-        ),
-        Location(
-            name="Shadow Conclave Hideout",
-            description="A hidden underground complex where the Shadow Conclave operates. Warded against magical detection and filled with artifacts that suppress arcane energies.",
-            uuid=str(uuid.uuid4()),
-            rules=["Speak only in whispers", "All magic must be approved by Sylvia"],
-            imageUrl=""
-        )
+        
     ]
 
-    previous_scene = Scene(
-        location=locations[0],
-        characters=characters,
-        description="The players are in the Crystalspire Tower, discussing the return of magic.",
-        summary="The players were in the Crystalspire Tower, discussing the return of magic. Elara was able to cast a spell to create a portal to the Ironforge Market."
-    )
+    previous_scene = None
 
     return {
         "llm_service": llm_service,

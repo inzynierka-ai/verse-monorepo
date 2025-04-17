@@ -2,14 +2,6 @@ from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field
 from app.schemas.story_generation import Story, Location, Character, Scene
 
-# Use CharacterDraft from the attached file
-class CharacterDraft(BaseModel):
-    """Base character information to be used for character generation"""
-    name: str = Field(..., description="Character name")
-    age: int = Field(..., description="Character age")
-    appearance: str = Field(..., description="Character appearance")
-    background: str = Field(..., description="Character background story")
-
 class SceneGeneratorState(BaseModel):
     """State model for the Scene Generator Agent"""
     story: Story

@@ -23,7 +23,7 @@ from app.services.image_generation.comfyui_service import ComfyUIService
 from app.core.config import settings
 from sqlalchemy.orm import Session
 from app.models.character import Character as CharacterModel
-
+from langfuse.decorators import observe  # type: ignore
 
 class CharacterGenerator:
     """
@@ -106,6 +106,7 @@ class CharacterGenerator:
         return await self.generate_character(
             character_draft, story, is_player)
 
+    @observe(name="generate_character")
     async def generate_character(self, character_draft: CharacterDraft, story: Story, is_player: bool) -> Character:
         """
         Orchestrates the entire character generation process.
@@ -213,6 +214,7 @@ class CharacterGenerator:
                 self.db_session.rollback()
             raise
 
+    @observe(name="describe_character")
     async def _describe_character(
         self,
         character: CharacterDraft,
@@ -248,6 +250,7 @@ class CharacterGenerator:
 
         return await self.llm_service.extract_content(response)
 
+    @observe(name="generate_image")
     async def _generate_image(self, image_prompt: str) -> str:
         """
         Generate an image for a character.
@@ -267,6 +270,7 @@ class CharacterGenerator:
         logging.info(f"Generated image: {result_dict}")
         return f"{settings.BACKEND_URL}{result_dict['imagePath']}"
 
+    @observe(name="generate_image_prompt")
     async def _generate_image_prompt(
         self,
         character: CharacterFromLLM,
@@ -306,6 +310,7 @@ class CharacterGenerator:
 
         return await self.llm_service.extract_content(response)
 
+    @observe(name="create_character_json")
     async def _create_character_json(
         self,
         character_description: str,
