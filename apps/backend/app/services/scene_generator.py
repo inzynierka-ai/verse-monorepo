@@ -1,6 +1,7 @@
 import json
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Coroutine
 import logging
+import asyncio
 
 from app.services.llm import LLMService, ModelName
 from app.schemas.scene_generator import SceneGeneratorState
@@ -172,7 +173,6 @@ class SceneGeneratorAgent:
         """
         
         # Create initial user prompt with state
-        print(self.state)
         user_prompt = self._create_user_prompt()
         
         # Loop until scene is complete
@@ -180,10 +180,12 @@ class SceneGeneratorAgent:
         step_count = 0
         max_steps = 10
         while not scene_complete and step_count < max_steps:
+            
             step_count += 1
             
             # Generate response from LLM with tools
             logging.info(f"Agent step {step_count}: Generating LLM response")
+            logging.info(f"Current state: {self.state}")
             
             # This will be traced by LLMService's @observe decorator
             response = await self.llm.generate_response(
@@ -202,29 +204,41 @@ class SceneGeneratorAgent:
             
             # Process function calls
             if function_calls:
-                for call in function_calls:
-
-                        
-                    # Handle each tool call
-                    if call["name"] == "generate_location":
-                        await self._handle_location_generation(call["arguments"])
+                # Group function calls by type
+                location_calls = [call for call in function_calls if call["name"] == "generate_location"]
+                character_calls = [call for call in function_calls if call["name"] == "generate_character"]
+                finalize_calls = [call for call in function_calls if call["name"] == "finalize_scene"]
+                
+                # Process location and character calls in parallel
+                tasks: List[Coroutine[Any, Any, None]] = []
+                for call in location_calls:
+                    tasks.append(self._handle_location_generation(call["arguments"]))
+                for call in character_calls:
+                    tasks.append(self._handle_character_generation(call["arguments"]))
+                
+                if tasks:
+                    await asyncio.gather(*tasks)
+                    
+                    # Log results after parallel processing
+                    if location_calls:
                         location_name = self.state.selected_location.name if self.state.selected_location else "None"
                         logging.info(f"Agent step {step_count}: Generated/selected location: {location_name}")
-                    elif call["name"] == "generate_character":
-                        await self._handle_character_generation(call["arguments"])
+                    if character_calls:
                         logging.info(f"Agent step {step_count}: Character count: {len(self.state.selected_characters)}")
-                    elif call["name"] == "finalize_scene":
-                        # Clear any previous error
-                        self.state.finalize_scene_error = None
-                        try:
-                            self.state.scene_description = call["arguments"]["description"]
-                            scene_complete = True
-                            logging.info(f"Agent step {step_count}: Scene finalized")
-                            break
-                        except Exception as e:
-                            error_msg = f"Error finalizing scene: {e}"
-                            logging.error(error_msg)
-                            self.state.finalize_scene_error = error_msg
+                
+                # Process finalize calls sequentially
+                for call in finalize_calls:
+                    # Clear any previous error
+                    self.state.finalize_scene_error = None
+                    try:
+                        self.state.scene_description = call["arguments"]["description"]
+                        scene_complete = True
+                        logging.info(f"Agent step {step_count}: Scene finalized")
+                        break
+                    except Exception as e:
+                        error_msg = f"Error finalizing scene: {e}"
+                        logging.error(error_msg)
+                        self.state.finalize_scene_error = error_msg
             
             # Update user prompt with new state
             user_prompt = self._create_user_prompt()
@@ -334,7 +348,7 @@ class SceneGeneratorAgent:
                     is_player=False
                 )
                 
-                print("new_character", new_character)
+                logging.info(f"new_character: {new_character}")
                 # Add to selected characters if we have fewer than 3
                 if len(self.state.selected_characters) < 3:
                     current_characters = list(self.state.selected_characters)
