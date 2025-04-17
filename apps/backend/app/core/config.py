@@ -24,7 +24,7 @@ class Settings:
     ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "0"))
     
     # Media settings
-    MEDIA_ROOT = "/media"
+    MEDIA_ROOT = os.path.join(os.getcwd(), "media")
     
     # Database settings
     DATABASE_URL: Optional[str] = os.getenv("DATABASE_URL")

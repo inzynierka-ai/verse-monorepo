@@ -81,6 +81,8 @@ class Character(CharacterFromLLM):
                          description="URL of the generated image for this character")
     role: Literal["player", "npc"] = Field(
         ..., description="Character's role in the story (player or npc)")
+    uuid: str = Field(
+        ..., description="Unique identifier for the character")
 
 
 # Location models
@@ -101,6 +103,8 @@ class Location(LocationFromLLM):
                                description="Location ID in the database")
     imageUrl: str = Field(...,
                          description="URL of the generated image for this location")
+    uuid: str = Field(
+        ..., description="Unique identifier for the location")
 
 
 # Narrator models

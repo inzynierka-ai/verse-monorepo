@@ -18,7 +18,8 @@ async def main():
         description="A cyberpunk story set in 2077, where corporations control society and cybernetic enhancements are common.",
         rules=["Characters should have cybernetic enhancements.", 
                "The story is divided between corporate elites and struggling lower classes.",
-               "Technology is advanced but unevenly distributed."]
+               "Technology is advanced but unevenly distributed."],
+        title="Cyberpunk City"
     )
     
     character_draft = CharacterDraft(

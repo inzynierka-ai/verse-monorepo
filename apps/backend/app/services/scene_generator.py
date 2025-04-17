@@ -4,13 +4,12 @@ import logging
 
 from app.services.llm import LLMService, ModelName
 from app.schemas.scene_generator import SceneGeneratorState
-from app.schemas.character import Character
-from app.schemas.location import Location
 from app.services.game_engine.tools.location_generator import LocationGenerator
 from app.services.game_engine.tools.character_generator import CharacterGenerator
-from app.schemas.story_generation import Story
+from app.schemas.story_generation import Story, Location, Character
 from langfuse.decorators import observe  # type: ignore
 from langfuse import Langfuse  # type: ignore
+
 
 class SceneGeneratorAgent:
     """Agent that generates scenes for the narrative adventure game"""
@@ -52,18 +51,14 @@ class SceneGeneratorAgent:
                 "properties": {
                     "brief_description": {
                         "type": "string", 
-                        "description": "Brief description to guide location generation"
+                        "description": "Brief description to guide location generation when introducing a new location"
                     },
                     "existing_location_id": {
                         "type": "string", 
                         "description": "UUID of existing location to use (optional)"
-                    },
-                    "reasoning": {
-                        "type": "string",
-                        "description": "Explain why this location was chosen for the scene"
                     }
                 },
-                "required": ["brief_description", "reasoning"]
+                "required": []
             }
         })
         
@@ -86,13 +81,9 @@ class SceneGeneratorAgent:
                     "existing_character_id": {
                         "type": "string",
                         "description": "UUID of existing character to use (optional)"
-                    },
-                    "reasoning": {
-                        "type": "string",
-                        "description": "Explain why this character was chosen for the scene"
                     }
                 },
-                "required": ["reasoning"]
+                "required": []
             }
         })
         
@@ -106,12 +97,8 @@ class SceneGeneratorAgent:
                         "type": "string", 
                         "description": "Compelling scene description to display to the user"
                     },
-                    "reasoning": {
-                        "type": "string",
-                        "description": "Explain your thought process for this scene"
-                    }
                 },
-                "required": ["description", "reasoning"]
+                "required": ["description"]
             }
         })
         
@@ -168,6 +155,12 @@ class SceneGeneratorAgent:
         Only call finalize_scene after you have selected both location and at least one character.
         If you are not sure about what to do next, think step by step and use the appropriate tool.
         </tool_usage>
+
+        <character_generation_rules>
+        NEVER generate or modify the player character. The player character is already defined in the context and must remain unchanged.
+        Only generate or select NPCs (non-player characters) that are DIFFERENT from the player.
+        The player character information is provided for context only.
+        </character_generation_rules>
         
         <planning>
         Plan before each action. Think about what elements would create an interesting scene. Consider:
@@ -179,6 +172,7 @@ class SceneGeneratorAgent:
         """
         
         # Create initial user prompt with state
+        print(self.state)
         user_prompt = self._create_user_prompt()
         
         # Loop until scene is complete
@@ -209,9 +203,7 @@ class SceneGeneratorAgent:
             # Process function calls
             if function_calls:
                 for call in function_calls:
-                    # Update reasoning with the agent's thinking
-                    if "reasoning" in call["arguments"]:
-                        self.state.reasoning = call["arguments"]["reasoning"]
+
                         
                     # Handle each tool call
                     if call["name"] == "generate_location":
@@ -222,10 +214,17 @@ class SceneGeneratorAgent:
                         await self._handle_character_generation(call["arguments"])
                         logging.info(f"Agent step {step_count}: Character count: {len(self.state.selected_characters)}")
                     elif call["name"] == "finalize_scene":
-                        self.state.scene_description = call["arguments"]["description"]
-                        scene_complete = True
-                        logging.info(f"Agent step {step_count}: Scene finalized")
-                        break
+                        # Clear any previous error
+                        self.state.finalize_scene_error = None
+                        try:
+                            self.state.scene_description = call["arguments"]["description"]
+                            scene_complete = True
+                            logging.info(f"Agent step {step_count}: Scene finalized")
+                            break
+                        except Exception as e:
+                            error_msg = f"Error finalizing scene: {e}"
+                            logging.error(error_msg)
+                            self.state.finalize_scene_error = error_msg
             
             # Update user prompt with new state
             user_prompt = self._create_user_prompt()
@@ -247,6 +246,9 @@ class SceneGeneratorAgent:
     async def _handle_location_generation(self, args: Dict[str, Any]) -> None:
         """Handle location generation or selection tool call"""
         
+        # Clear previous error
+        self.state.location_generation_error = None
+        
         # Check if we're selecting an existing location
         if "existing_location_id" in args and args["existing_location_id"]:
             # Find location by UUID
@@ -260,43 +262,40 @@ class SceneGeneratorAgent:
         
         try:
             # Generate a new location using the LocationGenerator
-            story_location = await self.location_generator.generate_location(
+            new_location = await self.location_generator.generate_location(
                 story=self.story,
                 description=brief_description
             )
-            
-            # Convert the StoryLocation to a Location
-            new_location = Location(
-                id=getattr(story_location, 'id', 999),
-                name=story_location.name,
-                description=story_location.description,
-                story_id=self.story.id if self.story.id is not None else 0,
-                uuid=getattr(story_location, 'uuid', "new-location-id")
-            )
+
             
             # Set as selected location
             self.state.selected_location = new_location
                 
         except Exception as e:
-            logging.error(f"Error generating location: {e}")
-            # Fallback to a simple location if needed
-            self.state.selected_location = Location(
-                id=999,
-                name=f"Generated: {brief_description[:20]}",
-                description=brief_description,
-                story_id=self.story.id if self.story.id is not None else 0,
-                uuid="fallback-location-id"
-            )
+            error_msg = f"Error generating location: {e}"
+            logging.error(error_msg)
+            self.state.location_generation_error = error_msg
+
     
     @observe(name="handle_character_generation")
     async def _handle_character_generation(self, args: Dict[str, Any]) -> None:
         """Handle character generation or selection tool call"""
+        
+        # Clear previous error
+        self.state.character_generation_error = None
         
         # Check if we're selecting an existing character
         if "existing_character_id" in args and args["existing_character_id"]:
             # Find character by UUID
             for character in self.state.characters_pool:
                 if character.uuid == args["existing_character_id"]:
+                    # Prevent selecting character with same name as player
+                    if character.name == self.player.name or character.role == "player":
+                        error_msg = f"Cannot select character with same name or role as player"
+                        logging.error(error_msg)
+                        self.state.character_generation_error = error_msg
+                        return
+                        
                     # Add to selected characters if not already present
                     if character not in self.state.selected_characters:
                         # Ensure we don't add more than 3 characters
@@ -310,6 +309,13 @@ class SceneGeneratorAgent:
         if "character_draft" in args and args["character_draft"]:
             draft_data = args["character_draft"]
             
+            # Prevent generating character with same name as player
+            if draft_data["name"] == self.player.name or draft_data.get("role") == "player":
+                error_msg = f"Cannot generate character with same name or role as player"
+                logging.error(error_msg)
+                self.state.character_generation_error = error_msg
+                return
+                
             try:
                 # Create a CharacterDraft object compatible with the character generator
                 from app.schemas.story_generation import CharacterDraft as StoryCharacterDraft
@@ -322,23 +328,13 @@ class SceneGeneratorAgent:
                 )
                 
                 # Generate a new character using the CharacterGenerator
-                story_character = await self.character_generator.generate_character(
+                new_character = await self.character_generator.generate_character(
                     character_draft=draft,
                     story=self.story,
                     is_player=False
                 )
                 
-                # Convert the StoryCharacter to a Character
-                new_character = Character(
-                    id=getattr(story_character, 'id', 999),
-                    name=story_character.name,
-                    role=story_character.role,
-                    description=story_character.description,
-                    story_id=self.story.id if self.story.id is not None else 0,
-                    backstory=getattr(story_character, 'backstory', None),
-                    uuid=getattr(story_character, 'uuid', "new-character-id")
-                )
-                
+                print("new_character", new_character)
                 # Add to selected characters if we have fewer than 3
                 if len(self.state.selected_characters) < 3:
                     current_characters = list(self.state.selected_characters)
@@ -346,21 +342,10 @@ class SceneGeneratorAgent:
                     self.state.selected_characters = current_characters
                         
             except Exception as e:
-                logging.error(f"Error generating character: {e}")
-                # Fallback to a simple character if needed
-                fallback_character = Character(
-                    id=999,
-                    name=draft_data["name"],
-                    role="NPC",
-                    description=draft_data["appearance"],
-                    story_id=self.story.id if self.story.id is not None else 0,
-                    backstory=draft_data["background"],
-                    uuid="fallback-character-id"
-                )
-                if len(self.state.selected_characters) < 3:
-                    current_characters = list(self.state.selected_characters)
-                    current_characters.append(fallback_character)
-                    self.state.selected_characters = current_characters
+                error_msg = f"Error generating character: {e}"
+                logging.error(error_msg)
+                self.state.character_generation_error = error_msg
+                
     
     def _create_user_prompt(self) -> str:
         """Create a user prompt with the current state using XML-style delimiters"""
@@ -420,6 +405,15 @@ class SceneGeneratorAgent:
         if self.state.previous_scene:
             previous_scene_str = json.dumps(self.state.previous_scene)
         
+        # Format error messages
+        error_messages = ""
+        if self.state.location_generation_error:
+            error_messages += f"<location_error>{self.state.location_generation_error}</location_error>\n"
+        if self.state.character_generation_error:
+            error_messages += f"<character_error>{self.state.character_generation_error}</character_error>\n"
+        if self.state.finalize_scene_error:
+            error_messages += f"<finalize_error>{self.state.finalize_scene_error}</finalize_error>\n"
+        
         # Build the complete prompt with XML delimiters
         return f"""
         <context>
@@ -447,6 +441,10 @@ class SceneGeneratorAgent:
                 </selected_characters>
                 
                 <scene_description>{self.state.scene_description or "None"}</scene_description>
+                
+                <errors>
+                {error_messages}
+                </errors>
             </current_state>
             
             <available_characters>

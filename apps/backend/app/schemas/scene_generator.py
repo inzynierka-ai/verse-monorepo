@@ -1,8 +1,6 @@
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field
-from app.schemas.character import Character
-from app.schemas.location import Location
-from app.schemas.story_generation import Story
+from app.schemas.story_generation import Story, Location, Character
 
 # Use CharacterDraft from the attached file
 class CharacterDraft(BaseModel):
@@ -30,5 +28,7 @@ class SceneGeneratorState(BaseModel):
     # Memory context
     relevant_conversations: List[Dict[str, Any]] = Field(default_factory=list)
     
-    # Agent reasoning (for thinking out loud)
-    reasoning: Optional[str] = None 
+    # Tool error messages
+    location_generation_error: Optional[str] = None
+    character_generation_error: Optional[str] = None
+    finalize_scene_error: Optional[str] = None 

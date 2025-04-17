@@ -19,6 +19,7 @@ from app.prompts.location_generator import (
 from app.utils.json_service import JSONService
 from app.services.image_generation.comfyui_service import ComfyUIService
 from app.core.config import settings
+from sqlalchemy.orm import Session
 from app.models.location import Location as LocationModel
 
 class LocationGenerator:
@@ -29,7 +30,7 @@ class LocationGenerator:
         self.llm_service = llm_service or LLMService()
         self.db_session = db_session
     
-    async def generate_location(self, story: Story, description: Optional[str] = "") -> Location:
+    async def generate_location(self, story: Story, description: str = "") -> Location:
         """
         Generate a complete location.
 
@@ -40,68 +41,46 @@ class LocationGenerator:
         Returns:
             Location object containing location details and image URL
         """
-        # 1. Generate detailed location description
-        location_description = await self._describe_location(story, description)
-        # 2. Create location JSON from description
-        location_from_llm = await self._create_location_json(location_description)
+        # 1. Generate UUID first - we need it for the entire process
+        location_uuid = str(uuid.uuid4())
+        
+        # 2. Generate detailed location description
+        location_description = await self._describe_location(story, description, location_uuid)
+        
+        # 3. Create location JSON from description
+        location_from_llm = await self._create_location_json(location_description, location_uuid)
 
-        image_prompt = await self._generate_image_prompt(location_from_llm, story.description)
+        # 4. Generate image prompt for the location
+        image_prompt = await self._generate_image_prompt(location_from_llm, story.description, location_uuid)
 
+        # 5. Generate image for the location
         image_url = await self._generate_image(image_prompt)
         
-        location_uuid = str(uuid.uuid4())
-
-        location_data = {
-            "name": "", #TODO
-            "description": location_description,
-            "image_prompt": image_prompt,
-            "rules": "", #TODO
-            "colors": "", #TODO
-            "image_dir": image_url,
-            "story_id": story.id,
-            "uuid": location_uuid
-        }
-
-        # Save the location to the database if session is available
-        if self.db_session:
-            db_location = self._save_location_to_db(Location(**location_data))  
-            if db_location:
-                location_data["id"] = db_location.id
-
-        return Location(**location_data)
-
-    def _save_location_to_db(self, location: Location) -> LocationModel:    
-        """
-        Save the generated location to the database.
-
-        Args:
-            location: The generated Location object
-
-        Returns:
-            The saved LocationModel object from the database
-        """
-        try:
-            db_location = LocationModel(**location.model_dump())
-            if self.db_session is None:
-                logging.warning("No database session available. Skipping save.")
-                return None
-            self.db_session.add(db_location)
-            self.db_session.commit()
-            return db_location
+        # 6. Create the final location with image URL and UUID
+        location = Location(
+            **location_from_llm.model_dump(),
+            imageUrl=image_url,
+            uuid=location_uuid
+        )
         
-        except Exception as e: 
-            logging.exception(f"Failed to save location to database: {str(e)}")
-            if self.db_session is not None and hasattr(self.db_session, 'is_active') and self.db_session.is_active:
-                self.db_session.rollback()
-            return None
+        # 7. Save to database as a side effect
+        if story.id is not None and self.db_session is not None:
+            await self._save_location_to_db(location, story.id, image_prompt)
+        else:
+            logging.warning("Story ID is None or no database session, skipping database save")
         
-    async def _describe_location(self, story: Story, description: str) -> str:
+        # 8. Return the Pydantic Location object
+        return location
+
+    
+    async def _describe_location(self, story: Story, description: str, location_uuid: str) -> str:
         """
         Generate a detailed narrative description of a location based on story description.
 
         Args:
             story: Story object containing description and other details
             description: Optional description to guide location generation
+            location_uuid: Unique identifier for the location
 
         Returns:
             A detailed narrative description of a single location
@@ -117,7 +96,10 @@ class LocationGenerator:
             messages=messages,
             model=ModelName.GPT4O_MINI,
             temperature=0.7,
-            stream=False
+            stream=False,
+            metadata={
+                "location_uuid": location_uuid
+            }
         )
 
         return await self.llm_service.extract_content(response)
@@ -125,7 +107,8 @@ class LocationGenerator:
     async def _generate_image_prompt(
         self,
         location: LocationFromLLM,
-        story_description: str
+        story_description: str,
+        location_uuid: str
     ) -> str:
         """
         Generate a detailed image prompt for a location.
@@ -133,6 +116,7 @@ class LocationGenerator:
         Args:
             location: The detailed location to generate an image prompt for
             story_description: The story description for context
+            location_uuid: Unique identifier for the location
 
         Returns:
             A detailed image prompt for the location
@@ -153,37 +137,50 @@ class LocationGenerator:
             messages=messages,
             model=ModelName.GPT4O_MINI,
             temperature=0.7,
-            stream=False
+            stream=False,
+            metadata={
+                "location_uuid": location_uuid
+            }
         )
 
         return await self.llm_service.extract_content(response)
 
     async def _generate_image(self, image_prompt: str) -> str:
         """
-        Generate an image for a character.
+        Generate an image for a location.
         """
-
+        import asyncio
+        
         comfyui_service = ComfyUIService()
-        result = comfyui_service.generate_image(image_prompt, "location")
-        return f"{settings.BACKEND_URL}{result['imagePath']}"
+        logging.info(f"Generating image for prompt: {image_prompt}")
+        
+        # Run the synchronous generate_image method in a thread pool
+        loop = asyncio.get_event_loop()
+        result_dict = await loop.run_in_executor(
+            None, 
+            lambda: comfyui_service.generate_image(image_prompt, "location")
+        )
+        
+        logging.info(f"Generated image: {result_dict}")
+        return f"{settings.BACKEND_URL}{result_dict['imagePath']}"
     
     async def _create_location_json(
         self,
         location_description: str,
+        location_uuid: str
     ) -> LocationFromLLM:
         """
         Generate a detailed location profile based on location description.
 
         Args:
             location_description: Detailed location description
-            
+            location_uuid: Unique identifier for the location
 
         Returns:
             Location object containing detailed location profile
         """
         user_prompt = CREATE_LOCATION_JSON_USER_PROMPT_TEMPLATE.format(
-            location_description=location_description,
-            
+            location_description=location_description
         )
 
         messages = [
@@ -196,7 +193,10 @@ class LocationGenerator:
             messages=messages,
             model=ModelName.GPT4O_MINI,
             temperature=0.7,
-            stream=False
+            stream=False,
+            metadata={
+                "location_uuid": location_uuid
+            }
         )
         
         response_text = await self.llm_service.extract_content(response)
@@ -214,7 +214,47 @@ class LocationGenerator:
             raise ValueError(
                 f"Failed to parse location data: {str(e)}, raw response: {response_text}") from e
 
-    def _create_location_prompt(self, story: Story, description: Optional[str] = "") -> str:
+    async def _save_location_to_db(self, location: Location, story_id: int, image_prompt: str) -> LocationModel:
+        """
+        Save the generated location to the database.
+        
+        Args:
+            location: The generated location object with UUID already set
+            story_id: ID of the story to associate with
+            image_prompt: The image prompt used to generate the location image
+            
+        Returns:
+            The saved database model
+        """
+        try:
+            # Create a database model from the location schema
+            db_location = LocationModel(
+                name=location.name,
+                description=location.description,
+                rules=", ".join(location.rules) if hasattr(location, 'rules') and location.rules else "",
+                image_dir=location.imageUrl,
+                image_prompt=image_prompt,
+                story_id=story_id,
+                uuid=location.uuid
+            )
+            
+            # Add to database session if available
+            if self.db_session is not None:
+                self.db_session.add(db_location)
+                self.db_session.commit()
+                logging.info(f"Location {location.name} saved to database with ID {db_location.id}")
+                return db_location
+            else:
+                logging.warning("No database session available, location not saved to database")
+                return db_location
+        except Exception as e:
+            logging.exception(f"Failed to save location to database: {str(e)}")
+            # Don't raise the exception, just log it, to avoid breaking the game flow
+            if self.db_session is not None and hasattr(self.db_session, 'is_active') and self.db_session.is_active:
+                self.db_session.rollback()
+            raise
+
+    def _create_location_prompt(self, story: Story, description: str) -> str:
         """
         Create a formatted prompt for location generation.
 

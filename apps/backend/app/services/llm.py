@@ -48,6 +48,7 @@ class LLMService:
         temperature: float = 0.7,
         max_tokens: Optional[int] = None,
         stream: bool = False,
+        metadata: Optional[Dict[str, str]] = None,
     ) -> AsyncGenerator[str, None] | str:
         """
         Generate a completion for the given messages.
@@ -59,7 +60,8 @@ class LLMService:
                 "temperature": temperature,
                 "max_tokens": max_tokens,
                 "stream": stream,
-                "messages_count": len(messages)
+                "messages_count": len(messages),
+                "metadata": metadata
             }
         )
 

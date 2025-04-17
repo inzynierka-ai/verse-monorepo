@@ -6,9 +6,7 @@ import logging
 from pathlib import Path
 from app.services.scene_generator import SceneGeneratorAgent
 from app.services.llm import LLMService
-from app.schemas.story_generation import Story
-from app.schemas.character import Character
-from app.schemas.location import Location
+from app.schemas.story_generation import Story, Location, Character
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -24,24 +22,24 @@ async def create_sample_data() -> Dict[str, Any]:
     # Create a sample story
     story = Story(
         id=1,
-        title="Space Adventure",
-        description="A thrilling adventure in a futuristic space station orbiting Mars in the year 2150.",
-        rules=["Technology is advanced but not magical", 
-               "Characters have realistic motivations",
-               "The setting is primarily the space station with occasional trips to Mars"],
+        title="The Last of Us",
+        description="A thrilling adventure in a post-apocalyptic world where a fungus has wiped out most of the population.",
+        rules=["The setting is primarily the United States with occasional trips to Canada", "The fungus is a sentient entity that is trying to take over the world"],
         user_id=1,
         uuid=str(uuid.uuid4())
     )
     
     # Create a player character
     player = Character(
-        id=1,
-        name="Alex Morgan",
-        role="Chief Engineer",
-        description="A brilliant engineer with a knack for fixing impossible problems. Has a mysterious past.",
-        story_id=1,
+        name="Joel",
+        role="player",
+        description="A middle-aged man with a kind face and a strong sense of responsibility. Has a mysterious past.",
         backstory="Grew up on Earth but left after a personal tragedy. Seeking a fresh start on the Mars station.",
-        uuid=str(uuid.uuid4())
+        uuid=str(uuid.uuid4()),
+        personalityTraits=[],
+        goals=[],
+        relationships=[],
+        imageUrl=""
     )
     
     # Create a list of characters
@@ -53,13 +51,16 @@ async def create_sample_data() -> Dict[str, Any]:
     locations: List[Location] = [
         
     ]
-    
+
+    previous_scene = None
+
     return {
         "llm_service": llm_service,
         "story": story,
         "player": player,
         "characters": characters,
-        "locations": locations
+        "locations": locations,
+        "previous_scene": previous_scene
     }
 
 async def main():
@@ -87,7 +88,7 @@ async def main():
     )
     
     # Create results directory if it doesn't exist
-    output_file = Path(__file__).parent / "generated_scene.json"
+    output_file = Path(__file__).parent / f"generated_scenes/{sample_data['story'].uuid}.json"
     
     # Save the generated scene to a JSON file
     logger.info(f"Saving generated scene to {output_file}...")
