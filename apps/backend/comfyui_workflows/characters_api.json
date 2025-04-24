@@ -54,7 +54,7 @@
   },
   "65": {
     "inputs": {
-      "image": "93ccb5a8-f1bc-4c6b-a7fe-7517165c4c87.webp",
+      "image": "model_reference.jpg",
       "upload": "image"
     },
     "class_type": "LoadImage"
