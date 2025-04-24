@@ -1,0 +1,32 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Backend Development Guidelines
+
+## Python Conventions
+- Use Python 3.10+ features
+- Follow PEP 8 style guidelines
+- Use type hints for all function parameters and return values
+- Use async/await for I/O-bound operations
+
+## FastAPI Conventions
+- Group related endpoints in routers
+- Use Pydantic models for request/response validation
+- Document all API endpoints with docstrings and OpenAPI annotations
+- Handle exceptions properly with appropriate status codes
+- Use dependency injection for database sessions and authentication
+
+## Database Conventions
+- Use SQLAlchemy ORM for database operations
+- Define database models in `/app/models`
+- Define Pydantic schemas in `/app/schemas`
+- Create CRUD operations in `/app/crud`
+- Use Alembic for database migrations
+
+## Testing
+- Write unit tests for all new functionality
+- Place tests in the `/tests` directory
+- Use pytest fixtures for test setup
+- Mock external services in tests
