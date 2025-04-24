@@ -49,8 +49,8 @@
   },
   "7": {
     "inputs": {
-      "text": "text, watermark",
-      "clip": ["4", 1]
+      "image": "model_reference.jpg",
+      "upload": "image"
     },
     "class_type": "CLIPTextEncode",
     "_meta": {
