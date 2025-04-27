@@ -8,17 +8,18 @@ import StoryGenerationError from './StoryGenerationError';
 import StoryGenerationCompleted from './StoryGenerationCompleted';
 import { useStoryGeneration } from '@/services/api/hooks/useStoryGeneration';
 import { useAuth } from '@/common/hooks/useAuth';
+import { Container } from '@/common/components';
 
 const StoryGenerationView = (): ReactElement => {
   const { isLoggedIn } = useAuth();
   const navigate = useNavigate();
-  
+
   // Add debug logging
   useEffect(() => {
     console.log('StoryGenerationView rendered, isLoggedIn:', isLoggedIn);
     console.log('Token in localStorage:', localStorage.getItem('auth-token'));
   }, [isLoggedIn]);
-  
+
   // Delay the redirect slightly to prevent flash redirects
   useEffect(() => {
     if (!isLoggedIn) {
@@ -29,24 +30,24 @@ const StoryGenerationView = (): ReactElement => {
       return () => clearTimeout(timer);
     }
   }, [isLoggedIn, navigate]);
-  
+
   const { state: generationState, generateStory, reset } = useStoryGeneration();
   console.log(generationState);
   const handleGenerateStory = (data: StoryGenerationRequest) => {
     generateStory(data);
   };
-  
+
   const handleReset = () => {
     reset();
   };
-  
+
   // Show loading indicator rather than nothing
   if (!isLoggedIn) {
     return <div className={styles.container}>Checking authentication...</div>;
   }
-  
+
   return (
-    <div className={styles.container}>
+    <Container>
       {generationState.status === 'idle' && <StoryGenerationForm onSubmit={handleGenerateStory} />}
 
       {(generationState.status === 'connecting' || generationState.status === 'generating') && (
@@ -64,7 +65,7 @@ const StoryGenerationView = (): ReactElement => {
           onReset={handleReset}
         />
       )}
-    </div>
+    </Container>
   );
 };
 

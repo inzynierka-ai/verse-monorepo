@@ -78,54 +78,54 @@ const LoginView = () => {
   };
 
   return (
-    <AuthCard 
-      title="Login" 
-      subtitle="Welcome back! Please enter your credentials to access your account."
-      errorMessage={loginError}
-      footer={
-        <span>
-          Don't have an account?
-          <Link to="/register">Register</Link>
-        </span>
-      }
-    >
-      <AuthForm onSubmit={handleSubmit}>
-        <Input
-          id="username"
-          name="username"
-          value={formData.username}
-          onChange={handleChange}
-          placeholder="Enter your username"
-          disabled={isLoading}
-          label="Username"
-          error={errors.username}
-          fullWidth
-        />
+    <div className={styles.container}>
+      <AuthCard
+        title="Login"
+        subtitle="Welcome back! Please enter your credentials to access your account."
+        errorMessage={loginError}
+        footer={
+          <span>
+            Don't have an account?
+            <Link to="/register">Register</Link>
+          </span>
+        }
+      >
+        <AuthForm onSubmit={handleSubmit}>
+          <Input
+            id="username"
+            name="username"
+            value={formData.username}
+            onChange={handleChange}
+            placeholder="Enter your username"
+            disabled={isLoading}
+            label="Username"
+            error={errors.username}
+            fullWidth
+          />
 
-        <Input
-          type="password"
-          id="password"
-          name="password"
-          value={formData.password}
-          onChange={handleChange}
-          placeholder="Enter your password"
-          disabled={isLoading}
-          label="Password"
-          error={errors.password}
-          fullWidth
-        />
+          <Input
+            type="password"
+            id="password"
+            name="password"
+            value={formData.password}
+            onChange={handleChange}
+            placeholder="Enter your password"
+            disabled={isLoading}
+            label="Password"
+            error={errors.password}
+            fullWidth
+          />
 
-        <div className={styles.forgotPassword}>
-          <Link to="/forgot-password">
-            Forgot password?
-          </Link>
-        </div>
+          <div className={styles.forgotPassword}>
+            <Link to="/forgot-password">Forgot password?</Link>
+          </div>
 
-        <Button type="submit" disabled={isLoading} fullWidth>
-          {isLoading ? 'Logging in...' : 'Login'}
-        </Button>
-      </AuthForm>
-    </AuthCard>
+          <Button type="submit" disabled={isLoading} fullWidth>
+            {isLoading ? 'Logging in...' : 'Login'}
+          </Button>
+        </AuthForm>
+      </AuthCard>
+    </div>
   );
 };
 

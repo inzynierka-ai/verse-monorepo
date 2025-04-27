@@ -1,6 +1,7 @@
 import { ReactElement } from 'react';
 import { useAuth } from '../../../common/hooks/useAuth';
 import styles from './Header.module.scss';
+import { Link } from '@tanstack/react-router';
 
 export const Header = (): ReactElement => {
   const { isLoggedIn, removeCredentials } = useAuth();
@@ -10,7 +11,7 @@ export const Header = (): ReactElement => {
   return (
     <header className={styles.header}>
       <div className={styles.headerContent}>
-        <div className={styles.logo}>Verse</div>
+        <Link to="/">Verse</Link>
         <div className={styles.authStatus}>
           {isLoggedIn ? (
             <div className={styles.userInfo}>

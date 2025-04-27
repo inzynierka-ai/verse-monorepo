@@ -25,6 +25,13 @@ def get_characters(db: Session) -> list[Character]:
     """Get all available characters"""
     return db.query(Character).all()
 
+def get_player_character_for_story(db: Session, story_id: int) -> Character | None:
+    """Get the player character associated with a specific story."""
+    return db.query(Character).filter(
+        Character.story_id == story_id, 
+        Character.role == 'player'  # Assuming 'player' is the role identifier
+    ).first()
+
 # mock_prompt = '''
 # You are Sheldon Cooper, a senior theoretical physicist at Caltech. You have an IQ of 187 and multiple degrees. You're highly intelligent but struggle with social interactions and sarcasm. You have OCD tendencies and strict routines.
 

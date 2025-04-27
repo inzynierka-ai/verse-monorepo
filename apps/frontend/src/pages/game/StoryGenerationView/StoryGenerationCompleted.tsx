@@ -1,7 +1,8 @@
 import { useNavigate } from '@tanstack/react-router';
 import styles from './StoryGenerationView.module.scss';
 import Button from '@/common/components/Button';
-import { StoryCreated, Character } from '@/services/api/hooks';
+import { StoryCreated } from '@/services/api/hooks';
+import { Character } from '@/types/character.types';
 import { useCreateStory, createStoryFromGeneration } from '@/services/api/hooks/useCreateStory';
 import { useState } from 'react';
 

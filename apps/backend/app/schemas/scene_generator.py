@@ -24,3 +24,10 @@ class SceneGeneratorState(BaseModel):
     location_generation_error: Optional[str] = None
     character_generation_error: Optional[str] = None
     finalize_scene_error: Optional[str] = None 
+
+class SceneGenerationResult(BaseModel):
+    """Result model for the Scene Generator Agent"""
+    location: Location
+    characters: List[Character]
+    description: str
+    steps_taken: int 

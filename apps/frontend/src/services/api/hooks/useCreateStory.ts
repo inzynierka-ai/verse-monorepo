@@ -1,7 +1,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { apiClient } from '@/services/api/client';
-import { StoryCreated, Character } from '@/services/api/hooks';
-
+import { StoryCreated } from '@/services/api/hooks';
+import { Character } from '@/types/character.types';
 interface CreateStoryRequest {
   title: string;
   description: string;

@@ -1,9 +1,9 @@
-from typing import List, Dict, Any, Optional, Coroutine
+from typing import List, Dict, Any, Optional, Coroutine, Callable
 import logging
 import asyncio
 
 from app.services.llm import LLMService, ModelName
-from app.schemas.scene_generator import SceneGeneratorState
+from app.schemas.scene_generator import SceneGeneratorState, SceneGenerationResult
 from app.services.game_engine.tools.location_generator import LocationGenerator
 from app.services.game_engine.tools.character_generator import CharacterGenerator
 from app.schemas.story_generation import Story, Location, Character, Scene
@@ -11,10 +11,22 @@ from langfuse.decorators import observe  # type: ignore
 from langfuse import Langfuse  # type: ignore
 
 
+# Define callback type hints
+LocationCallback = Callable[[Location], Coroutine[Any, Any, None]]
+CharacterCallback = Callable[[Character], Coroutine[Any, Any, None]]
+
+
 class SceneGeneratorAgent:
     """Agent that generates scenes for the narrative adventure game"""
     
-    def __init__(self, llm_service: LLMService, story: Story, player: Character):
+    def __init__(
+        self,
+        llm_service: LLMService,
+        story: Story,
+        player: Character,
+        on_location_added: Optional[LocationCallback] = None,
+        on_character_added: Optional[CharacterCallback] = None,
+    ):
         """
         Initialize the scene generator agent.
         
@@ -22,6 +34,8 @@ class SceneGeneratorAgent:
             llm_service: LLM service for generating text
             story: Story object containing details about the game world
             player: Player character
+            on_location_added: Async callback triggered when a location is added/selected.
+            on_character_added: Async callback triggered when a character is added/selected.
         """
         self.llm = llm_service
         self.story = story
@@ -30,6 +44,8 @@ class SceneGeneratorAgent:
         self.character_generator = CharacterGenerator(llm_service)
         self.tools = self._register_tools()
         self.langfuse = Langfuse()
+        self.on_location_added = on_location_added
+        self.on_character_added = on_character_added
         
         # Initialize with empty state
         self.state = SceneGeneratorState(
@@ -111,7 +127,7 @@ class SceneGeneratorAgent:
         locations: List[Location], 
         previous_scene: Optional[Scene] = None,
         relevant_conversations: Optional[List[Dict[str, Any]]] = None
-    ) -> Dict[str, Any]:
+    ) -> SceneGenerationResult:
         """
         Generate a new scene for the game
         
@@ -139,7 +155,7 @@ class SceneGeneratorAgent:
         return await self._run_agent_loop()
         
     @observe(name="agent_loop")
-    async def _run_agent_loop(self) -> Dict[str, Any]:
+    async def _run_agent_loop(self) -> SceneGenerationResult:
         """Run the agent loop until the scene is complete"""
         
         # Create system prompt with key components from prompting guide
@@ -248,12 +264,12 @@ class SceneGeneratorAgent:
             self.state.scene_description = self.state.scene_description or "Scene generation timed out before completion."
         
         # Return the final scene
-        return {
-            "location": self.state.selected_location.model_dump() if self.state.selected_location else None,
-            "characters": [c.model_dump() for c in self.state.selected_characters],
-            "description": self.state.scene_description,
-            "steps_taken": step_count
-        }
+        return SceneGenerationResult(
+            location=self.state.selected_location, # type: ignore
+            characters=self.state.selected_characters,
+            description=self.state.scene_description, # type: ignore
+            steps_taken=step_count
+        )
     
     @observe(name="handle_location_generation")
     async def _handle_location_generation(self, args: Dict[str, Any]) -> None:
@@ -261,33 +277,53 @@ class SceneGeneratorAgent:
         
         # Clear previous error
         self.state.location_generation_error = None
+        selected_location: Optional[Location] = None
         
         # Check if we're selecting an existing location
         if "existing_location_id" in args and args["existing_location_id"]:
             # Find location by UUID
             for location in self.state.locations_pool:
                 if location.uuid == args["existing_location_id"]:
-                    self.state.selected_location = location
-                    return
-        
-        # Otherwise, we need to generate a new location using LocationGenerator
-        brief_description = args["brief_description"]
-        
-        try:
-            # Generate a new location using the LocationGenerator
-            new_location = await self.location_generator.generate_location(
-                story=self.story,
-                description=brief_description
-            )
+                    selected_location = location
+                    break # Found the location
+            if not selected_location:
+                 error_msg = f"Could not find existing location with UUID: {args['existing_location_id']}"
+                 logging.warning(error_msg)
+                 self.state.location_generation_error = error_msg
+                 return
 
-            
-            # Set as selected location
-            self.state.selected_location = new_location
-                
-        except Exception as e:
-            error_msg = f"Error generating location: {e}"
-            logging.error(error_msg)
-            self.state.location_generation_error = error_msg
+
+        # Otherwise, we need to generate a new location using LocationGenerator
+        elif "brief_description" in args and args["brief_description"]:
+            brief_description = args["brief_description"]
+            try:
+                # Generate a new location using the LocationGenerator
+                new_location = await self.location_generator.generate_location(
+                    story=self.story,
+                    description=brief_description
+                )
+                selected_location = new_location
+
+            except Exception as e:
+                error_msg = f"Error generating location: {e}"
+                logging.error(error_msg)
+                self.state.location_generation_error = error_msg
+                return
+        else:
+             error_msg = "Location generation requires either 'existing_location_id' or 'brief_description'."
+             logging.warning(error_msg)
+             self.state.location_generation_error = error_msg
+             return
+
+
+        # Set as selected location and trigger callback
+        if selected_location:
+            self.state.selected_location = selected_location
+            if self.on_location_added:
+                try:
+                    await self.on_location_added(selected_location)
+                except Exception as e:
+                    logging.error(f"Error executing on_location_added callback: {e}")
 
     
     @observe(name="handle_character_generation")
@@ -296,39 +332,60 @@ class SceneGeneratorAgent:
         
         # Clear previous error
         self.state.character_generation_error = None
+        added_character: Optional[Character] = None
         
         # Check if we're selecting an existing character
         if "existing_character_id" in args and args["existing_character_id"]:
             # Find character by UUID
+            existing_char_uuid = args["existing_character_id"]
+            found_character = None
             for character in self.state.characters_pool:
-                if character.uuid == args["existing_character_id"]:
-                    # Prevent selecting character with same name as player
-                    if character.name == self.player.name or character.role == "player":
-                        error_msg = f"Cannot select character with same name or role as player"
-                        logging.error(error_msg)
-                        self.state.character_generation_error = error_msg
-                        return
-                        
-                    # Add to selected characters if not already present
-                    if character not in self.state.selected_characters:
-                        # Ensure we don't add more than 3 characters
-                        if len(self.state.selected_characters) < 3:
-                            current_characters = list(self.state.selected_characters)
-                            current_characters.append(character)
-                            self.state.selected_characters = current_characters
-                    return
-        
-        # Otherwise, generate a new character if we have a draft
-        if "character_draft" in args and args["character_draft"]:
-            draft_data = args["character_draft"]
-            
-            # Prevent generating character with same name as player
-            if draft_data["name"] == self.player.name or draft_data.get("role") == "player":
-                error_msg = f"Cannot generate character with same name or role as player"
-                logging.error(error_msg)
+                if str(character.uuid) == existing_char_uuid:
+                    found_character = character
+                    break
+
+            if not found_character:
+                error_msg = f"Could not find existing character with UUID: {existing_char_uuid}"
+                logging.warning(error_msg)
                 self.state.character_generation_error = error_msg
                 return
-                
+
+            # Prevent selecting character with same name as player or role 'player'
+            if found_character.name == self.player.name or found_character.role == 'player':
+                error_msg = f"Cannot select character with same name or role as player ({found_character.name})"
+                logging.warning(error_msg)
+                self.state.character_generation_error = error_msg
+                return
+
+            # Add to selected characters if not already present and limit is not reached
+            if found_character not in self.state.selected_characters:
+                if len(self.state.selected_characters) < 3:
+                    current_characters = list(self.state.selected_characters)
+                    current_characters.append(found_character)
+                    self.state.selected_characters = current_characters
+                    added_character = found_character
+                else:
+                    logging.warning("Maximum number of characters (3) already selected.")
+            else:
+                 logging.info(f"Character {found_character.name} already selected.")
+
+
+        # Otherwise, generate a new character if we have a draft
+        elif "character_draft" in args and args["character_draft"]:
+            draft_data = args["character_draft"]
+
+            # Prevent generating character with same name as player or role 'player'
+            if draft_data["name"] == self.player.name or draft_data.get("role") == 'player':
+                error_msg = f"Cannot generate character with same name or role as player ({draft_data['name']})"
+                logging.warning(error_msg)
+                self.state.character_generation_error = error_msg
+                return
+
+            if len(self.state.selected_characters) >= 3:
+                logging.warning("Cannot generate new character, maximum number of characters (3) already selected.")
+                self.state.character_generation_error = "Maximum number of characters already selected."
+                return
+
             try:
                 # Generate a new character using the CharacterGenerator
                 new_character = await self.character_generator.generate_character(
@@ -336,19 +393,31 @@ class SceneGeneratorAgent:
                     story=self.story,
                     is_player=False
                 )
-                
-                logging.info(f"new_character: {new_character}")
-                # Add to selected characters if we have fewer than 3
-                if len(self.state.selected_characters) < 3:
-                    current_characters = list(self.state.selected_characters)
-                    current_characters.append(new_character)
-                    self.state.selected_characters = current_characters
-                        
+
+                # Add to selected characters
+                current_characters = list(self.state.selected_characters)
+                current_characters.append(new_character)
+                self.state.selected_characters = current_characters
+                added_character = new_character
+
             except Exception as e:
                 error_msg = f"Error generating character: {e}"
-                logging.error(error_msg)
+                logging.error(error_msg, exc_info=True)
                 self.state.character_generation_error = error_msg
-                
+                return
+        else:
+            error_msg = "Character generation requires either 'existing_character_id' or 'character_draft'."
+            logging.warning(error_msg)
+            self.state.character_generation_error = error_msg
+            return
+
+        # Trigger callback if a character was successfully added
+        if added_character and self.on_character_added:
+            try:
+                await self.on_character_added(added_character)
+            except Exception as e:
+                logging.error(f"Error executing on_character_added callback: {e}")
+
     
     def _create_user_prompt(self) -> str:
         """Create a user prompt with the current state using XML-style delimiters"""
@@ -446,8 +515,8 @@ class SceneGeneratorAgent:
         return f"""
         <context>
             <story>
-                <id>{self.state.story.id}</id>
-                <name>{self.state.story.description}</name>
+                <uuid>{self.state.story.uuid}</uuid>
+                <title>{self.state.story.title}</title>
                 <description>{self.state.story.description}</description>
             </story>
             
