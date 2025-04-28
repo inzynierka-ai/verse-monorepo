@@ -21,6 +21,7 @@ from app.schemas.story_generation import (
     Location as LocationGenerationSchema
 )
 from app.utils.model_converters import convert_character, convert_characters, convert_locations
+from app.schemas.scene_generator import SceneGenerationResult
 
 logger = logging.getLogger(__name__)
 
@@ -144,7 +145,8 @@ class SceneGenerationHandler:
                 story=generation_input_story,
                 player=player_character_schema,
                 on_location_added=self._handle_location_added,
-                on_character_added=self._handle_character_added
+                on_character_added=self._handle_character_added,
+                db_session=self.db_session
             )
             self.agent = agent
 
@@ -171,12 +173,9 @@ class SceneGenerationHandler:
                     )
                     logger.info(f"Final scene data received from agent: {final_scene_data}")
 
-                    if final_scene_data:
-                        await self._send_scene_complete(final_scene_data)
-                    else:
-                        logger.error(f"Scene data not finalized or persisted for story {self.story_uuid}")
-                        await self._send_error("Scene generation completed but failed to save final data.")
-
+                    
+                    await self._send_scene_complete(final_scene_data)
+                    
                     logger.info(f"Scene generation finished successfully for story {self.story_uuid}")
 
                 except Exception as e:
@@ -215,12 +214,12 @@ class SceneGenerationHandler:
         logger.info(f"Sending CHARACTER_ADDED update for story {self.story_uuid}: {payload}")
         await self._send_update("CHARACTER_ADDED", payload)
 
-    async def _send_scene_complete(self, scene: SceneModel):
+    async def _send_scene_complete(self, scene: SceneGenerationResult):
         """Sends the SCENE_COMPLETE message with the final scene details."""
         payload = {
-            "id": scene.id,
             "storyId": str(self.story_uuid),
-            "message": "Scene generation complete."
+            "message": "Scene generation complete.",
+            "description": scene.description,
         }
         await self._send_update("SCENE_COMPLETE", payload)
 

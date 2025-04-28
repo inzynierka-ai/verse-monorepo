@@ -1,6 +1,7 @@
 from typing import List, Dict, Any, Optional, Coroutine, Callable
 import logging
 import asyncio
+import uuid
 
 from app.services.llm import LLMService, ModelName
 from app.schemas.scene_generator import SceneGeneratorState, SceneGenerationResult
@@ -9,6 +10,9 @@ from app.services.game_engine.tools.character_generator import CharacterGenerato
 from app.schemas.story_generation import Story, Location, Character, Scene
 from langfuse.decorators import observe  # type: ignore
 from langfuse import Langfuse  # type: ignore
+from sqlalchemy.orm import Session
+from app.models.scene import Scene as SceneModel
+from app.models.character import Character as CharacterOrmModel
 
 
 # Define callback type hints
@@ -26,6 +30,7 @@ class SceneGeneratorAgent:
         player: Character,
         on_location_added: Optional[LocationCallback] = None,
         on_character_added: Optional[CharacterCallback] = None,
+        db_session: Optional[Session] = None
     ):
         """
         Initialize the scene generator agent.
@@ -36,16 +41,18 @@ class SceneGeneratorAgent:
             player: Player character
             on_location_added: Async callback triggered when a location is added/selected.
             on_character_added: Async callback triggered when a character is added/selected.
+            db_session: Database session for saving data
         """
         self.llm = llm_service
         self.story = story
         self.player = player
-        self.location_generator = LocationGenerator(llm_service)
-        self.character_generator = CharacterGenerator(llm_service)
+        self.location_generator = LocationGenerator(llm_service, db_session)
+        self.character_generator = CharacterGenerator(llm_service, db_session)
         self.tools = self._register_tools()
         self.langfuse = Langfuse()
         self.on_location_added = on_location_added
         self.on_character_added = on_character_added
+        self.db_session = db_session
         
         # Initialize with empty state
         self.state = SceneGeneratorState(
@@ -152,7 +159,16 @@ class SceneGeneratorAgent:
         )
         
         # Run agent loop
-        return await self._run_agent_loop()
+        result = await self._run_agent_loop()
+        
+        # Save the scene to the database if a session is available
+        if self.db_session and self.story.id is not None:
+            try:
+                await self._save_scene_to_db(result, self.story.id)
+            except Exception as e:
+                logging.error(f"Failed to save scene to database: {str(e)}")
+                
+        return result
         
     @observe(name="agent_loop")
     async def _run_agent_loop(self) -> SceneGenerationResult:
@@ -555,3 +571,62 @@ class SceneGeneratorAgent:
         
         Based on the context above, continue generating the next scene. If you need to generate a location, use the generate_location tool. If you need to generate characters, use the generate_character tool. When you have selected a location and at least one character, use the finalize_scene tool to complete the scene.
         """ 
+
+    async def _save_scene_to_db(self, scene_result: SceneGenerationResult, story_id: int) -> SceneModel:
+        """
+        Save the generated scene to the database.
+        
+        Args:
+            scene_result: The generated scene result
+            story_id: ID of the story to associate with
+            chapter_id: ID of the chapter to associate with
+            
+        Returns:
+            The saved database model
+        """
+        try:
+            if not self.db_session:
+                raise ValueError("No database session available")
+                
+            # Create a database model from the scene result
+            scene_uuid = str(uuid.uuid4())
+            
+            location = scene_result.location
+            location_id = location.id 
+            
+            # Create the scene model
+            db_scene = SceneModel(
+                uuid=scene_uuid,
+                prompt=scene_result.description,
+                location_id=location_id,
+                chapter_id=story_id,
+            )
+            
+            if location_id is None:
+                logging.warning("Scene location does not have an ID, scene will be saved without location reference")
+            
+            # Add to database session
+            self.db_session.add(db_scene)
+            self.db_session.flush()  # Get the ID without committing
+            
+            # Add character associations if characters have IDs
+            if hasattr(db_scene, 'characters'):
+                for character in scene_result.characters:
+                    # Check if character has an ID attribute
+                    character_id = getattr(character, 'id', None)
+                    if character_id is not None:
+                        # Find the character ORM instance
+                        character_orm = self.db_session.query(CharacterOrmModel).filter_by(id=character_id).first()
+                        if character_orm:
+                            # Add to the relationship collection
+                            db_scene.characters.append(character_orm)
+            
+            # Commit changes
+            self.db_session.commit()
+            logging.info(f"Scene saved to database with ID {db_scene.id}")
+            return db_scene
+        except Exception as e:
+            logging.exception(f"Failed to save scene to database: {str(e)}")
+            if self.db_session and hasattr(self.db_session, 'is_active') and self.db_session.is_active:
+                self.db_session.rollback()
+            raise 
