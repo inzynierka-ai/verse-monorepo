@@ -35,7 +35,7 @@ const GameView = () => {
       setCurrentScene(null);
 
       try {
-        const latestScene = await apiClient.get<Scene>(`/game/stories/${storyId}/scene/latest`);
+        const latestScene = await apiClient.get<Scene>(`/stories/${storyId}/scene/latest`);
         setCurrentScene(latestScene);
         setNeedsGeneration(false);
       } catch (error: any) {

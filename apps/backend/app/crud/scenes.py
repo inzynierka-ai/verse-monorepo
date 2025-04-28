@@ -15,7 +15,7 @@ def create_scene(db: Session, scene: scene_schema.SceneCreate):
     db_scene = Scene(
         prompt=scene.prompt, 
         location_id=scene.location_id, 
-        chapter_id=scene.chapter_id)
+        story_id=scene.story_id)
     
     db.add(db_scene)
     db.commit()

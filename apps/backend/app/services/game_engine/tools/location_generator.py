@@ -248,6 +248,7 @@ class LocationGenerator:
                 self.db_session.add(db_location)
                 self.db_session.commit()
                 logging.info(f"Location {location.name} saved to database with ID {db_location.id}")
+                location.id = db_location.id
                 return db_location
             else:
                 logging.warning("No database session available, location not saved to database")

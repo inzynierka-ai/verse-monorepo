@@ -1,8 +1,8 @@
+import uuid
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from typing import List
 from app.schemas import story as story_schema
-from app.schemas import chapter as chapter_schema
 from app.schemas import scene as scene_schema
 from app.db.session import get_db
 from app.crud.stories import get_story, create_story as create_story_service
@@ -28,13 +28,6 @@ def get_story_by_id(story_id: int, current_user: User = Depends(get_current_user
     story = get_story(db, story_id, current_user.id)
     return story
 
-@router.get("/{story_id}/chapters", response_model=List[chapter_schema.Chapter])
-def list_chapters(story_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    """Get all chapters for a specific story"""
-    story = get_story(db, story_id, current_user.id)
-    chapters = story.chapters
-    return chapters
-
 @router.post("/", response_model=story_schema.StoryRead)
 def create_story(
     story: story_schema.StoryCreate, 
@@ -58,19 +51,20 @@ def list_characters(story_id: int, current_user: User = Depends(get_current_user
     characters = story.characters
     return characters
 
-@router.get("/{story_id}/scene/latest", response_model=scene_schema.SceneDetail)
+
+@router.get("/{story_uuid}/scene/latest", response_model=scene_schema.SceneDetail)
 def get_latest_scene(
-    story_id: int, 
+    story_uuid: uuid.UUID,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """Get the latest scene for a story"""
     # Verify user owns the story
-    get_story(db, story_id, current_user.id)
+    story = get_story(db, story_uuid, current_user.id)
     
     # Instantiate the service and call the method
     scene_service = SceneService()
-    latest_scene = scene_service.fetch_latest_scene(db, story_id)
+    latest_scene = scene_service.fetch_latest_scene(db, story.id)
     
     # Handle not found cases
     if not latest_scene:

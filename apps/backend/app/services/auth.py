@@ -78,16 +78,8 @@ class ResourcePermission:
         current_user: User = Depends(get_current_user)
     ):
         # Get the appropriate model based on resource type
-        if self.resource_type == "chapter":
-            from app.models.chapter import Chapter
-            resource = db.query(Chapter).filter(Chapter.id == resource_id).first()
-            if not resource:
-                raise HTTPException(status_code=404, detail=f"Chapter not found")
-                
-            # Get the associated story to check ownership
-            story = resource.story
         
-        elif self.resource_type == "scene":
+        if self.resource_type == "scene":
             from app.models.scene import Scene
             
             # Query scene with all relationships loaded for SceneDetail

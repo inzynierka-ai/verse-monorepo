@@ -579,7 +579,6 @@ class SceneGeneratorAgent:
         Args:
             scene_result: The generated scene result
             story_id: ID of the story to associate with
-            chapter_id: ID of the chapter to associate with
             
         Returns:
             The saved database model
@@ -599,7 +598,7 @@ class SceneGeneratorAgent:
                 uuid=scene_uuid,
                 prompt=scene_result.description,
                 location_id=location_id,
-                chapter_id=story_id,
+                story_id=story_id,
             )
             
             if location_id is None:

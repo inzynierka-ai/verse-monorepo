@@ -4,9 +4,9 @@ from app.models.story import Story
 from app.schemas import story as story_schema
 from fastapi import HTTPException
 
-def get_story(db: Session, story_id: int, user_id: int):
-    """Get a story by its ID with optional user filtering"""
-    story = db.query(Story).filter(Story.user_id==user_id).filter(Story.id == story_id).first()
+def get_story(db: Session, story_uuid: uuid.UUID, user_id: int):
+    """Get a story by its UUID with optional user filtering"""
+    story = db.query(Story).filter(Story.user_id==user_id).filter(Story.uuid == str(story_uuid)).first()
     if not story:
         raise HTTPException(status_code=404, detail=f"Story not found")
     return story
@@ -26,7 +26,7 @@ def create_story(db: Session, story: story_schema.StoryCreate):
         description=story.description,
         user_id=story.user_id,
         rules=story.rules,
-        uuid=story.uuid
+        uuid=story.uuid 
     )
     db.add(db_story)
     db.commit()
