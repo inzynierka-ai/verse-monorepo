@@ -61,6 +61,15 @@ const SceneGenerationView = ({ storyId, onSceneComplete, startGeneration }: Scen
         <div className={styles.generationHeader}>
           <div className={styles.loadingSpinner}></div>
           <h2>Creating your adventure...</h2>
+          {Object.keys(state.actions).length > 0 && (
+            <div className={styles.actionsContainer}>
+              {Object.entries(state.actions).map(([actionType, actionMessage]) => (
+                <p key={actionType} className={styles.actionItem}>
+                  {actionMessage}
+                </p>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className={styles.generationProgress}>

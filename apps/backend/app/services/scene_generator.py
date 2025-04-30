@@ -18,6 +18,7 @@ from app.models.character import Character as CharacterOrmModel
 # Define callback type hints
 LocationCallback = Callable[[Location], Coroutine[Any, Any, None]]
 CharacterCallback = Callable[[Character], Coroutine[Any, Any, None]]
+ActionCallback = Callable[[str, Optional[str]], Coroutine[Any, Any, None]]
 
 
 class SceneGeneratorAgent:
@@ -30,6 +31,7 @@ class SceneGeneratorAgent:
         player: Character,
         on_location_added: Optional[LocationCallback] = None,
         on_character_added: Optional[CharacterCallback] = None,
+        on_action_changed: Optional[ActionCallback] = None,
         db_session: Optional[Session] = None
     ):
         """
@@ -41,6 +43,7 @@ class SceneGeneratorAgent:
             player: Player character
             on_location_added: Async callback triggered when a location is added/selected.
             on_character_added: Async callback triggered when a character is added/selected.
+            on_action_changed: Async callback triggered when the agent's current action changes.
             db_session: Database session for saving data
         """
         self.llm = llm_service
@@ -52,6 +55,7 @@ class SceneGeneratorAgent:
         self.langfuse = Langfuse()
         self.on_location_added = on_location_added
         self.on_character_added = on_character_added
+        self.on_action_changed = on_action_changed
         self.db_session = db_session
         
         # Initialize with empty state
@@ -60,7 +64,8 @@ class SceneGeneratorAgent:
             player=player,
             characters_pool=[],
             locations_pool=[],
-            selected_characters=[]
+            selected_characters=[],
+            active_actions={}
         )
         
     def _register_tools(self) -> List[Dict[str, Any]]:
@@ -127,6 +132,40 @@ class SceneGeneratorAgent:
         
         return [location_generator, character_generator, finalize_scene]
         
+    async def _update_action(self, action_type: str, action_message: str) -> None:
+        """
+        Update the current action and call the action changed callback
+        
+        Args:
+            action_type: Type of action (e.g., 'location', 'character', 'scene')
+            action_message: Descriptive message about the action
+        """
+        # Update in state dictionary
+        self.state.active_actions[action_type] = action_message
+        
+        # Call the callback if available
+        if self.on_action_changed:
+            try:
+                await self.on_action_changed(action_type, action_message)
+            except Exception as e:
+                logging.error(f"Error executing on_action_changed callback: {e}")
+            
+    async def _remove_action(self, action_type: str) -> None:
+        """
+        Remove an action from the active actions list
+        
+        Args:
+            action_type: Type of action to remove
+        """
+        if action_type in self.state.active_actions:
+            del self.state.active_actions[action_type]
+            # Notify about the removal
+            if self.on_action_changed:
+                try:
+                    await self.on_action_changed(action_type, None)
+                except Exception as e:
+                    logging.error(f"Error executing on_action_changed callback for removal: {e}")
+        
     @observe(name="generate_scene")
     async def generate_scene(
         self, 
@@ -155,18 +194,27 @@ class SceneGeneratorAgent:
             locations_pool=locations,
             previous_scene=previous_scene,
             relevant_conversations=relevant_conversations or [],
-            selected_characters=[]
+            selected_characters=[],
+            active_actions={}
         )
+        
+        await self._update_action("scene", "Starting scene generation")
         
         # Run agent loop
         result = await self._run_agent_loop()
         
+        # Remove scene-level action now that actual generation is complete
+        await self._remove_action("scene")
+        
         # Save the scene to the database if a session is available
         if self.db_session and self.story.id is not None:
             try:
+                await self._update_action("database", "Saving scene to database")
                 await self._save_scene_to_db(result, self.story.id)
+                await self._remove_action("database")
             except Exception as e:
                 logging.error(f"Failed to save scene to database: {str(e)}")
+                await self._remove_action("database")
                 
         return result
         
@@ -228,6 +276,8 @@ class SceneGeneratorAgent:
             logging.info(f"Agent step {step_count}: Generating LLM response")
             logging.info(f"Current state: {self.state}")
             
+            await self._update_action("planning", f"Planning next scene element")
+            
             # This will be traced by LLMService's @observe decorator
             response = await self.llm.generate_response(
                 input_text=user_prompt,
@@ -239,6 +289,9 @@ class SceneGeneratorAgent:
             )
             
             logging.info(f"Agent step {step_count}: Received response from LLM")
+            
+            # Remove planning action since we received the response
+            await self._remove_action("planning")
             
             # Extract function calls
             function_calls = await LLMService.extract_function_calls(response)
@@ -269,17 +322,21 @@ class SceneGeneratorAgent:
                 
                 # Process finalize calls sequentially
                 for call in finalize_calls:
+                    await self._update_action("scene", "Finalizing scene description")
                     # Clear any previous error
                     self.state.finalize_scene_error = None
                     try:
                         self.state.scene_description = call["arguments"]["description"]
                         scene_complete = True
                         logging.info(f"Agent step {step_count}: Scene finalized")
+                        # Clear the scene action once finalized
+                        await self._remove_action("scene")
                         break
                     except Exception as e:
                         error_msg = f"Error finalizing scene: {e}"
                         logging.error(error_msg)
                         self.state.finalize_scene_error = error_msg
+                        await self._remove_action("scene")
             
             # Update user prompt with new state
             user_prompt = self._create_user_prompt()
@@ -288,6 +345,10 @@ class SceneGeneratorAgent:
             logging.warning(f"Scene generation hit maximum steps ({max_steps}) without completion")
             # Return whatever we have so far
             self.state.scene_description = self.state.scene_description or "Scene generation timed out before completion."
+        
+        # Make sure any lingering actions are removed
+        for action_type in list(self.state.active_actions.keys()):
+            await self._remove_action(action_type)
         
         # Return the final scene
         return SceneGenerationResult(
@@ -307,6 +368,7 @@ class SceneGeneratorAgent:
         
         # Check if we're selecting an existing location
         if "existing_location_id" in args and args["existing_location_id"]:
+            await self._update_action("location", f"Selecting existing location with UUID: {args['existing_location_id']}")
             # Find location by UUID
             for location in self.state.locations_pool:
                 if location.uuid == args["existing_location_id"]:
@@ -316,11 +378,13 @@ class SceneGeneratorAgent:
                  error_msg = f"Could not find existing location with UUID: {args['existing_location_id']}"
                  logging.warning(error_msg)
                  self.state.location_generation_error = error_msg
+                 await self._remove_action("location")
                  return
 
 
         # Otherwise, we need to generate a new location using LocationGenerator
         elif "brief_description" in args and args["brief_description"]:
+            await self._update_action("location", f"Creating new location: {args['brief_description']}")
             brief_description = args["brief_description"]
             try:
                 # Generate a new location using the LocationGenerator
@@ -334,11 +398,13 @@ class SceneGeneratorAgent:
                 error_msg = f"Error generating location: {e}"
                 logging.error(error_msg)
                 self.state.location_generation_error = error_msg
+                await self._remove_action("location")
                 return
         else:
              error_msg = "Location generation requires either 'existing_location_id' or 'brief_description'."
              logging.warning(error_msg)
              self.state.location_generation_error = error_msg
+             await self._remove_action("location")
              return
 
 
@@ -350,6 +416,9 @@ class SceneGeneratorAgent:
                     await self.on_location_added(selected_location)
                 except Exception as e:
                     logging.error(f"Error executing on_location_added callback: {e}")
+        
+            # Remove the action since it's complete
+            await self._remove_action("location")
 
     
     @observe(name="handle_character_generation")
@@ -362,6 +431,7 @@ class SceneGeneratorAgent:
         
         # Check if we're selecting an existing character
         if "existing_character_id" in args and args["existing_character_id"]:
+            await self._update_action("character", f"Selecting existing character with UUID: {args['existing_character_id']}")
             # Find character by UUID
             existing_char_uuid = args["existing_character_id"]
             found_character = None
@@ -374,6 +444,7 @@ class SceneGeneratorAgent:
                 error_msg = f"Could not find existing character with UUID: {existing_char_uuid}"
                 logging.warning(error_msg)
                 self.state.character_generation_error = error_msg
+                await self._remove_action("character")
                 return
 
             # Prevent selecting character with same name as player or role 'player'
@@ -381,6 +452,7 @@ class SceneGeneratorAgent:
                 error_msg = f"Cannot select character with same name or role as player ({found_character.name})"
                 logging.warning(error_msg)
                 self.state.character_generation_error = error_msg
+                await self._remove_action("character")
                 return
 
             # Add to selected characters if not already present and limit is not reached
@@ -392,24 +464,29 @@ class SceneGeneratorAgent:
                     added_character = found_character
                 else:
                     logging.warning("Maximum number of characters (3) already selected.")
+                    await self._remove_action("character")
             else:
                  logging.info(f"Character {found_character.name} already selected.")
+                 await self._remove_action("character")
 
 
         # Otherwise, generate a new character if we have a draft
         elif "character_draft" in args and args["character_draft"]:
             draft_data = args["character_draft"]
+            await self._update_action("character", f"Creating new character: {draft_data['name']}")
 
             # Prevent generating character with same name as player or role 'player'
             if draft_data["name"] == self.player.name or draft_data.get("role") == 'player':
                 error_msg = f"Cannot generate character with same name or role as player ({draft_data['name']})"
                 logging.warning(error_msg)
                 self.state.character_generation_error = error_msg
+                await self._remove_action("character")
                 return
 
             if len(self.state.selected_characters) >= 3:
                 logging.warning("Cannot generate new character, maximum number of characters (3) already selected.")
                 self.state.character_generation_error = "Maximum number of characters already selected."
+                await self._remove_action("character")
                 return
 
             try:
@@ -430,11 +507,13 @@ class SceneGeneratorAgent:
                 error_msg = f"Error generating character: {e}"
                 logging.error(error_msg, exc_info=True)
                 self.state.character_generation_error = error_msg
+                await self._remove_action("character")
                 return
         else:
             error_msg = "Character generation requires either 'existing_character_id' or 'character_draft'."
             logging.warning(error_msg)
             self.state.character_generation_error = error_msg
+            await self._remove_action("character")
             return
 
         # Trigger callback if a character was successfully added
@@ -443,6 +522,9 @@ class SceneGeneratorAgent:
                 await self.on_character_added(added_character)
             except Exception as e:
                 logging.error(f"Error executing on_character_added callback: {e}")
+        
+        # Remove the action since it's complete
+        await self._remove_action("character")
 
     
     def _create_user_prompt(self) -> str:

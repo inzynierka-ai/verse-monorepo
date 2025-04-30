@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import Optional, Any, List
+from typing import Optional, Any, List, Dict
 import uuid
 
 from fastapi import WebSocket, WebSocketDisconnect
@@ -46,6 +46,7 @@ class SceneGenerationHandler:
         self.llm_service = LLMService()
         self.agent: Optional[SceneGeneratorAgent] = None
         self.agent_task: Optional[asyncio.Task[Any]] = None
+        self.active_actions: Dict[str, str] = {}
 
     async def run(self):
         """
@@ -146,6 +147,7 @@ class SceneGenerationHandler:
                 player=player_character_schema,
                 on_location_added=self._handle_location_added,
                 on_character_added=self._handle_character_added,
+                on_action_changed=self._handle_action_changed,
                 db_session=self.db_session
             )
             self.agent = agent
@@ -213,6 +215,31 @@ class SceneGenerationHandler:
         payload = character.model_dump()
         logger.info(f"Sending CHARACTER_ADDED update for story {self.story_uuid}: {payload}")
         await self._send_update("CHARACTER_ADDED", payload)
+        
+    async def _send_action_changed(self, action_type: str, action_message: Optional[str]):
+        """
+        Sends an ACTION_CHANGED message with the current agent actions.
+        
+        Args:
+            action_type: Type of action that changed
+            action_message: Message describing the action, or None if action was removed
+        """
+        # Update our local tracking of active actions
+        if action_message is None:
+            # Remove the action if message is None
+            if action_type in self.active_actions:
+                del self.active_actions[action_type]
+        else:
+            # Add or update action
+            self.active_actions[action_type] = action_message
+            
+        # Send the full set of active actions
+        payload = {
+            "storyId": str(self.story_uuid),
+            "actions": self.active_actions
+        }
+        logger.info(f"Sending ACTION_CHANGED update for story {self.story_uuid}, active actions: {self.active_actions}")
+        await self._send_update("ACTION_CHANGED", payload)
 
     async def _send_scene_complete(self, scene: SceneGenerationResult):
         """Sends the SCENE_COMPLETE message with the final scene details."""
@@ -253,3 +280,14 @@ class SceneGenerationHandler:
         """Callback triggered by SceneGeneratorAgent when a character is added."""
         logger.debug(f"Callback _handle_character_added called for story {self.story_uuid}")
         await self._send_character_added(character) 
+        
+    async def _handle_action_changed(self, action_type: str, action_message: Optional[str]):
+        """
+        Callback triggered by SceneGeneratorAgent when action status changes.
+        
+        Args:
+            action_type: Type of action (location, character, etc.)
+            action_message: Message describing the action, or None if action was removed
+        """
+        logger.debug(f"Callback _handle_action_changed called for story {self.story_uuid}: {action_type}={action_message}")
+        await self._send_action_changed(action_type, action_message) 

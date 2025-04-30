@@ -20,11 +20,24 @@ interface ErrorPayload {
   message: string;
 }
 
+// Interface for the payload of ACTION_CHANGED
+interface ActionChangedPayload {
+  storyId: string;
+  actions: Record<string, string>;
+}
+
 // Define message types for scene generation
 interface SceneGenerationMessage {
-  type: 'LOCATION_ADDED' | 'CHARACTER_ADDED' | 'SCENE_COMPLETE' | 'ERROR' | 'AUTH_SUCCESS' | 'SCENE_START';
+  type:
+    | 'LOCATION_ADDED'
+    | 'CHARACTER_ADDED'
+    | 'SCENE_COMPLETE'
+    | 'ERROR'
+    | 'AUTH_SUCCESS'
+    | 'SCENE_START'
+    | 'ACTION_CHANGED';
   // Use specific payload types based on message type
-  payload: Location | Character | SceneCompletePayload | ErrorPayload | any;
+  payload: Location | Character | SceneCompletePayload | ErrorPayload | ActionChangedPayload | any;
 }
 
 // Define the state for the hook
@@ -35,6 +48,7 @@ export interface SceneGenerationState {
   scene?: SceneCompletePayload; // Store the final complete scene payload
   description?: string; // Store the final scene description separately if needed
   error?: string; // Store the error message
+  actions: Record<string, string>; // Track active actions by type
 }
 
 interface UseSceneGenerationProps {
@@ -59,6 +73,7 @@ export const useSceneGeneration = ({
   const [internalState, setInternalState] = useState<SceneGenerationState>({
     status: 'idle',
     lastCharacters: [],
+    actions: {},
   });
 
   const updateState = useCallback((newState: Partial<SceneGenerationState>) => {
@@ -87,6 +102,14 @@ export const useSceneGeneration = ({
               status: 'generating',
             });
             break;
+          case 'ACTION_CHANGED':
+            // Assert payload type for ACTION_CHANGED
+            const actionPayload = data.payload as ActionChangedPayload;
+            updateState({
+              status: 'generating',
+              actions: actionPayload.actions,
+            });
+            break;
           case 'LOCATION_ADDED':
             // Assert payload type for LOCATION_ADDED
             const locationPayload = data.payload as Location;
@@ -113,6 +136,7 @@ export const useSceneGeneration = ({
               description: scenePayload.description, // Also store top-level description for convenience?
               lastLocation: scenePayload.location, // Update last location from final scene
               lastCharacters: scenePayload.characters, // Update characters from final scene
+              actions: {}, // Clear actions
             });
             break;
           case 'ERROR':
@@ -190,6 +214,7 @@ export const useSceneGeneration = ({
       scene: undefined, // Reset scene payload
       description: undefined,
       error: undefined,
+      actions: {},
     });
   }, []);
 
