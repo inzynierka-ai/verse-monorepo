@@ -198,23 +198,15 @@ class SceneGeneratorAgent:
             active_actions={}
         )
         
-        await self._update_action("scene", "Starting scene generation")
-        
         # Run agent loop
         result = await self._run_agent_loop()
-        
-        # Remove scene-level action now that actual generation is complete
-        await self._remove_action("scene")
         
         # Save the scene to the database if a session is available
         if self.db_session and self.story.id is not None:
             try:
-                await self._update_action("database", "Saving scene to database")
                 await self._save_scene_to_db(result, self.story.id)
-                await self._remove_action("database")
             except Exception as e:
                 logging.error(f"Failed to save scene to database: {str(e)}")
-                await self._remove_action("database")
                 
         return result
         
@@ -322,21 +314,17 @@ class SceneGeneratorAgent:
                 
                 # Process finalize calls sequentially
                 for call in finalize_calls:
-                    await self._update_action("scene", "Finalizing scene description")
                     # Clear any previous error
                     self.state.finalize_scene_error = None
                     try:
                         self.state.scene_description = call["arguments"]["description"]
                         scene_complete = True
                         logging.info(f"Agent step {step_count}: Scene finalized")
-                        # Clear the scene action once finalized
-                        await self._remove_action("scene")
                         break
                     except Exception as e:
                         error_msg = f"Error finalizing scene: {e}"
                         logging.error(error_msg)
                         self.state.finalize_scene_error = error_msg
-                        await self._remove_action("scene")
             
             # Update user prompt with new state
             user_prompt = self._create_user_prompt()
