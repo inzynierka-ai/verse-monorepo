@@ -1,40 +1,28 @@
 import { useNavigate } from '@tanstack/react-router';
 import styles from './StoryGenerationView.module.scss';
 import Button from '@/common/components/Button';
-import { StoryCreated, Character } from '@/services/api/hooks';
-import { useCreateStory, createStoryFromGeneration } from '@/services/api/hooks/useCreateStory';
+
+import { Character } from '@/types/character.types';
+
 import { useState } from 'react';
+import { Story } from '@/types/story.types';
 
 interface StoryGenerationCompletedProps {
-  story?: StoryCreated;
+  story?: Story;
   character?: Character;
   onReset: () => void;
 }
 
 const StoryGenerationCompleted = ({ story, character, onReset }: StoryGenerationCompletedProps) => {
   const navigate = useNavigate();
-  const [isCreating, setIsCreating] = useState(false);
-  const createStoryMutation = useCreateStory();
 
   const handleExploreStories = () => {
     navigate({ to: '/stories' });
   };
 
   const handleBeginAdventure = async () => {
-    console.log(story, character);
-    if (!story || !character) return;
-
-    try {
-      setIsCreating(true);
-      const storyData = createStoryFromGeneration(story, character);
-      const response = await createStoryMutation.mutateAsync(storyData);
-
-      // Navigate to the play page with the new story ID
-      navigate({ to: `/play/${response.id}` });
-    } catch (error) {
-      console.error('Failed to create story:', error);
-      setIsCreating(false);
-    }
+    if (!story) return;
+    navigate({ to: `/play/${story.uuid}` });
   };
 
   return (

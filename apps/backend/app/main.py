@@ -34,7 +34,7 @@ app.include_router(api_router, prefix="/api")
 
 # Mount media directory for serving generated images
 os.makedirs(settings.MEDIA_ROOT, exist_ok=True)
-app.mount(settings.MEDIA_ROOT, StaticFiles(directory=settings.MEDIA_ROOT), name="media")
+app.mount("/media", StaticFiles(directory=settings.MEDIA_ROOT), name="media")
 
 @app.on_event("startup")
 def startup_event():

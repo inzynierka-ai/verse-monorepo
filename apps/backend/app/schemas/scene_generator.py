@@ -20,7 +20,17 @@ class SceneGeneratorState(BaseModel):
     # Memory context
     relevant_conversations: List[Dict[str, Any]] = Field(default_factory=list)
     
+    # Current actions being performed (multiple can run in parallel)
+    active_actions: Dict[str, str] = Field(default_factory=dict)
+    
     # Tool error messages
     location_generation_error: Optional[str] = None
     character_generation_error: Optional[str] = None
     finalize_scene_error: Optional[str] = None 
+
+class SceneGenerationResult(BaseModel):
+    """Result model for the Scene Generator Agent"""
+    location: Location
+    characters: List[Character]
+    description: str
+    steps_taken: int 

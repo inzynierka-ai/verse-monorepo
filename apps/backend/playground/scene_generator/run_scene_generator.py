@@ -163,9 +163,9 @@ async def main():
     
     # Print a summary of the generated scene
     logger.info("Scene generation complete!")
-    logger.info(f"Location: {generated_scene['location']['name']}")
-    logger.info(f"Characters: {[char['name'] for char in generated_scene['characters']]}")
-    logger.info(f"Description length: {len(generated_scene['description'])} characters")
+    logger.info(f"Location: {generated_scene.location.name}")
+    logger.info(f"Characters: {[char.name for char in generated_scene.characters]}")
+    logger.info(f"Description length: {len(generated_scene.description)} characters")
     logger.info(f"Full output saved to {output_file}")
 
 if __name__ == "__main__":

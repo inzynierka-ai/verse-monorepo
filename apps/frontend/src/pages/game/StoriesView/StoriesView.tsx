@@ -1,58 +1,55 @@
-import { useState } from 'react';
-import { Box, Container, Paper, Typography, CircularProgress, List, ListItem, ListItemButton, ListItemText } from '@mui/material';
-import { useNavigate } from '@tanstack/react-router';
+import { ReactElement } from 'react';
+import { Link, useNavigate } from '@tanstack/react-router';
+import Container from '@/common/components/Container/Container';
+import Button from '@/common/components/Button/Button';
+import styles from './StoriesView.module.scss';
 import { useStories } from '@/services/api/hooks/useStory';
 
-const StoriesView = () => {
+const StoriesView = (): ReactElement => {
   const { data: stories = [], isLoading, error } = useStories();
   const navigate = useNavigate();
 
-  const handleStoryClick = (storyId: string) => {
-
-    navigate({ to: `/play/${storyId}` });
-    
+  const handleCreateStory = () => {
+    navigate({ to: '/create-story' });
   };
 
   if (isLoading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" height="100vh">
-        <CircularProgress />
-      </Box>
+      <div className={styles.loadingContainer}>
+        <p>Loading stories...</p>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" height="100vh">
-        <Typography color="error">Failed to load stories. Please try again later.</Typography>
-      </Box>
+      <div className={styles.errorContainer}>
+        <p>Failed to load stories. Please try again later.</p>
+      </div>
     );
   }
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Typography variant="h4" component="h1" gutterBottom>
-        Available Stories
-      </Typography>
-      
-      <Paper elevation={3} sx={{ p: 2 }}>
-        {stories.length === 0 ? (
-          <Typography>No stories available.</Typography>
-        ) : (
-          <List>
-            {stories.map((story) => (
-              <ListItem key={story.id} disablePadding>
-                <ListItemButton onClick={() => handleStoryClick(story.id)}>
-                  <ListItemText 
-                    primary={story.title}
-                    secondary={story.description}
-                  />
-                </ListItemButton>
-              </ListItem>
-            ))}
-          </List>
-        )}
-      </Paper>
+    <Container>
+      <div className={styles.header}>
+        <h1>Available Stories</h1>
+        <Button onClick={handleCreateStory} variant="secondary">
+          Create New Story
+        </Button>
+      </div>
+
+      {stories.length === 0 ? (
+        <div className={styles.emptyState}>No stories available.</div>
+      ) : (
+        <div className={styles.storiesList}>
+          {stories.map((story) => (
+            <Link key={story.uuid} className={styles.storyItem} to="/play/$storyId" params={{ storyId: story.uuid }}>
+              <div className={styles.storyTitle}>{story.title}</div>
+              <div className={styles.storyDescription}>{story.description}</div>
+            </Link>
+          ))}
+        </div>
+      )}
     </Container>
   );
 };

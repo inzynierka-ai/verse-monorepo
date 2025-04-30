@@ -3,11 +3,14 @@ from typing import Dict, Any, List, Optional, Callable, Type
 import json
 import logging
 from jose import jwt, JWTError  # Add JWT handling
+import uuid  # Add uuid
 
 from app.routers.game_ws.base import BaseMessageHandler
 from app.routers.game_ws.handlers.initialization import GameInitializationHandler
-from app.services.auth import SECRET_KEY, ALGORITHM  # Import your security constants
-from app.db.session import get_db, Session  # Import synchronous database session
+from app.routers.game_ws.handlers.scene_generation import SceneGenerationHandler  # Import SceneGenerationHandler
+from app.services.auth import SECRET_KEY, ALGORITHM  # Import security constants
+from app.db.session import get_db, Session
+from app.services.users import get_user  # Import synchronous database session
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -44,20 +47,27 @@ class AuthenticationHandler(BaseMessageHandler):
         try:
             # Decode the JWT token
             payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-            user_id = payload.get("sub")
-            username = payload.get("preferred_username", user_id)
+            username: str | None = payload.get("sub")
             
             # Store user info in WebSocket state for later use
-            websocket.state.user_id = user_id
             websocket.state.username = username
             
-            if self.db_session:
+            if self.db_session and username:
                 # Here you can perform database operations like checking if user exists,
                 # updating last login time, etc.
-                logger.info(f"Database available for user authentication: {user_id}")
+                logger.info(f"Database available for user authentication: {username}")
+                user = get_user(self.db_session, username)
+                if not user:
+                    logger.error(f"User {username} not found in database for authentication")
+                    await websocket.send_json({
+                        "type": "AUTH_ERROR",
+                        "payload": {"message": "User not found"}
+                    })
+                else:
+                    websocket.state.user_id = user.id
             
-            logger.info(f"User authenticated: {username} (ID: {user_id})")
-            print(f"WebSocket authenticated for user: {username} (ID: {user_id})")
+            logger.info(f"User authenticated: {username}")
+            print(f"WebSocket authenticated for user: {username}")
             
             # Send success response
             await websocket.send_json({
@@ -180,25 +190,24 @@ class GameMessageHandler:
 
 
 # Create a single instance of the handler
-game_handler = GameMessageHandler()
+# game_handler = GameMessageHandler() # Remove this instance, we will create handlers per connection now
 
 
 @router.websocket("/ws")
 async def game_websocket(websocket: WebSocket):
-    """WebSocket endpoint for game communication"""
+    """WebSocket endpoint for general game communication (authentication, etc.)"""
     # Initialize user state
-    websocket.state.user_id = None
     websocket.state.username = "unknown"
-    
+
     # Get database session (synchronous)
     db = next(get_db())
-    logger.info(f"Database session created: {db}")
-    
-    # Create a handler with the database session
-    handler = GameMessageHandler(db_session=db)
-    
+    logger.info(f"Database session created for general WS: {db}")
+
+    # Create a handler with the database session for this connection
+    handler = GameMessageHandler(db_session=db) # Pass db session
+
     await handler.connect(websocket)
-    
+
     try:
         while True:
             print(f"Waiting for message from user: {getattr(websocket.state, 'username', 'unknown')}")
@@ -214,10 +223,115 @@ async def game_websocket(websocket: WebSocket):
                 })
     except WebSocketDisconnect:
         handler.disconnect(websocket)
+        logger.info(f"WebSocket disconnected for user: {getattr(websocket.state, 'username', 'unknown')}")
     except Exception:
         username = getattr(websocket.state, "username", "unknown")
         logger.exception(f"Unexpected error in WebSocket connection for user: {username}")
-        handler.disconnect(websocket)
+        handler.disconnect(websocket) # Ensure disconnection on error
     finally:
         # Close the database session
-        db.close()
+        if db: # Check if db was assigned
+            db.close()
+            logger.info(f"Database session closed for general WS connection of user: {getattr(websocket.state, 'username', 'unknown')}")
+
+
+@router.websocket("/ws/stories/{story_uuid}/scene")
+async def scene_generation_websocket(
+    websocket: WebSocket,
+    story_uuid: uuid.UUID,
+):
+    """WebSocket endpoint for scene generation communication."""
+    logger.info(f"Initiating scene generation WS for story {story_uuid}")
+    await websocket.accept() # Accept the connection first
+    
+    # Get database session (synchronous)
+    db = next(get_db())
+    logger.info(f"Database session created for scene generation WS: {db}")
+
+    # Initialize websocket state
+    websocket.state.username = "unknown"
+
+    # Create and use an authentication handler
+    auth_handler = AuthenticationHandler(db_session=db)
+    
+    try:
+        # Wait for and process the authentication message
+        data = await websocket.receive_text()
+        try:
+            message = json.loads(data)
+            if not await auth_handler.handle(message, websocket):
+                await websocket.send_json({
+                    "type": "ERROR",
+                    "payload": {"message": "Authentication required as first message"}
+                })
+                if db:
+                    db.close()
+                return
+        except json.JSONDecodeError:
+            await websocket.send_json({
+                "type": "ERROR",
+                "payload": {"message": "Invalid JSON in authentication message"}
+            })
+            if db:
+                db.close()
+            return
+    except WebSocketDisconnect:
+        logger.info(f"WebSocket disconnected during authentication for story {story_uuid}")
+        if db:
+            db.close()
+        return
+    except Exception as e:
+        logger.exception(f"Error during authentication for scene generation: {e}")
+        if db:
+            db.close()
+        return
+    
+    # Check if we have a user_id after authentication
+    username = getattr(websocket.state, "username", "unknown")
+    user_id: int = getattr(websocket.state, "user_id", None) # type: ignore
+
+    logger.info(f"User ID after authentication: {user_id}")
+    
+    if not username:
+        logger.error(f"No username after authentication for scene generation WS for story {story_uuid}")
+        await websocket.send_json({
+            "type": "AUTH_ERROR",
+            "payload": {"message": "Authentication failed"}
+        })
+        if db:
+            db.close()
+        return
+    
+    # Acknowledge scene generation is starting
+    await websocket.send_json({
+        "type": "SCENE_START",
+        "payload": {"message": f"Scene generation starting for story {story_uuid}"}
+    })
+    
+    logger.info(f"Starting scene generation for user {username} and story {story_uuid}")
+    
+    handler = SceneGenerationHandler(
+        websocket=websocket,
+        story_uuid=story_uuid,
+        db_session=db,
+        user_id=user_id
+    )
+
+    try:
+        await handler.run()
+    except WebSocketDisconnect:
+        logger.info(f"Scene generation WS disconnected for story {story_uuid}")
+        # Cleanup is handled within handler.run()'s finally block
+    except Exception as e:
+        logger.exception(f"Unexpected error in scene generation WS for story {story_uuid}: {e}")
+        # Attempt to send error before closing
+        try:
+            await websocket.send_json({"type": "ERROR", "payload": {"message": "Internal server error during scene generation."}})
+        except Exception:
+            pass # Ignore if sending fails (connection might be closed)
+    finally:
+        # The handler manages its own cleanup including WebSocket closure
+        # Ensure the database session provided by Depends is closed
+        logger.info(f"Closing DB session for scene generation WS for story {story_uuid}")
+        if db:
+            db.close()

@@ -3,7 +3,6 @@ from app.db.session import SessionLocal
 from app.models.user import User
 from app.models.story import Story
 from app.models.character import Character
-from app.models.chapter import Chapter
 from app.models.scene import Scene
 from app.models.message import Message
 from app.models.location import Location
@@ -27,7 +26,6 @@ def clear_database():
         # Delete in reverse order of dependencies
         db.query(Message).delete()
         db.query(Scene).delete()
-        db.query(Chapter).delete()
         db.query(Character).delete()
         db.query(Location).delete()
         db.query(Story).delete()
@@ -369,51 +367,12 @@ def seed_database(force_reseed=False):
         db.add_all(characters_story1 + characters_story2 + characters_story3 + characters_story4)
         db.flush()
         
-        # Create chapters with all required fields
-        chapter1 = Chapter(
-            title="The Beginning of Adventure",
-            description="The heroes meet and begin their journey",
-            uuid=generate_uuid(),
-            story_id=story1.id,
-            characters=characters_story1,  # Associate characters with chapter
-            locations=[location1]  # Associate locations with chapter
-        )
-        
-        chapter2 = Chapter(
-            title="The Murder Investigation",
-            description="Detective Blake begins solving the case",
-            uuid=generate_uuid(),
-            story_id=story2.id,
-            characters=characters_story2,
-            locations=[location2]
-        )
-        
-        chapter3 = Chapter(
-            title="Launch into the Unknown",
-            description="The crew embarks on their journey",
-            uuid=generate_uuid(),
-            story_id=story3.id,
-            characters=characters_story3,
-            locations=[location3]
-        )
-        
-        chapter4 = Chapter(
-            title="First Steps into Magic",
-            description="Willow discovers her magical abilities",
-            uuid=generate_uuid(),
-            story_id=story4.id,
-            characters=characters_story4,
-            locations=[location4]
-        )
-        
-        db.add_all([chapter1, chapter2, chapter3, chapter4])
-        db.flush()
         
         # Create scenes with all required fields
         scene1 = Scene(
             uuid=generate_uuid(),
             prompt="The heroes meet in the grand hall of the castle as moonlight streams through stained glass windows.",
-            chapter_id=chapter1.id,
+            story_id=story1.id,
             location_id=location1.id,
             characters=characters_story1  # Associate characters with scene
         )
@@ -421,7 +380,7 @@ def seed_database(force_reseed=False):
         scene2 = Scene(
             uuid=generate_uuid(),
             prompt="Detective Blake examines the body found in the mansion's library while the storm rages outside.",
-            chapter_id=chapter2.id,
+            story_id=story2.id,
             location_id=location2.id,
             characters=characters_story2
         )
@@ -429,7 +388,7 @@ def seed_database(force_reseed=False):
         scene3 = Scene(
             uuid=generate_uuid(),
             prompt="On the bridge of the Starship Explorer, the crew prepares for their first jump to hyperspace.",
-            chapter_id=chapter3.id,
+            story_id=story3.id,
             location_id=location3.id,
             characters=characters_story3
         )
@@ -437,7 +396,7 @@ def seed_database(force_reseed=False):
         scene4 = Scene(
             uuid=generate_uuid(),
             prompt="In a sunlit clearing of the Whispering Woods, Willow discovers she can communicate with the forest spirits.",
-            chapter_id=chapter4.id,
+            story_id=story4.id,
             location_id=location4.id,
             characters=characters_story4
         )

@@ -1,5 +1,5 @@
 from typing import List, Optional, Literal
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 # Input models
@@ -77,6 +77,7 @@ class CharacterFromLLM(BaseModel):
 
 class Character(CharacterFromLLM):
     """Final character output structure"""
+    model_config = ConfigDict(from_attributes=True)
     imageUrl: str = Field(...,
                          description="URL of the generated image for this character")
     role: Literal["player", "npc"] = Field(

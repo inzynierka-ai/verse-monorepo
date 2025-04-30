@@ -41,8 +41,6 @@ class StepUpdate(WebSocketMessage):
 class StoryTemplateComplete(WebSocketMessage):
     data: Dict[str, Any]
 
-class ChapterComplete(WebSocketMessage):
-    data: Dict[str, Any]
 
 class CharactersComplete(WebSocketMessage):
     data: Dict[str, Any]

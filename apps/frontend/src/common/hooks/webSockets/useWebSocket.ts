@@ -149,27 +149,8 @@ export const useWebSocket = ({
       console.log(`WebSocket closed: ${event.code} ${event.reason}`);
       setIsConnected(false);
       onCloseRef.current?.();
-      
-      activeConnections.delete(connectionKey);
 
-      // Only attempt reconnection if this was an abnormal closure 
-      // and we haven't exceeded attempts
-      if (enabled && 
-          attempts.current < reconnectAttempts && 
-          event.code !== 1000 && // Normal closure
-          event.code !== 1001) { // Going away (page navigation) 
-          
-        const delay = getBackoffDelay(attempts.current);
-        attempts.current++;
-        
-        console.log(`Attempting reconnect in ${delay}ms (attempt ${attempts.current}/${reconnectAttempts})`);
-        
-        clearConnectionTimeout();
-        connectTimeoutRef.current = window.setTimeout(() => {
-          connectTimeoutRef.current = null;
-          connect();
-        }, delay);
-      }
+      activeConnections.delete(connectionKey);
     };
 
     newSocket.onmessage = (event) => {

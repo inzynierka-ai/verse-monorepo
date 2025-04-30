@@ -7,9 +7,6 @@
 }
 
 .content {
-  display: flex;
-  justify-content: center;
-  align-items: center;
   min-height: 100vh;
   font-family: $game-font;
   background: linear-gradient(135deg, rgba(13, 17, 23, 0.85), rgba(20, 30, 48, 0.9));
@@ -17,7 +14,7 @@
   background-position: center;
   padding: 1rem;
   position: relative;
-  overflow: hidden;
+  
   
   &::before {
     content: '';

@@ -3,7 +3,7 @@ from sqlalchemy.orm import relationship
 from typing import List
 from sqlalchemy.orm import Mapped
 from app.db.session import Base
-from app.models.associations import chapter_location_association, location_character_association, location_connections
+from app.models.associations import location_character_association, location_connections
 
 class Location(Base):
     __tablename__ = 'locations'
@@ -22,7 +22,6 @@ class Location(Base):
     story = relationship("Story", back_populates="locations")
     scenes = relationship("Scene", back_populates="location")
     characters: Mapped[List["Character"]] = relationship(secondary=location_character_association, back_populates="locations") # type: ignore
-    chapters: Mapped[List["Chapter"]] = relationship(secondary=chapter_location_association, back_populates="locations") # type: ignore
     
     # Self-referential relationship for connected locations
     connected_locations: Mapped[List["Location"]] = relationship(

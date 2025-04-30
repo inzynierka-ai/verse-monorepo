@@ -1,6 +1,8 @@
 import { useCallback, useState } from 'react';
 import { useWebSocket } from '@/common/hooks/webSockets/useWebSocket';
 import { sendWebSocketMessage } from '@/utils/webSocket';
+import { Character } from '@/types/character.types';
+import { Story } from '@/types/story.types';
 
 export interface StorySettings {
   theme: string;
@@ -21,27 +23,6 @@ export interface StoryGenerationRequest {
   playerCharacter: PlayerCharacter;
 }
 
-export interface StoryCreated {
-  description: string;
-  rules: string[];
-}
-
-export interface Character {
-  name: string;
-  description: string;
-  personalityTraits: string[];
-  backstory: string;
-  goals: string[];
-  relationships: {
-    name: string;
-    level: number;
-    type: string;
-    backstory: string;
-  }[];
-  imageUrl: string;
-  role: 'player' | 'npc';
-}
-
 export interface StoryGenerationMessage {
   type: 'STATUS_UPDATE' | 'STORY_CREATED' | 'CHARACTER_CREATED' | 'INITIALIZATION_COMPLETE' | 'ERROR';
   payload: any;
@@ -50,7 +31,7 @@ export interface StoryGenerationMessage {
 export interface StoryGenerationState {
   status: 'idle' | 'connecting' | 'generating' | 'complete' | 'error';
   statusMessage: string;
-  story?: StoryCreated;
+  story?: Story;
   character?: Character;
   errorMessage?: string;
 }
