@@ -1,7 +1,6 @@
 import { useMutation } from '@tanstack/react-query';
 import { apiClient } from '@/services/api/client';
-import { StoryCreated } from '@/services/api/hooks';
-import { Character } from '@/types/character.types';
+
 interface CreateStoryRequest {
   title: string;
   description: string;
@@ -26,24 +25,3 @@ export const useCreateStory = () => {
   });
 };
 
-// Helper function to convert generated story and character to a story request
-export const createStoryFromGeneration = (story: StoryCreated, character: Character): CreateStoryRequest => {
-  // Create a title based on the character and story
-  const title = `${character.name}'s Adventure`;
-
-  // Use the story description
-  const description = story.description;
-
-  // Join the rules array into a string
-  const rules = story.rules.join('\n');
-
-  // Generate a UUID - the backend will generate one, but we need one for the request
-  const uuid = crypto.randomUUID();
-
-  return {
-    title,
-    description,
-    rules,
-    uuid,
-  };
-};

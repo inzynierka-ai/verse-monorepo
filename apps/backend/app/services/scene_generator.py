@@ -194,11 +194,21 @@ class SceneGeneratorAgent:
         The player character information is provided for context only.
         </character_generation_rules>
         
+        <player_perspective>
+        The story is being discovered from the perspective of the player. The player character is the MAIN FOCAL POINT of this story.
+        All scenes should be meaningful and relevant to the player character's journey.
+        Consider how each scene provides opportunities for the player to:
+        1. Make meaningful choices that affect the story
+        2. Develop relationships with NPCs
+        3. Explore and interact with the world from their perspective
+        4. Advance their personal storyline or goals
+        </player_perspective>
+        
         <planning>
         Plan before each action. Think about what elements would create an interesting scene. Consider:
-        1. How this scene connects to previous scenes
-        2. What character interactions would be compelling
-        3. How to advance the story
+        1. How this scene connects to previous scenes from the player's perspective
+        2. What character interactions would be compelling for the player
+        3. How to advance the story while keeping the player character central
         Explain your reasoning for each decision.
         </planning>
         """

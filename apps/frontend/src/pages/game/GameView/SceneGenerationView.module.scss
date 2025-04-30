@@ -47,4 +47,170 @@
   to {
     transform: rotate(360deg);
   }
+}
+
+// Use variables and mixins when available
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+  color: var(--color-text-primary);
+}
+
+.connectionStatus,
+.idleState,
+.errorSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  text-align: center;
+  width: 100%;
+}
+
+.errorSection {
+  h2 {
+    margin-bottom: 1.5rem;
+    color: var(--color-error);
+  }
+
+  p {
+    margin-bottom: 2rem;
+    max-width: 600px;
+  }
+}
+
+// Generation in progress styles
+.generationHeader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 2.5rem;
+  text-align: center;
+  
+  h2 {
+    margin-top: 1rem;
+    font-size: 1.75rem;
+  }
+}
+
+.generationProgress {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 3rem;
+}
+
+// Location section styles
+.locationSection {
+  h3 {
+    margin-bottom: 1.25rem;
+    font-size: 1.5rem;
+    text-align: center;
+  }
+}
+
+.locationCard {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  max-width: 800px;
+  margin: 0 auto;
+  
+  @media (min-width: 768px) {
+    flex-direction: row;
+  }
+}
+
+.locationInfo {
+  padding: 1.5rem;
+  flex: 1;
+  
+  h4 {
+    font-size: 1.25rem;
+    margin-bottom: 0.75rem;
+  }
+  
+  p {
+    line-height: 1.6;
+  }
+}
+
+// Characters section styles
+.charactersSection {
+  h3 {
+    margin-bottom: 1.25rem;
+    font-size: 1.5rem;
+    text-align: center;
+  }
+}
+
+.charactersGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1.5rem;
+  width: 100%;
+}
+
+.characterCard {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  transition: transform 0.2s ease-in-out;
+  
+  &:hover {
+    transform: translateY(-5px);
+  }
+}
+
+.characterInfo {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  
+  h4 {
+    font-size: 1.125rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .characterRole {
+    font-size: 0.875rem;
+    color: var(--color-text-secondary);
+  }
+}
+
+// Image containers
+.imageContainer {
+  width: 100%;
+  overflow: hidden;
+  
+  .locationCard & {
+    @media (min-width: 768px) {
+      width: 40%;
+    }
+  }
+}
+
+.locationImage,
+.characterImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.locationImage {
+  @media (min-width: 768px) {
+    height: 300px;
+  }
+}
+
+.characterImage {
+  height: 220px;
 } 
