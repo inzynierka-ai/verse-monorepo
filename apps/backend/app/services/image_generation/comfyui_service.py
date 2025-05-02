@@ -62,7 +62,9 @@ class ComfyUIService:
         """
         # Use the factory to create the appropriate loader
         loader = WorkflowLoaderFactory.create_loader(context_type)
-        return loader.load_workflow(prompt, generation_id)
+        workflow: Dict[str, Any] = loader.load_workflow(prompt, generation_id)
+        
+        return workflow
 
     def _get_history(self, prompt_id: str) -> Dict[str, Any]:
         """Get generation history from ComfyUI"""
@@ -110,7 +112,7 @@ class ComfyUIService:
             logging.error(f"Error getting image: {str(e)}")
             return b""
 
-    def save_image_bytes(self, image_bytes: bytes, filename: str) -> str:
+    def _save_image_bytes(self, image_bytes: bytes, filename: str) -> str:
         """
         Save image bytes to a file in the output directory
 
@@ -254,7 +256,7 @@ class ComfyUIService:
                 # Save the image locally
                 local_filename = f"{generation_id}_{filename}"
                 logging.info(f"Saving image as: {local_filename}")
-                file_path = self.save_image_bytes(image_bytes, local_filename)
+                file_path = self._save_image_bytes(image_bytes, local_filename)
 
                 if not file_path:
                     logging.error("Failed to save image locally")
@@ -284,3 +286,5 @@ class ComfyUIService:
             import traceback
             logging.error(traceback.format_exc())
             return {"success": False, "error": f"Error generating image: {str(e)}", "imagePath": ""}
+
+    
