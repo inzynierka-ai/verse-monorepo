@@ -11,6 +11,7 @@ import styles from './GameView.module.scss';
 
 const GameView = () => {
   const { storyId } = gameRoute.useParams();
+  console.log('storyId', storyId);
   const navigate = useNavigate();
   const [message, setMessage] = useState('');
   const queryClient = useQueryClient();
@@ -86,7 +87,8 @@ const GameView = () => {
     );
   }
 
-  return <></>;
+  navigate({ to: '/play/$storyId/scenes/$sceneId', params: { storyId, sceneId: currentScene.uuid } });
+  return null;
 };
 
 export default GameView;

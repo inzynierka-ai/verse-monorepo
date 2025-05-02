@@ -1,0 +1,184 @@
+@use "@/common/styles/variables" as *;
+@use "@/common/styles/mixins" as *;
+
+.sceneView {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.sceneHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.sceneHeader h1 {
+  margin: 0;
+  font-size: 2rem;
+}
+
+.sceneDescription {
+  background-color: rgba(0, 0, 0, 0.05);
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  font-size: 1.1rem;
+  line-height: 1.6;
+}
+
+.locationInfo {
+  margin-bottom: 2rem;
+}
+
+.locationInfo h2 {
+  margin-bottom: 1rem;
+}
+
+.locationCard {
+  display: flex;
+  flex-direction: column;
+  background-color: rgba(0, 0, 0, 0.02);
+  border-radius: 0.5rem;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+
+  @media (min-width: 768px) {
+    flex-direction: row;
+  }
+}
+
+.locationImage {
+  width: 100%;
+  height: 200px;
+  overflow: hidden;
+  
+  @media (min-width: 768px) {
+    width: 300px;
+    height: 250px;
+  }
+}
+
+.locationImage img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.locationDetails {
+  padding: 1.5rem;
+  flex: 1;
+}
+
+.locationDetails h3 {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  font-size: 1.5rem;
+}
+
+.charactersSection h2 {
+  margin-bottom: 1rem;
+}
+
+.charactersGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1.5rem;
+}
+
+.characterCard {
+  background-color: white;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  }
+}
+
+.characterCard h3 {
+  margin: 0.5rem 0;
+  font-size: 1.2rem;
+}
+
+.characterPortrait {
+  width: 100%;
+  height: 150px;
+  background-color: #f0f0f0;
+  border-radius: 0.25rem;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.characterPortrait img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.characterPlaceholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #3498db;
+  color: white;
+  font-size: 3rem;
+  font-weight: bold;
+}
+
+.characterRole {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #666;
+  text-transform: capitalize;
+}
+
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 50vh;
+}
+
+.loadingSpinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(0, 0, 0, 0.1);
+  border-radius: 50%;
+  border-top-color: #3498db;
+  animation: spin 1s ease-in-out infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.error {
+  max-width: 600px;
+  margin: 4rem auto;
+  padding: 2rem;
+  text-align: center;
+  background-color: rgba(255, 0, 0, 0.05);
+  border-radius: 0.5rem;
+}
+
+.error h2 {
+  color: #e74c3c;
+}
+
+.error button {
+  margin-top: 1rem;
+} 

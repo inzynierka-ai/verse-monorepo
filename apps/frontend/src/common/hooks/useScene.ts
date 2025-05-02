@@ -15,6 +15,7 @@ interface SceneMessage {
 
 interface UseSceneProps {
   sceneId: string;
+  characterId: string;
   onConnectionChange?: (isConnected: boolean) => void;
 }
 
@@ -24,7 +25,7 @@ interface UseSceneReturn {
   reconnect: () => void;
 }
 
-export const useScene = ({ sceneId, onConnectionChange }: UseSceneProps): UseSceneReturn => {
+export const useScene = ({ sceneId, characterId, onConnectionChange }: UseSceneProps): UseSceneReturn => {
   const queryClient = useQueryClient();
 
   // Handle incoming messages from WebSocket
@@ -45,10 +46,7 @@ export const useScene = ({ sceneId, onConnectionChange }: UseSceneProps): UseSce
                 };
                 return messages;
               }
-              return [
-                ...messages,
-                { role: 'assistant', content: message.content, threadId: sceneId },
-              ];
+              return [...messages, { role: 'assistant', content: message.content, threadId: sceneId }];
             });
             break;
           }
@@ -64,7 +62,7 @@ export const useScene = ({ sceneId, onConnectionChange }: UseSceneProps): UseSce
         console.error(error);
       }
     },
-    [queryClient, sceneId],
+    [queryClient, sceneId, characterId],
   );
 
   // Handle WebSocket connection changes
@@ -75,14 +73,14 @@ export const useScene = ({ sceneId, onConnectionChange }: UseSceneProps): UseSce
   const handleClose = useCallback(() => {
     onConnectionChange?.(false);
   }, [onConnectionChange]);
-  
+
   // Initialize WebSocket connection with enabled flag based on sceneId
   const { socket, isConnected, reconnect } = useWebSocket({
     url: `${import.meta.env.VITE_BACKEND_URL}/api/scenes/${sceneId}`,
     onMessage: handleMessage,
     onOpen: handleOpen,
     onClose: handleClose,
-    enabled: !!sceneId
+    enabled: !!sceneId,
   });
 
   // Send message handler
@@ -90,7 +88,7 @@ export const useScene = ({ sceneId, onConnectionChange }: UseSceneProps): UseSce
     (content: string) => {
       // Don't send if no valid sceneId or socket
       if (!sceneId || !socket) return false;
-      
+
       // Optimistically update messages cache
       queryClient.setQueryData(messagesQueryKey(sceneId), (old: Message[] = []) => [
         ...old,
