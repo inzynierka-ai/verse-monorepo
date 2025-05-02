@@ -50,13 +50,12 @@ def upload_image_to_comfy(image_path, comfy_server_address="http://127.0.0.1:818
         print(f"Wystąpił błąd: {str(e)}")
         return None
 
-def get_image_for_workflow(image_name, comfy_server_address="http://127.0.0.1:8188"):
+def get_image_for_workflow(image_name):
     """
     Funkcja zwracająca informacje o załadowanym obrazku dla workflow ComfyUI
     
     Args:
         image_name (str): Nazwa obrazka na serwerze
-        comfy_server_address (str): Adres serwera ComfyUI
     
     Returns:
         dict: Dane obrazka w formacie wymaganym przez ComfyUI
@@ -65,21 +64,3 @@ def get_image_for_workflow(image_name, comfy_server_address="http://127.0.0.1:81
         "filename": image_name,
         "type": "input"
     }
-
-if __name__ == "__main__":
-    # Ścieżka do obrazka referencyjnego (dostosuj według potrzeb)
-    reference_image_path = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)), 
-        "assets", "reference_images", "model_reference.jpg"
-    )
-    
-    # Adres serwera ComfyUI (dostosuj według potrzeb)
-    comfy_address = "http://127.0.0.1:8188"
-    
-    # Upload obrazka
-    uploaded_image = upload_image_to_comfy(reference_image_path, comfy_address)
-    
-    if uploaded_image:
-        # Pobierz dane obrazka dla workflow
-        image_data = get_image_for_workflow(uploaded_image, comfy_address)
-        print(f"Dane obrazka do użycia w workflow: {json.dumps(image_data, indent=2)}")
