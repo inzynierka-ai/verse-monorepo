@@ -20,11 +20,6 @@ from app.prompts.location_generator import (
     LOCATION_GENERATOR_SYSTEM_PROMPT,
     LOCATION_GENERATOR_USER_PROMPT_TEMPLATE,
 )
-from app.prompts.story_coordinator import (
-    STORY_COORDINATOR_SYSTEM_PROMPT,
-    STORY_COORDINATOR_USER_PROMPT_TEMPLATE,
-)
-
 
 # Story Wizard prompts
 STORY_WIZARD_SYSTEM_PROMPT = """You are an expert story-building AI that creates engaging and rich narrative stories for interactive fiction and RPGs. Given a theme, you'll generate a detailed description of a game story including setting, atmosphere, characters, locations, and initial conflicts.
@@ -86,8 +81,6 @@ __all__ = [
     'CREATE_CHARACTER_DRAFT_USER_PROMPT_TEMPLATE',
     'LOCATION_GENERATOR_SYSTEM_PROMPT',
     'LOCATION_GENERATOR_USER_PROMPT_TEMPLATE',
-    'STORY_COORDINATOR_SYSTEM_PROMPT',
-    'STORY_COORDINATOR_USER_PROMPT_TEMPLATE',
     'STORY_WIZARD_SYSTEM_PROMPT',
     'STORY_WIZARD_USER_PROMPT_TEMPLATE',
     'STORY_STRUCTURE_SYSTEM_PROMPT',

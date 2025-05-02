@@ -7,7 +7,7 @@ class Scene(Base):
     __tablename__ = 'scenes'
     
     id = Column(Integer, primary_key=True, index=True)
-    prompt = Column(String, nullable=False)
+    description = Column(String, nullable=False)
     location_id = Column(Integer, ForeignKey('locations.id'), nullable=False)
     uuid = Column(String, nullable=False)
     story_id = Column(Integer, ForeignKey('stories.id'), nullable=False)

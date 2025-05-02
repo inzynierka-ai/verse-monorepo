@@ -12,7 +12,7 @@ from langfuse.decorators import observe  # type: ignore
 from langfuse import Langfuse  # type: ignore
 from sqlalchemy.orm import Session
 from app.models.scene import Scene as SceneModel
-from app.models.character import Character as CharacterOrmModel
+from app.crud import scenes as scenes_crud
 
 
 # Define callback type hints
@@ -335,7 +335,7 @@ class SceneGeneratorAgent:
             self.state.scene_description = self.state.scene_description or "Scene generation timed out before completion."
         
         # Make sure any lingering actions are removed
-        for action_type in list(self.state.active_actions.keys()):
+        for action_type in list(self.state.active_actions.keys()):  # type: ignore
             await self._remove_action(action_type)
         
         # Return the final scene
@@ -673,10 +673,10 @@ class SceneGeneratorAgent:
             location = scene_result.location
             location_id = location.id 
             
-            # Create the scene model
+            # Create the scene model with just basic attributes
             db_scene = SceneModel(
                 uuid=scene_uuid,
-                prompt=scene_result.description,
+                description=scene_result.description,
                 location_id=location_id,
                 story_id=story_id,
             )
@@ -684,23 +684,28 @@ class SceneGeneratorAgent:
             if location_id is None:
                 logging.warning("Scene location does not have an ID, scene will be saved without location reference")
             
-            # Add to database session
+            # Add to database session and get ID
             self.db_session.add(db_scene)
             self.db_session.flush()  # Get the ID without committing
             
-            # Add character associations if characters have IDs
-            if hasattr(db_scene, 'characters'):
-                for character in scene_result.characters:
-                    # Check if character has an ID attribute
-                    character_id = getattr(character, 'id', None)
-                    if character_id is not None:
-                        # Find the character ORM instance
-                        character_orm = self.db_session.query(CharacterOrmModel).filter_by(id=character_id).first()
-                        if character_orm:
-                            # Add to the relationship collection
-                            db_scene.characters.append(character_orm)
+            # Collect character IDs that have database IDs
+            character_ids: List[int] = []
+            for character in scene_result.characters:
+                character_id = getattr(character, 'id', None)
+                if character_id is not None:
+                    character_ids.append(character_id)
             
-            # Commit changes
+            # Use CRUD function to associate characters with scene if we have character IDs
+            if character_ids:
+                # Type cast the ID to an integer to satisfy the linter
+                scene_id: int = db_scene.id  # type: ignore
+                db_scene = scenes_crud.add_characters_to_scene(
+                    self.db_session, 
+                    scene_id,
+                    character_ids
+                )
+            
+            # Commit all changes
             self.db_session.commit()
             logging.info(f"Scene saved to database with ID {db_scene.id}")
             return db_scene
@@ -708,4 +713,4 @@ class SceneGeneratorAgent:
             logging.exception(f"Failed to save scene to database: {str(e)}")
             if self.db_session and hasattr(self.db_session, 'is_active') and self.db_session.is_active:
                 self.db_session.rollback()
-            raise 
+            raise ValueError(f"Failed to save scene to database: {str(e)}") 

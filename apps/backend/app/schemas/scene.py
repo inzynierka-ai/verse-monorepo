@@ -6,25 +6,16 @@ from pydantic import BaseModel
 from app.schemas.message import Message
 from app.schemas.character import Character
 from app.schemas.location import Location
-
-class SceneBase(BaseModel):
-    prompt: str
+class Scene(BaseModel):
+    id: int
+    description: str
     location_id: int
     story_id: int
     uuid: str
-
-class SceneCreate(SceneBase):
-    pass
-
-class Scene(SceneBase):
-    id: int
-
-    model_config = ConfigDict(from_attributes=True)
-
-class SceneDetail(Scene):
     location: Location
     characters: List[Character]
     messages: List[Message]
+    description: str
 
     model_config = ConfigDict(from_attributes=True)
 

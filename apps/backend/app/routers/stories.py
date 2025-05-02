@@ -52,7 +52,7 @@ def list_characters(story_id: int, current_user: User = Depends(get_current_user
     return characters
 
 
-@router.get("/{story_uuid}/scene/latest", response_model=scene_schema.SceneDetail)
+@router.get("/{story_uuid}/scene/latest", response_model=scene_schema.Scene)
 def get_latest_scene(
     story_uuid: uuid.UUID,
     db: Session = Depends(get_db),

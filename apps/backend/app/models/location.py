@@ -1,9 +1,6 @@
 from sqlalchemy import Column, Integer, String, ForeignKey
 from sqlalchemy.orm import relationship
-from typing import List
-from sqlalchemy.orm import Mapped
 from app.db.session import Base
-from app.models.associations import location_character_association, location_connections
 
 class Location(Base):
     __tablename__ = 'locations'
@@ -21,13 +18,3 @@ class Location(Base):
     # Relationships
     story = relationship("Story", back_populates="locations")
     scenes = relationship("Scene", back_populates="location")
-    characters: Mapped[List["Character"]] = relationship(secondary=location_character_association, back_populates="locations") # type: ignore
-    
-    # Self-referential relationship for connected locations
-    connected_locations: Mapped[List["Location"]] = relationship(
-        "Location",
-        secondary=location_connections,
-        primaryjoin=(id == location_connections.c.from_location_id),
-        secondaryjoin=(id == location_connections.c.to_location_id),
-        backref="connected_from"
-    )
