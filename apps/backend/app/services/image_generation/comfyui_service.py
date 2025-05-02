@@ -62,7 +62,9 @@ class ComfyUIService:
         """
         # Use the factory to create the appropriate loader
         loader = WorkflowLoaderFactory.create_loader(context_type)
-        return loader.load_workflow(prompt, generation_id)
+        workflow: Dict[str, Any] = loader.load_workflow(prompt, generation_id)
+        
+        return workflow
 
     def _get_history(self, prompt_id: str) -> Dict[str, Any]:
         """Get generation history from ComfyUI"""
@@ -110,7 +112,7 @@ class ComfyUIService:
             logging.error(f"Error getting image: {str(e)}")
             return b""
 
-    def save_image_bytes(self, image_bytes: bytes, filename: str) -> str:
+    def _save_image_bytes(self, image_bytes: bytes, filename: str) -> str:
         """
         Save image bytes to a file in the output directory
 
@@ -254,7 +256,7 @@ class ComfyUIService:
                 # Save the image locally
                 local_filename = f"{generation_id}_{filename}"
                 logging.info(f"Saving image as: {local_filename}")
-                file_path = self.save_image_bytes(image_bytes, local_filename)
+                file_path = self._save_image_bytes(image_bytes, local_filename)
 
                 if not file_path:
                     logging.error("Failed to save image locally")
@@ -285,169 +287,4 @@ class ComfyUIService:
             logging.error(traceback.format_exc())
             return {"success": False, "error": f"Error generating image: {str(e)}", "imagePath": ""}
 
-    def generate_with_reference(self, reference_image_path, workflow_file=None, workflow_data=None):
-        """
-        Metoda do generowania obrazów z wykorzystaniem obrazka referencyjnego
-        
-        Args:
-            reference_image_path (str): Ścieżka do pliku obrazka referencyjnego
-            workflow_file (str, optional): Ścieżka do pliku workflow JSON dla ComfyUI
-            workflow_data (dict, optional): Bezpośrednio podane dane workflow jako słownik
-        
-        Returns:
-            dict: Słownik zawierający informacje o wyniku generowania
-        """
-        # 1. Upload obrazka referencyjnego
-        uploaded_image = self.upload_image(reference_image_path)
-        
-        if not uploaded_image:
-            logging.error("Nie udało się załadować obrazka referencyjnego. Przerywam generowanie.")
-            return {"success": False, "error": "Nie udało się załadować obrazka referencyjnego"}
-        
-        # 2. Załaduj workflow z pliku JSON lub użyj podanych danych
-        workflow = None
-        if workflow_data:
-            workflow = workflow_data
-        elif workflow_file:
-            try:
-                with open(workflow_file, 'r') as f:
-                    workflow = json.load(f)
-            except Exception as e:
-                logging.error(f"Błąd podczas ładowania workflow: {str(e)}")
-                return {"success": False, "error": f"Błąd podczas ładowania workflow: {str(e)}"}
-        else:
-            logging.error("Nie podano ani pliku workflow, ani danych workflow")
-            return {"success": False, "error": "Nie podano workflow"}
-        
-        # 3. Modyfikuj workflow, dodając referencję do załadowanego obrazka
-        # Uwaga: Poniższy kod należy dostosować do konkretnego workflow
-        # Znajdujemy wszystkie węzły typu "LoadImage"
-        for node_id, node_data in workflow.get("nodes", {}).items():
-            if node_data.get("class_type") == "LoadImage":
-                # Dodajemy referencję do naszego obrazka
-                node_data["inputs"]["image"] = self.get_image_for_workflow(uploaded_image)
-        
-        # 4. Wyślij workflow do przetworzenia
-        try:
-            # Używamy istniejącej metody _queue_prompt do wysłania workflow
-            result = self._queue_prompt(workflow)
-            
-            if "prompt_id" in result:
-                logging.info(f"Workflow został pomyślnie wysłany do ComfyUI z ID: {result['prompt_id']}")
-                # Możemy użyć kodu z generate_image do oczekiwania na wynik i pobrania obrazka
-                return {"success": True, "prompt_id": result["prompt_id"]}
-            else:
-                logging.error(f"Błąd podczas wysyłania workflow: {result}")
-                return {"success": False, "error": "Błąd podczas wysyłania workflow"}
-        except Exception as e:
-            logging.error(f"Wystąpił błąd: {str(e)}")
-            return {"success": False, "error": f"Wystąpił błąd: {str(e)}"}
-
-    def upload_image(self, image_path):
-        """
-        Metoda do uploadowania obrazka referencyjnego do ComfyUI
-        
-        Args:
-            image_path (str): Ścieżka do pliku obrazka
-        
-        Returns:
-            str: Nazwa obrazka na serwerze ComfyUI lub None w przypadku błędu
-        """
-        # Sprawdzenie czy plik istnieje
-        if not os.path.exists(image_path):
-            logging.error(f"Plik {image_path} nie istnieje")
-            return None
-        
-        try:
-            # Odczytanie pliku obrazka
-            with open(image_path, 'rb') as file:
-                image_data = file.read()
-            
-            # Tworzenie nazwy pliku (używamy tylko nazwy bez ścieżki)
-            filename = os.path.basename(image_path)
-            
-            # Przygotowanie danych do wysłania
-            files = {
-                'image': (filename, image_data)
-            }
-            
-            # Endpoint do uploadowania obrazków w ComfyUI API - używamy self.comfy_url
-            upload_url = f"{self.comfy_url}/upload/image"
-            
-            # Wysłanie żądania POST
-            response = requests.post(upload_url, files=files)
-            
-            # Sprawdzenie odpowiedzi
-            if response.status_code == 200:
-                logging.info(f"Obrazek '{filename}' został pomyślnie załadowany do ComfyUI")
-                return filename
-            else:
-                logging.error(f"Błąd podczas uploadowania obrazka: {response.text}")
-                return None
-                
-        except Exception as e:
-            logging.error(f"Wystąpił błąd podczas uploadowania obrazka: {str(e)}")
-            return None
-
-    def get_image_for_workflow(self, image_name):
-        """
-        Metoda zwracająca informacje o załadowanym obrazku dla workflow ComfyUI
-        
-        Args:
-            image_name (str): Nazwa obrazka na serwerze
-        
-        Returns:
-            dict: Dane obrazka w formacie wymaganym przez ComfyUI
-        """
-        return {
-            "filename": image_name,
-            "type": "input"
-        }
-
-
-def upload_image(image_path, comfy_server_address="http://127.0.0.1:8188"):
-    """
-    Funkcja do uploadowania obrazka referencyjnego do ComfyUI
     
-    Args:
-        image_path (str): Ścieżka do pliku obrazka
-        comfy_server_address (str): Adres serwera ComfyUI
-    
-    Returns:
-        str: Nazwa obrazka na serwerze ComfyUI lub None w przypadku błędu
-    """
-    # Sprawdzenie czy plik istnieje
-    if not os.path.exists(image_path):
-        print(f"Błąd: Plik {image_path} nie istnieje")
-        return None
-    
-    try:
-        # Odczytanie pliku obrazka
-        with open(image_path, 'rb') as file:
-            image_data = file.read()
-        
-        # Tworzenie nazwy pliku (używamy tylko nazwy bez ścieżki)
-        filename = os.path.basename(image_path)
-        
-        # Przygotowanie danych do wysłania
-        files = {
-            'image': (filename, image_data)
-        }
-        
-        # Endpoint do uploadowania obrazków w ComfyUI API
-        upload_url = f"{comfy_server_address}/upload/image"
-        
-        # Wysłanie żądania POST
-        response = requests.post(upload_url, files=files)
-        
-        # Sprawdzenie odpowiedzi
-        if response.status_code == 200:
-            print(f"Obrazek '{filename}' został pomyślnie załadowany do ComfyUI")
-            return filename
-        else:
-            print(f"Błąd podczas uploadowania obrazka: {response.text}")
-            return None
-            
-    except Exception as e:
-        print(f"Wystąpił błąd: {str(e)}")
-        return None

@@ -1,5 +1,10 @@
 import logging
-from typing import Dict, Any
+import os
+from pathlib import Path
+from typing import Dict, Any, Optional
+
+import requests
+from app.core.config import  settings
 from .workflow_loader import WorkflowLoader
 
 
@@ -54,4 +59,71 @@ class CharacterWorkflowLoader(WorkflowLoader):
                     }
                 }
         
-        return workflow 
+        # Add reference image for character generation
+        self._add_reference_image(workflow)
+        
+        return workflow
+    
+    def _add_reference_image(self, workflow: Dict[str, Any]) -> None:
+        """Add reference image to character workflow"""
+        # Find reference image path
+        reference_image_path = Path(settings.MEDIA_ROOT) / "comfyui" / "reference_images" / "model_reference.jpg"
+        if reference_image_path.exists():
+            uploaded_image = self._upload_image(str(reference_image_path))
+            if uploaded_image:
+                # Find LoadImage nodes and update them with reference image
+                for _node_id, node_data in workflow.get("nodes", {}).items():
+                    if node_data.get("class_type") == "LoadImage":
+                        # Add reference to our uploaded image
+                        node_data["inputs"]["image"] = uploaded_image
+                        logging.info(f"Added reference image to workflow node {_node_id}")
+            else:
+                logging.error("Failed to upload reference image for character generation")
+        else:
+            logging.error(f"Reference image not found at {reference_image_path}")
+
+    def _upload_image(self, image_path: str) -> Optional[str]:
+        """
+        Method for uploading reference image to ComfyUI
+        
+        Args:
+            image_path (str): Path to the image file
+        
+        Returns:
+            str: Image name on the ComfyUI server or None in case of error
+        """
+        # Check if file exists
+        if not os.path.exists(image_path):
+            logging.error(f"File {image_path} does not exist")
+            return None
+
+        try:
+            # Read the image file
+            with open(image_path, 'rb') as file:
+                image_data = file.read()
+
+            # Create filename (using only the name without path)
+            filename = os.path.basename(image_path)
+
+            # Prepare data to send
+            files = {
+                'image': (filename, image_data)
+            }
+
+            # Endpoint for uploading images in ComfyUI API - using self.comfy_url
+            upload_url = f"{settings.COMFYUI_API_URL}/upload/image"
+
+            # Send POST request
+            response = requests.post(upload_url, files=files)
+
+            # Check response
+            if response.status_code == 200:
+                print(f"Image '{filename}' was successfully uploaded to ComfyUI")
+                return filename
+            else:
+                print(f"Error uploading image: {response.text}")
+                return None
+
+        except Exception as e:
+            logging.error(f"An error occurred while uploading the image: {str(e)}")
+            return None
