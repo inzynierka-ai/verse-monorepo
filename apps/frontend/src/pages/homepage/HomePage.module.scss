@@ -4,16 +4,10 @@
 .container {
   width: 100%;
   height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  position: relative;
-  overflow: hidden;
-  background: linear-gradient(135deg, $dark-bg, darken($dark-bg, 5%));
-  color: $light-text;
 }
 
 .content {
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -80,27 +74,3 @@
 .loginButton, .exploreButton, .createButton {
   width: 100%;
 }
-
-.background {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: radial-gradient(circle at center, transparent 0%, $dark-bg 70%);
-  
-  &::after {
-    content: '';
-    position: absolute;
-    top: -50%;
-    left: -50%;
-    right: -50%;
-    bottom: -50%;
-    background: 
-      radial-gradient(circle at 80% 10%, rgba($primary-color, 0.1) 0%, transparent 25%),
-      radial-gradient(circle at 20% 80%, rgba($accent-color, 0.1) 0%, transparent 25%);
-    z-index: 1;
-    animation: gradientBg 15s ease infinite;
-    background-size: 200% 200%;
-  }
-} 

@@ -5,6 +5,7 @@ import Logo from '../../pages/auth/components/Logo/Logo';
 import Button from '../../common/components/Button/Button';
 import Link from '../../common/components/Link/Link';
 import { useAuth } from '../../common/hooks';
+import { Container } from '@/common/components';
 
 const HomePage = (): ReactElement => {
   const navigate = useNavigate();
@@ -23,47 +24,34 @@ const HomePage = (): ReactElement => {
   };
 
   return (
-    <div className={styles.container}>
+    <Container className={styles.container}>
       <div className={styles.content}>
         <Logo className={styles.logo} />
         <h2 className={styles.tagline}>Interactive Fiction Reimagined</h2>
         <p className={styles.description}>
-          Dive into immersive stories where your choices shape the narrative.
-          Experience a new generation of interactive storytelling.
+          Dive into immersive stories where your choices shape the narrative. Experience a new generation of interactive
+          storytelling.
         </p>
-        
+
         {isLoggedIn ? (
           <div className={styles.authButtons}>
-            <Button 
-              onClick={handleExploreStories} 
-              className={styles.exploreButton}
-            >
+            <Button onClick={handleExploreStories} className={styles.exploreButton}>
               Explore Stories
             </Button>
-            <Button 
-              onClick={handleCreateStory} 
-              variant="secondary"
-              className={styles.createButton}
-            >
+            <Button onClick={handleCreateStory} variant="secondary" className={styles.createButton}>
               Create New Story
             </Button>
           </div>
         ) : (
           <div className={styles.authButtons}>
-            <Button 
-              onClick={handleLogin} 
-              className={styles.loginButton}
-            >
+            <Button onClick={handleLogin} className={styles.loginButton}>
               Log In
             </Button>
-            <Link to="/register">
-              Create an account
-            </Link>
+            <Link to="/register">Create an account</Link>
           </div>
         )}
       </div>
-      <div className={styles.background}></div>
-    </div>
+    </Container>
   );
 };
 

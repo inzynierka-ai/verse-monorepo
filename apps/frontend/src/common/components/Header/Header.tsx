@@ -2,10 +2,12 @@ import { ReactElement } from 'react';
 import { useAuth } from '../../../common/hooks/useAuth';
 import styles from './Header.module.scss';
 import { Link } from '@tanstack/react-router';
+import Button from '../Button';
+import { useNavigate } from '@tanstack/react-router';
 
 export const Header = (): ReactElement => {
   const { isLoggedIn, removeCredentials } = useAuth();
-
+  const navigate = useNavigate();
   console.log(isLoggedIn);
 
   return (
@@ -21,7 +23,9 @@ export const Header = (): ReactElement => {
               </button>
             </div>
           ) : (
-            <span>You are not logged in</span>
+            <Button variant="secondary" onClick={() => navigate({ to: '/login' })}>
+              Login
+            </Button>
           )}
         </div>
       </div>
