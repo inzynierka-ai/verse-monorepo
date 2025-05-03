@@ -87,7 +87,7 @@ const GameView = () => {
     );
   }
 
-  navigate({ to: '/play/$storyId/scenes/$sceneId', params: { storyId, sceneId: currentScene.uuid } });
+  navigate({ to: '/play/$storyId/scenes/$sceneId', params: { storyId, sceneId: currentScene.uuid }, replace: true });
   return null;
 };
 
