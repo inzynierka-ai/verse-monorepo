@@ -1,0 +1,460 @@
+@use "@/common/styles/variables" as *;
+@use "@/common/styles/mixins" as *;
+
+.sceneView {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+  animation: fadeIn 0.8s ease-out forwards;
+}
+
+.sceneHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba($accent-color, 0.15);
+  position: relative;
+  
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    width: 15%;
+    height: 2px;
+    background: linear-gradient(90deg, $primary-color, $accent-color);
+  }
+}
+
+.sceneHeader h1 {
+  margin: 0;
+  font-size: 2.2rem;
+  font-weight: 600;
+  color: $accent-color;
+  text-shadow: 0 0 10px rgba($accent-color, 0.3);
+  letter-spacing: 1px;
+}
+
+// Two column layout container
+.sceneContent {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  
+  @media (min-width: 992px) {
+    flex-direction: row;
+  }
+}
+
+// Left column
+.sceneContextColumn {
+  flex: 1;
+  
+  @media (min-width: 992px) {
+    flex: 0.65;
+    padding-right: 2rem;
+  }
+}
+
+// Right column
+.charactersColumn {
+  flex: 1;
+  
+  @media (min-width: 992px) {
+    flex: 0.35;
+    position: sticky;
+    top: 2rem;
+    align-self: flex-start;
+    max-height: calc(100vh - 4rem);
+    overflow-y: auto;
+    padding-right: 0.5rem;
+    
+    &::-webkit-scrollbar {
+      width: 5px;
+    }
+    
+    &::-webkit-scrollbar-track {
+      background: rgba($dark-bg, 0.2);
+      border-radius: 4px;
+    }
+    
+    &::-webkit-scrollbar-thumb {
+      background: rgba($accent-color, 0.3);
+      border-radius: 4px;
+    }
+  }
+}
+
+.sceneDescription {
+  @include card-container;
+  margin-bottom: 2rem;
+  font-size: 1rem;
+  line-height: 1.6;
+  padding: 1.5rem;
+  position: relative;
+}
+
+.toggleDescription {
+  position: absolute;
+  bottom: 0.75rem;
+  right: 0.75rem;
+  background: transparent;
+  border: none;
+  color: $accent-color;
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    background: rgba($accent-color, 0.1);
+  }
+}
+
+.descriptionCollapsed {
+  max-height: 100px;
+  overflow: hidden;
+  mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
+}
+
+.locationInfo {
+  margin-bottom: 2rem;
+}
+
+.locationSectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.locationInfo h2 {
+  margin-bottom: 0;
+  font-size: 1.5rem;
+  color: $light-text;
+  position: relative;
+  display: inline-block;
+  
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 0;
+    width: 40px;
+    height: 3px;
+    background: linear-gradient(90deg, $primary-color, $accent-color);
+    border-radius: 3px;
+  }
+}
+
+.locationCard {
+  @include card-container;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+}
+
+.locationImage {
+  width: 100%;
+  height: 200px;
+  overflow: hidden;
+  border-radius: 12px 12px 0 0;
+  position: relative;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to bottom, transparent 70%, rgba($dark-bg, 0.7));
+    z-index: 1;
+    pointer-events: none;
+  }
+}
+
+.locationImage img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+  
+  &:hover {
+    transform: scale(1.05);
+  }
+}
+
+.locationDetails {
+  padding: 1.5rem;
+  flex: 1;
+}
+
+.locationDetails h3 {
+  margin-top: 0;
+  margin-bottom: 0.75rem;
+  font-size: 1.4rem;
+  color: $accent-color;
+  text-shadow: 0 0 8px rgba($accent-color, 0.3);
+}
+
+.charactersSection {
+  margin-bottom: 2rem;
+}
+
+.charactersSectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.charactersSection h2 {
+  margin-bottom: 0;
+  font-size: 1.5rem;
+  color: $light-text;
+  position: relative;
+  display: inline-block;
+  
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 0;
+    width: 40px;
+    height: 3px;
+    background: linear-gradient(90deg, $primary-color, $accent-color);
+    border-radius: 3px;
+  }
+}
+
+.charactersTitle {
+  position: relative;
+  
+  .characterCount {
+    display: inline-block;
+    background: rgba($accent-color, 0.2);
+    color: $accent-color;
+    font-size: 0.8rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 12px;
+    margin-left: 0.75rem;
+    vertical-align: middle;
+  }
+}
+
+.charactersGrid {
+  display: grid;
+  gap: 1.5rem;
+  
+  @media (max-width: 991px) {
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  }
+  
+  @media (min-width: 992px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.characterCard {
+  background: $card-bg;
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  padding: 1.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  color: $light-text;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, $primary-color, $accent-color, $secondary-accent);
+    background-size: 200% 200%;
+    animation: gradientBg 10s ease infinite;
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle at top right, rgba($accent-color, 0.08), transparent 70%);
+    pointer-events: none;
+  }
+
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3), 0 0 15px rgba($primary-color, 0.15);
+    
+    .characterPortrait img {
+      transform: scale(1.05);
+    }
+  }
+  
+  @media (min-width: 992px) {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 1rem;
+  }
+}
+
+.characterPortrait {
+  width: 60px;
+  height: 60px;
+  border-radius: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
+  position: relative;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+  
+  @media (min-width: 992px) {
+    width: 100%;
+    height: 120px;
+    margin-bottom: 0.5rem;
+  }
+}
+
+.characterPortrait img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.characterInfo {
+  flex: 1;
+  min-width: 0;
+  
+  @media (min-width: 992px) {
+    width: 100%;
+  }
+}
+
+.characterCard h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: $accent-color;
+  text-shadow: 0 0 8px rgba($accent-color, 0.3);
+  transition: all 0.3s ease;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.characterPlaceholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, $primary-color, $accent-color);
+  color: white;
+  font-size: 2rem;
+  font-weight: bold;
+}
+
+.finishSceneContainer {
+  display: flex;
+  justify-content: center;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+}
+
+.finishButton {
+  background: linear-gradient(90deg, #e74c3c, #c0392b);
+  color: white;
+  padding: 1rem 2.5rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 5px 15px rgba(#e74c3c, 0.4);
+  width: 100%;
+  
+  &::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(transparent, rgba(255, 255, 255, 0.2), transparent);
+    transform: rotate(30deg);
+    transition: 0.6s;
+  }
+  
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(#e74c3c, 0.5);
+    
+    &::after {
+      left: 100%;
+    }
+  }
+  
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 50vh;
+}
+
+.loadingSpinner {
+  width: 50px;
+  height: 50px;
+  border: 3px solid rgba($primary-color, 0.1);
+  border-radius: 50%;
+  border-top-color: $accent-color;
+  animation: spin 1s ease-in-out infinite;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 0 15px rgba($accent-color, 0.3);
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.error {
+  @include card-container;
+  max-width: 600px;
+  margin: 4rem auto;
+  text-align: center;
+}
+
+.error h2 {
+  color: $error-color;
+  margin-bottom: 1rem;
+}
+
+.error button {
+  margin-top: 1.5rem;
+} 

@@ -2,6 +2,6 @@ export interface Location {
   uuid: string;
   name: string;
   description: string;
-  imageUrl: string;
+  image_dir: string;
   rules?: string[];
 }

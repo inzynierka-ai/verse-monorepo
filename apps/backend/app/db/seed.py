@@ -371,7 +371,7 @@ def seed_database(force_reseed=False):
         # Create scenes with all required fields
         scene1 = Scene(
             uuid=generate_uuid(),
-            prompt="The heroes meet in the grand hall of the castle as moonlight streams through stained glass windows.",
+            description="The heroes meet in the grand hall of the castle as moonlight streams through stained glass windows.",
             story_id=story1.id,
             location_id=location1.id,
             characters=characters_story1  # Associate characters with scene
@@ -379,7 +379,7 @@ def seed_database(force_reseed=False):
         
         scene2 = Scene(
             uuid=generate_uuid(),
-            prompt="Detective Blake examines the body found in the mansion's library while the storm rages outside.",
+            description="Detective Blake examines the body found in the mansion's library while the storm rages outside.",
             story_id=story2.id,
             location_id=location2.id,
             characters=characters_story2
@@ -387,7 +387,7 @@ def seed_database(force_reseed=False):
         
         scene3 = Scene(
             uuid=generate_uuid(),
-            prompt="On the bridge of the Starship Explorer, the crew prepares for their first jump to hyperspace.",
+            description="On the bridge of the Starship Explorer, the crew prepares for their first jump to hyperspace.",
             story_id=story3.id,
             location_id=location3.id,
             characters=characters_story3
@@ -395,7 +395,7 @@ def seed_database(force_reseed=False):
         
         scene4 = Scene(
             uuid=generate_uuid(),
-            prompt="In a sunlit clearing of the Whispering Woods, Willow discovers she can communicate with the forest spirits.",
+            description="In a sunlit clearing of the Whispering Woods, Willow discovers she can communicate with the forest spirits.",
             story_id=story4.id,
             location_id=location4.id,
             characters=characters_story4

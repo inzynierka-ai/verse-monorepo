@@ -3,7 +3,7 @@ import { Character } from './character.types';
 
 // Describes the overall scene structure, potentially including the final description
 export interface Scene {
-  id?: number | string; // Optional ID if the scene itself is stored as a record
+  uuid: string;
   location: Location;
   characters: Character[];
   description: string; // The final narrative description of the scene
