@@ -6,7 +6,6 @@ export const messagesQueryKey = (sceneId: string, characterId: string) => ['game
 
 export const useMessages = (sceneId: string, characterId: string) => {
   return useQuery<Message[]>({
-    enabled: !!sceneId && !!characterId,
     queryFn: () => apiClient.get(`/messages/scenes/${sceneId}/characters/${characterId}`),
     queryKey: messagesQueryKey(sceneId, characterId),
     staleTime: Infinity,

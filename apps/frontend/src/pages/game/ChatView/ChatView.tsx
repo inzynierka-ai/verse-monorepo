@@ -4,7 +4,7 @@ import { useState } from 'react';
 
 import Input from '@/common/components/Input/Input';
 import Button from '@/common/components/Button/Button';
-import { useScene } from '@/common/hooks/useScene';
+import { useConversation } from '@/common/hooks/useConversation';
 import { useMessages } from '@/common/hooks/useMessages';
 
 import styles from './ChatView.module.scss';
@@ -20,7 +20,7 @@ const Chat = () => {
   const [isConnected, setIsConnected] = useState(false);
 
   // Setup scene and real-time messaging with WebSocket
-  const { sendMessage, isConnected: wsConnected } = useScene({
+  const { sendMessage, isConnected: wsConnected } = useConversation({
     sceneId,
     characterId,
     onConnectionChange: setIsConnected,

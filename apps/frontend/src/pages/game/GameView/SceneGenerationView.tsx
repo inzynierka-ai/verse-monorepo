@@ -1,4 +1,4 @@
-import { useSceneGeneration, SceneGenerationState } from '@/services/api/hooks/useSceneGeneration';
+import { useSceneGeneration } from '@/services/api/hooks/useSceneGeneration';
 import { Scene } from '@/types/scene.types';
 import Button from '@/common/components/Button/Button';
 import Card from '@/common/components/Card/Card';
@@ -12,7 +12,6 @@ interface SceneGenerationViewProps {
 }
 
 const SceneGenerationView = ({ storyId, onSceneComplete, startGeneration }: SceneGenerationViewProps) => {
-  console.log(storyId);
   const {
     state,
     start,
@@ -28,7 +27,6 @@ const SceneGenerationView = ({ storyId, onSceneComplete, startGeneration }: Scen
   // Trigger generation when the component mounts
   useEffect(() => {
     if (isConnected) {
-      console.log('Starting scene generation...');
       start();
     }
   }, [isConnected]);
@@ -77,10 +75,10 @@ const SceneGenerationView = ({ storyId, onSceneComplete, startGeneration }: Scen
             <div className={styles.locationSection}>
               <h3>Location Discovered</h3>
               <Card className={styles.locationCard}>
-                {state.lastLocation.imageUrl && (
+                {state.lastLocation.image_dir && (
                   <div className={styles.imageContainer}>
                     <img
-                      src={state.lastLocation.imageUrl}
+                      src={state.lastLocation.image_dir}
                       alt={state.lastLocation.name}
                       className={styles.locationImage}
                     />
@@ -100,9 +98,9 @@ const SceneGenerationView = ({ storyId, onSceneComplete, startGeneration }: Scen
               <div className={styles.charactersGrid}>
                 {state.lastCharacters.map((char) => (
                   <Card key={char.uuid} className={styles.characterCard}>
-                    {char.imageUrl && (
+                    {char.image_dir && (
                       <div className={styles.imageContainer}>
-                        <img src={char.imageUrl} alt={char.name} className={styles.characterImage} />
+                        <img src={char.image_dir} alt={char.name} className={styles.characterImage} />
                       </div>
                     )}
                     <div className={styles.characterInfo}>

@@ -8,7 +8,6 @@ import uuid  # Add uuid
 from app.routers.game_ws.base import BaseMessageHandler
 from app.routers.game_ws.handlers.initialization import GameInitializationHandler
 from app.routers.game_ws.handlers.scene_generation import SceneGenerationHandler  # Import SceneGenerationHandler
-from app.services.ws_auth import WebSocketAuthenticator  # Import the shared authenticator
 from app.db.session import get_db, Session
 
 

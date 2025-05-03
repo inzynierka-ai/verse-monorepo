@@ -69,7 +69,6 @@ export const useStoryGeneration = ({ onConnectionChange }: UseStoryGenerationPro
     (event: MessageEvent) => {
       try {
         const data: StoryGenerationMessage = JSON.parse(event.data);
-        console.log(data);
 
         switch (data.type) {
           case 'STATUS_UPDATE':

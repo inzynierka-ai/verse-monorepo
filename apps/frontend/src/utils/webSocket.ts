@@ -9,7 +9,6 @@ export const sendWebSocketMessage = (socket: WebSocket | null, data: unknown): b
 
   try {
     const message = typeof data === 'string' ? data : JSON.stringify(data);
-    console.log(message);
     socket.send(message);
     return true;
   } catch (error) {

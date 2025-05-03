@@ -25,7 +25,6 @@ const GameView = () => {
 
   const handleSceneComplete = useCallback(
     (scene: Scene) => {
-      console.log('Scene generation complete:', scene);
       // Invalidate the query to fetch the latest scene
       queryClient.invalidateQueries({ queryKey: ['latest-scene', storyId] });
     },
@@ -34,15 +33,7 @@ const GameView = () => {
 
   const handleSendMessage = () => {
     if (message.trim() && storyId && currentScene) {
-      console.log('Sending message:', message);
       setMessage('');
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
     }
   };
 

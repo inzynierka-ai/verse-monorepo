@@ -6,33 +6,36 @@ import { Message, Analysis } from '@/types/chat';
 import { messagesQueryKey } from './useMessages';
 import { analysisQueryKey } from './useAnalysis';
 
-// Types for scene-specific messages
-interface SceneMessage {
+interface ConversationMessage {
   type: 'chat_chunk' | 'chat_complete' | 'analysis';
   content?: string;
   analysis?: Analysis;
 }
 
-interface UseSceneProps {
+interface UseConversationProps {
   sceneId: string;
   characterId: string;
   onConnectionChange?: (isConnected: boolean) => void;
 }
 
-interface UseSceneReturn {
+interface UseConversationReturn {
   sendMessage: (content: string) => boolean;
   isConnected: boolean;
   reconnect: () => void;
 }
 
-export const useScene = ({ sceneId, characterId, onConnectionChange }: UseSceneProps): UseSceneReturn => {
+export const useConversation = ({
+  sceneId,
+  characterId,
+  onConnectionChange,
+}: UseConversationProps): UseConversationReturn => {
   const queryClient = useQueryClient();
 
   // Handle incoming messages from WebSocket
   const handleMessage = useCallback(
     (event: MessageEvent) => {
       try {
-        const message: SceneMessage = JSON.parse(event.data);
+        const message: ConversationMessage = JSON.parse(event.data);
         switch (message.type) {
           case 'chat_chunk': {
             if (!message.content) break;
@@ -85,12 +88,9 @@ export const useScene = ({ sceneId, characterId, onConnectionChange }: UseSceneP
     },
   });
 
-  console.log(isConnected);
-
   // Send message handler
   const sendMessage = useCallback(
     (content: string) => {
-      console.log('Sending message:', content, sceneId, characterId, socket);
       // Don't send if no valid sceneId or socket
       if (!sceneId || !socket) return false;
 
