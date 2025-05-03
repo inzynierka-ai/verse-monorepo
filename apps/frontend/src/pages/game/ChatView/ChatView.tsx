@@ -30,11 +30,13 @@ const Chat = () => {
   const selectedCharacter = scene?.characters.find((c) => c.uuid === characterId);
 
   // Get messages that are updated in real-time by the WebSocket handler in useScene
-  const { data: messages = [] } = useMessages(sceneId);
+  const { data: messages = [] } = useMessages(sceneId, characterId);
 
-  const handleSendMessage = () => {
-    if (message.trim()) {
-      sendMessage(message);
+  const handleSendMessage = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const trimmedMessage = message.trim();
+    if (trimmedMessage) {
+      sendMessage(trimmedMessage);
       setMessage('');
     }
   };
@@ -127,7 +129,7 @@ const Chat = () => {
               placeholder="What would you like to say..."
               fullWidth
             />
-            <Button type="submit" disabled={!isConnected || !message.trim()}>
+            <Button type="submit" disabled={!wsConnected || !message.trim()}>
               Send
             </Button>
           </form>

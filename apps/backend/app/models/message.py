@@ -12,7 +12,7 @@ class Message(Base):
     content = Column(String)
     timestamp = Column(TIMESTAMP(), server_default=func.now())
     uuid = Column(String, nullable=False)
-
+    role = Column(String, nullable=False)
     # Relationships
     scene = relationship("Scene", back_populates="messages")  
     character = relationship("Character", back_populates="messages")  

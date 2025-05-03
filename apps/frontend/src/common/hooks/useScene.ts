@@ -36,7 +36,7 @@ export const useScene = ({ sceneId, characterId, onConnectionChange }: UseSceneP
         switch (message.type) {
           case 'chat_chunk': {
             if (!message.content) break;
-            queryClient.setQueryData(messagesQueryKey(sceneId), (old: Message[] = []) => {
+            queryClient.setQueryData(messagesQueryKey(sceneId, characterId), (old: Message[] = []) => {
               const messages = [...old];
               const lastMessage = messages[messages.length - 1];
               if (lastMessage?.role === 'assistant') {
@@ -76,33 +76,44 @@ export const useScene = ({ sceneId, characterId, onConnectionChange }: UseSceneP
 
   // Initialize WebSocket connection with enabled flag based on sceneId
   const { socket, isConnected, reconnect } = useWebSocket({
-    url: `${import.meta.env.VITE_BACKEND_URL}/api/scenes/${sceneId}`,
+    url: `${import.meta.env.VITE_BACKEND_URL}/api/game/ws/scenes/${sceneId}/characters/${characterId}`,
     onMessage: handleMessage,
     onOpen: handleOpen,
     onClose: handleClose,
-    enabled: !!sceneId,
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem('authToken')}`,
+    },
   });
+
+  console.log(isConnected);
 
   // Send message handler
   const sendMessage = useCallback(
     (content: string) => {
+      console.log('Sending message:', content, sceneId, characterId, socket);
       // Don't send if no valid sceneId or socket
       if (!sceneId || !socket) return false;
 
-      // Optimistically update messages cache
-      queryClient.setQueryData(messagesQueryKey(sceneId), (old: Message[] = []) => [
-        ...old,
-        { role: 'user', content, threadId: sceneId },
-      ]);
+      // Get current messages from cache for context
+      const currentMessages = queryClient.getQueryData<Message[]>(messagesQueryKey(sceneId, characterId)) || [];
 
-      // Send message through WebSocket
+      // Optimistically update messages cache
+      const updatedMessages = [...currentMessages, { role: 'user', content, threadId: sceneId }];
+
+      queryClient.setQueryData(messagesQueryKey(sceneId, characterId), updatedMessages);
+
+      // Send message through WebSocket with all required fields from ClientMessage model
       return sendWebSocketMessage(socket, {
-        type: 'message',
-        content,
         sceneId,
+        characterId,
+        messages: updatedMessages.map((msg) => ({
+          role: msg.role,
+          content: msg.content,
+          threadId: msg.threadId,
+        })),
       });
     },
-    [socket, sceneId, queryClient],
+    [socket, sceneId, characterId, queryClient],
   );
 
   return {

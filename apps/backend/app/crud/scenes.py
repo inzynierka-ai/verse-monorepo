@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session, joinedload
 from app.models.scene import Scene
 from app.models.character import Character
 
-from typing import List
+from typing import List, Optional
 
 def get_scene(db: Session, scene_id: int):
     """Get a scene by its ID with all relationships loaded"""
@@ -42,3 +42,16 @@ def add_characters_to_scene(db: Session, scene_id: int, character_ids: List[int]
     db.commit()
     db.refresh(db_scene)
     return db_scene
+
+
+def get_scene_by_uuid(db: Session, scene_uuid: str) -> Optional[Scene]:
+    """Fetch a scene by its UUID"""
+    scene = db.query(Scene).options(
+        joinedload(Scene.location),
+        joinedload(Scene.characters),
+        joinedload(Scene.messages)
+    ).filter(
+        Scene.uuid == scene_uuid
+    ).first()
+
+    return scene

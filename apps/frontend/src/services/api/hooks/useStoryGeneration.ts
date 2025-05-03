@@ -139,7 +139,6 @@ export const useStoryGeneration = ({ onConnectionChange }: UseStoryGenerationPro
   // Generate story handler
   const generateStory = useCallback(
     (data: StoryGenerationRequest): boolean => {
-      console.log(socket);
       if (!socket) {
         reconnect();
         return false;

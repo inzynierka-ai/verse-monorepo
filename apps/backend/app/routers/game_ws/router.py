@@ -8,9 +8,17 @@ import uuid  # Add uuid
 from app.routers.game_ws.base import BaseMessageHandler
 from app.routers.game_ws.handlers.initialization import GameInitializationHandler
 from app.routers.game_ws.handlers.scene_generation import SceneGenerationHandler  # Import SceneGenerationHandler
-from app.services.auth import SECRET_KEY, ALGORITHM  # Import security constants
+from app.services.ws_auth import WebSocketAuthenticator  # Import the shared authenticator
 from app.db.session import get_db, Session
-from app.services.users import get_user  # Import synchronous database session
+
+
+
+from app.schemas.conversation import ClientMessage, ChatChunkMessage, ChatCompleteMessage, ErrorMessage
+from app.crud.characters import get_character_by_uuid
+from app.crud.scenes import get_scene_by_uuid
+from app.services.conversation_service import ConversationService
+from app.services.auth import ALGORITHM, SECRET_KEY
+from app.services.users import get_user
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -125,7 +133,6 @@ class GameMessageHandler:
         """
         return {
             "initialization": GameInitializationHandler,
-            "authentication": AuthenticationHandler
         }
     
     def _create_default_handlers(self) -> List[BaseMessageHandler]:
@@ -137,7 +144,6 @@ class GameMessageHandler:
         """
         factory = self.handler_factory()
         return [
-            factory["authentication"](db_session=self.db_session),  # Auth handler should be first
             factory["initialization"](db_session=self.db_session),
             # Add more handlers here as they're implemented
         ]
@@ -187,10 +193,6 @@ class GameMessageHandler:
             "type": "ERROR",
             "payload": {"message": f"Unknown message type: {message_type}"}
         })
-
-
-# Create a single instance of the handler
-# game_handler = GameMessageHandler() # Remove this instance, we will create handlers per connection now
 
 
 @router.websocket("/ws")
@@ -335,3 +337,107 @@ async def scene_generation_websocket(
         logger.info(f"Closing DB session for scene generation WS for story {story_uuid}")
         if db:
             db.close()
+
+
+@router.websocket("/ws/scenes/{scene_uuid}/characters/{character_uuid}")
+async def scene_websocket(websocket: WebSocket, scene_uuid: str, character_uuid: str):
+
+    # Accept the WebSocket connection
+    await websocket.accept()
+
+    db = next(get_db())
+
+    auth_handler = AuthenticationHandler(db_session=db)
+
+    try:
+        # Wait for and process the authentication message
+        data = await websocket.receive_text()
+        try:
+            message = json.loads(data)
+            if not await auth_handler.handle(message, websocket):
+                await websocket.send_json({
+                    "type": "ERROR",
+                    "payload": {"message": "Authentication required as first message"}
+                })
+                if db:
+                    db.close()
+                return
+        except json.JSONDecodeError:
+            await websocket.send_json({
+                "type": "ERROR",
+                "payload": {"message": "Invalid JSON in authentication message"}
+            })
+            if db:
+                db.close()
+            return
+    except WebSocketDisconnect:
+        if db:
+            db.close()
+        return
+    except Exception as e:
+        logger.exception(f"Error during authentication for scene generation: {e}")
+        if db:
+            db.close()
+        return
+
+
+    conversation_service = ConversationService()
+
+    # Fetch scene and character by their UUIDs
+    scene = get_scene_by_uuid(db, scene_uuid)
+    character = get_character_by_uuid(db, character_uuid)
+
+    if not scene or not character:
+        await websocket.send_json({
+            "type": "ERROR",
+            "payload": {"message": "Invalid scene or character"}
+        })
+        await websocket.close(code=1008)  # Policy violation: invalid scene or character
+        return
+
+    # Acknowledge successful connection setup
+    await websocket.send_json({
+        "type": "CONNECTION_READY",
+        "payload": {"message": f"Ready for conversation with {character.name}"}
+    })
+
+    while True:
+        # Receive message from client
+        raw_message = await websocket.receive_text()
+
+        try:
+            message = ClientMessage.model_validate_json(raw_message)
+        except Exception as e:
+            error = ErrorMessage(
+                type="error",
+                content="Invalid message format",
+                details=str(e)
+            )
+            await websocket.send_text(error.model_dump_json())
+            continue
+
+        # Verify scene ID matches
+        if not conversation_service.verify_scene_id(message.sceneId, scene_uuid):
+            error = ErrorMessage(
+                type="error",
+                content="Scene ID mismatch"
+            )
+            await websocket.send_text(error.model_dump_json())
+            continue
+
+        # Process the message and stream chunks back to the client
+        async for chunk in await conversation_service.process_message(
+            db=db,
+            messages=message.messages,
+            character=character,
+            scene=scene
+        ):
+            chunk_message = ChatChunkMessage(
+                type="chat_chunk",
+                content=chunk
+            )
+            await websocket.send_text(chunk_message.model_dump_json())
+
+        # Signal that the response is complete
+        complete_message = ChatCompleteMessage(type="chat_complete")
+        await websocket.send_text(complete_message.model_dump_json())
