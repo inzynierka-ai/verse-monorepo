@@ -1,8 +1,8 @@
-"""Add Scene relationship to Story model
+"""add character memories table
 
-Revision ID: d317977dfd8e
-Revises: 1949cf624ae3
-Create Date: 2025-04-28 21:38:58.801998
+Revision ID: bbe98ae1d0ab
+Revises: 10752eef0bef
+Create Date: 2025-05-05 23:21:38.827404
 
 """
 from typing import Sequence, Union
@@ -12,8 +12,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'd317977dfd8e'
-down_revision: Union[str, None] = '1949cf624ae3'
+revision: str = 'bbe98ae1d0ab'
+down_revision: Union[str, None] = '10752eef0bef'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
