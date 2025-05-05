@@ -116,9 +116,9 @@ const SceneView = () => {
               ))}
             </div>
             <div className={styles.finishSceneContainer}>
-              <button className={styles.finishButton} onClick={handleFinishScene}>
+              <Button variant="danger" fullWidth onClick={handleFinishScene}>
                 Finish Scene
-              </button>
+              </Button>
             </div>
           </div>
         </div>
