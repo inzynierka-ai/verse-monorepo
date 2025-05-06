@@ -22,7 +22,7 @@ const StoryGenerationCompleted = ({ story, character, onReset }: StoryGeneration
 
   const handleBeginAdventure = async () => {
     if (!story) return;
-    navigate({ to: `/play/${story.uuid}` });
+    navigate({ to: `/play/${story.uuid}`, replace: true });
   };
 
   return (

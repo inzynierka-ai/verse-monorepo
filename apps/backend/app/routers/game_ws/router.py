@@ -131,6 +131,7 @@ class GameMessageHandler:
             Dictionary of handler name to handler class
         """
         return {
+            "authentication": AuthenticationHandler,
             "initialization": GameInitializationHandler,
         }
     

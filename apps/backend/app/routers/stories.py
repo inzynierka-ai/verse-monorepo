@@ -1,7 +1,7 @@
 import uuid
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, cast
 from app.schemas import story as story_schema
 from app.schemas import scene as scene_schema
 from app.db.session import get_db
@@ -58,16 +58,43 @@ def get_latest_scene(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Get the latest scene for a story"""
+    """Get the latest active scene for a story"""
     # Verify user owns the story
     story = get_story(db, story_uuid, current_user.id)
     
+    # Get the story ID as an integer
+    story_id = cast(int, story.id)
+    
     # Instantiate the service and call the method
     scene_service = SceneService()
-    latest_scene = scene_service.fetch_latest_scene(db, story.id)
+    latest_scene = scene_service.fetch_latest_active_scene(db, story_id)
     
     # Handle not found cases
     if not latest_scene:
-        raise HTTPException(status_code=404, detail="No scene found for this story")
+        raise HTTPException(status_code=404, detail="No active scene found for this story")
     
     return latest_scene
+
+@router.patch("/{story_uuid}/scenes/{scene_uuid}/complete", response_model=scene_schema.Scene)
+def complete_scene(
+    story_uuid: uuid.UUID,
+    scene_uuid: uuid.UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Mark a scene as completed"""
+    # Verify user owns the story
+    story = get_story(db, story_uuid, current_user.id)
+    
+    # Get the story ID as an integer
+    story_id = cast(int, story.id)
+    
+    # Mark the scene as completed
+    scene_service = SceneService()
+    completed_scene = scene_service.mark_scene_completed(db, scene_uuid, story_id)
+    
+    # Handle not found cases
+    if not completed_scene:
+        raise HTTPException(status_code=404, detail="Scene not found or already completed")
+    
+    return completed_scene

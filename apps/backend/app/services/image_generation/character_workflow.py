@@ -37,7 +37,7 @@ class CharacterWorkflowLoader(WorkflowLoader):
         for _, node in workflow.items():
             if node.get("class_type") == "KSampler":
                 node["inputs"]["seed"] = random_seed
-                node["inputs"]["steps"] = self._get_random_steps()
+                node["inputs"]["steps"] = 10
                 node["inputs"]["cfg"] = self._get_random_cfg()
                 node["inputs"]["sampler_name"] = self._get_random_sampler()
         

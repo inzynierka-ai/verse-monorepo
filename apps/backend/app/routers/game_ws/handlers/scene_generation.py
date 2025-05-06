@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import Optional, Any, List, Dict
+from typing import Optional, Any, List, Dict, Union
 import uuid
 
 from fastapi import WebSocket, WebSocketDisconnect
@@ -20,7 +20,7 @@ from app.schemas.story_generation import (
     Character as CharacterGenerationSchema,
     Location as LocationGenerationSchema
 )
-from app.utils.model_converters import convert_character, convert_characters, convert_locations
+from app.utils.model_converters import convert_character, convert_characters, convert_locations, convert_scene
 from app.schemas.scene_generator import SceneGenerationResult
 
 logger = logging.getLogger(__name__)
@@ -59,13 +59,17 @@ class SceneGenerationHandler:
             story_data = StoryRead.model_validate(story_orm)
 
             story_internal_id = story_data.id
-            latest_scene = self._fetch_latest_scene(story_internal_id)
+            
+            # Directly fetch only active scenes
+            active_scene = self._fetch_latest_active_scene(story_internal_id)
 
-            if latest_scene and self._is_scene_complete(latest_scene):
-                logger.info(f"Found complete scene {latest_scene.id} for story {self.story_uuid}")
-                await self._send_scene_complete(latest_scene)
+            if active_scene:
+                # Send the active scene to the client
+                logger.info(f"Found active scene {active_scene.id} for story {self.story_uuid}")
+                await self._send_scene_complete(active_scene)
             else:
-                logger.info(f"No complete scene found for story {self.story_uuid}. Starting generation.")
+                # No active scene found, generate a new one
+                logger.info(f"No active scene found for story {self.story_uuid}. Starting generation.")
                 await self._run_generation(story_data, story_orm)
 
             while True:
@@ -112,9 +116,25 @@ class SceneGenerationHandler:
             logger.exception(f"Database error fetching latest scene for story ID {story_id}: {e}")
             raise
 
+    def _fetch_latest_active_scene(self, story_id: int) -> Optional[SceneModel]:
+        """Fetches the latest active scene from the database."""
+        try:
+            return self.scene_service.fetch_latest_active_scene(self.db_session, story_id)
+        except Exception as e:
+            logger.exception(f"Database error fetching latest active scene for story ID {story_id}: {e}")
+            raise
+
+    def _fetch_latest_completed_scene(self, story_id: int) -> Optional[SceneModel]:
+        """Fetches the latest completed scene from the database."""
+        try:
+            return self.scene_service.fetch_latest_completed_scene(self.db_session, story_id)
+        except Exception as e:
+            logger.exception(f"Database error fetching latest completed scene for story ID {story_id}: {e}")
+            raise
+
     def _is_scene_complete(self, scene: SceneModel) -> bool:
         """Checks if a fetched scene is considered complete."""
-        return bool(scene.description)
+        return str(scene.status) == "completed"
 
     async def _run_generation(self, story_data: StoryRead, story_orm: Story):
         """Instantiates and runs the SceneGeneratorAgent."""
@@ -127,6 +147,7 @@ class SceneGenerationHandler:
                 logger.error(f"Player character not found for story {story_data.uuid}. Cannot proceed.")
                 raise ValueError("Player character is required for scene generation but was not found.")
             logger.info(f"Player character orm: {player_character_orm}")
+            logger.info(f"Player character orm UUID: {player_character_orm.uuid}")
             
             # Use the new converter utility
             player_character_schema = convert_character(player_character_orm)
@@ -156,7 +177,7 @@ class SceneGenerationHandler:
 
             async def generation_task_wrapper():
                 try:
-                    characters_orm: List[CharacterOrmModel] = story_orm.characters or []
+                    characters_orm: List[CharacterOrmModel] = [char for char in story_orm.characters if char.role == 'npc']
                     locations_orm: List[LocationOrmModel] = story_orm.locations or []
 
                     # Use the new converter utility for the list of characters
@@ -165,7 +186,18 @@ class SceneGenerationHandler:
                     # Use the new converter utility for the list of locations
                     locations_pool_schema = convert_locations(locations_orm)
 
+                    # Fetch the latest completed scene to use as context
                     previous_scene_data = None
+                    try:
+                        previous_completed_scene = self._fetch_latest_completed_scene(story_data.id)
+                        if previous_completed_scene:
+                            logger.info(f"Found previous completed scene {previous_completed_scene.id} for story {self.story_uuid}")
+                            
+                            # Use the converter utility for scene conversion
+                            previous_scene_data = convert_scene(previous_completed_scene)
+                    except Exception as e:
+                        logger.warning(f"Error fetching previous completed scene: {e}. Continuing without previous scene context.")
+                        previous_scene_data = None
 
                     assert self.agent is not None
                     final_scene_data = await self.agent.generate_scene(
@@ -241,12 +273,22 @@ class SceneGenerationHandler:
         logger.info(f"Sending ACTION_CHANGED update for story {self.story_uuid}, active actions: {self.active_actions}")
         await self._send_update("ACTION_CHANGED", payload)
 
-    async def _send_scene_complete(self, scene: SceneGenerationResult):
+    async def _send_scene_complete(self, scene: Union[SceneModel, SceneGenerationResult]):
         """Sends the SCENE_COMPLETE message with the final scene details."""
+        
+        # Handle different types of scene objects
+        if isinstance(scene, SceneModel):
+            # Convert from ORM model
+            description = scene.description
+            # If we wanted to include more data, we'd convert location and characters too
+        else:
+            # Already a SceneGenerationResult
+            description = scene.description
+            
         payload = {
             "storyId": str(self.story_uuid),
             "message": "Scene generation complete.",
-            "description": scene.description,
+            "description": description,
         }
         await self._send_update("SCENE_COMPLETE", payload)
 
