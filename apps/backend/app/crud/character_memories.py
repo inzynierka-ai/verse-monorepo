@@ -2,7 +2,7 @@ from models.character_memory import CharacterMemory
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import func
 from sqlalchemy import select
-from app.services.embedding import get_embedding  # Your wrapper around OpenAI or similar
+from apps.backend.app.utils.embedding import get_embedding  # Your wrapper around OpenAI or similar
 
 def save_memory(db: Session, character_id: int, scene_id: int, text: str):
     embedding = get_embedding(text)  # should return a list[float]

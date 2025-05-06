@@ -16,3 +16,6 @@ class Message(Base):
     # Relationships
     scene = relationship("Scene", back_populates="messages")  
     character = relationship("Character", back_populates="messages")  
+
+    def __str__(self):
+        return f"character_id: {self.character.name}, content:{self.content}"
