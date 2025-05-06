@@ -1,10 +1,12 @@
+import logging
 from typing import Optional, List
 from sqlalchemy.orm import Session
 from app.schemas.message import Message
 from app.crud.messages import get_messages_by_scene
 from app.services.llm import LLMService, ModelName
 from app.utils.json_service import JSONService
-
+from app.models.character_memory import CharacterMemory as CharacterMemoryModel
+from app.utils.embedding import get_embedding
 
 
 class MemoryGenerator:
@@ -27,7 +29,7 @@ class MemoryGenerator:
         conversation_text = "\n".join([f"{msg}\n" for msg in conversation])
 
         system_prompt = f"""
-                    You are an AI assistant that helps generate memory summaries for game characters.
+                    You are an AI assistant who helps generate memory summaries for game characters.
 
                     Below is a transcript of a conversation between a player and a character named **{character_name}**, who is an NPC in an interactive story.
 
@@ -70,3 +72,33 @@ class MemoryGenerator:
         content = await self.llm_service.extract_content(response)
         memories = JSONService.parse_and_validate_string_list(content)
         return memories
+    
+    def _save_memory_to_db(self, memory: str, scene_id, character_id: int) -> None:
+        """
+        Save the generated memories to the database.
+        """
+
+        try:
+            # create a database model from the memory
+            db_memory = CharacterMemoryModel(   
+                character_id=character_id,
+                scene_id=scene_id,
+                memory_text=memory,
+                embedding=get_embedding(memory)
+            )
+
+            #add the memory to the session
+            if self.db_session:
+                self.db_session.add(db_memory)
+                self.db_session.commit()
+                logging.info(f"Memory saved to DB: {memory}")
+                memory_id = db_memory.id
+                return memory_id
+            else:
+                logging.error("No database session available, memory not saved to database")
+                return memory_id
+        except Exception as e:
+            logging.error(f"Failed to save memory to database: {str(e)}")
+            if self.db_session is not None and hasattr(self.db_session, 'is_active') and self.db_session.is_active:
+                self.db_session.rollback()
+            raise
