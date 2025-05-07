@@ -73,7 +73,7 @@ class MemoryGenerator:
         memories = JSONService.parse_and_validate_string_list(content)
         return memories
     
-    def _save_memory_to_db(self, memory: str, scene_id, character_id: int) -> None:
+    def _save_memory_to_db(self, memory: str, scene_id:int, character_id: int) -> None:
         """
         Save the generated memories to the database.
         """
@@ -96,7 +96,7 @@ class MemoryGenerator:
                 return memory_id
             else:
                 logging.error("No database session available, memory not saved to database")
-                return memory_id
+                return None
         except Exception as e:
             logging.error(f"Failed to save memory to database: {str(e)}")
             if self.db_session is not None and hasattr(self.db_session, 'is_active') and self.db_session.is_active:
