@@ -32,6 +32,13 @@ const StoryGenerationCompleted = ({ story, character, onReset }: StoryGeneration
       {story && (
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>Story</h2>
+          
+          {/* Display brief description first */}
+          <h3>Summary</h3>
+          <p className={styles.storyBriefDescription}>{story.brief_description}</p>
+          
+          {/* Display full description */}
+          <h3>Full Description</h3>
           <p className={styles.storyDescription}>{story.description}</p>
 
           {story.rules.length > 0 && (
@@ -109,4 +116,4 @@ const StoryGenerationCompleted = ({ story, character, onReset }: StoryGeneration
   );
 };
 
-export default StoryGenerationCompleted; 
+export default StoryGenerationCompleted;
