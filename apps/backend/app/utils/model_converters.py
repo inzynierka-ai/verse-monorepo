@@ -55,13 +55,10 @@ class ModelConverter:
         except Exception as e:
             logger.error(f"Failed to convert ORM model to dict: {e}")
             orm_dict = {}
-        logger.info(f"ORM dict: {orm_dict}")
-        logger.info(f"Defaults: {defaults}")
         # Apply any default values
         if defaults:
             for key, value in defaults.items():
                 orm_dict[key] = value
-        logger.info(f"ORM dict after defaults: {orm_dict}")
         try:
             # Convert to Pydantic model
             return pydantic_model.model_validate(orm_dict)
@@ -127,8 +124,6 @@ class ModelConverter:
         elif isinstance(getattr(character_orm, "goals", None), str):
             goals_str = getattr(character_orm, "goals", "")
             defaults["goals"] = [goal.strip() for goal in goals_str.split(",") if goal.strip()]
-        logger.info(f"Goals: {defaults['goals']}")
-        logger.info(f"Goals: {getattr(character_orm, 'goals', None)}")
         # Ensure role is properly set
         if not getattr(character_orm, "role", None) or getattr(character_orm, "role", "") not in ["player", "npc"]:
             defaults["role"] = "npc"

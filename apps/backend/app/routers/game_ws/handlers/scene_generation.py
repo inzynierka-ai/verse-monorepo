@@ -275,20 +275,11 @@ class SceneGenerationHandler:
 
     async def _send_scene_complete(self, scene: Union[SceneModel, SceneGenerationResult]):
         """Sends the SCENE_COMPLETE message with the final scene details."""
-        
-        # Handle different types of scene objects
-        if isinstance(scene, SceneModel):
-            # Convert from ORM model
-            description = scene.description
-            # If we wanted to include more data, we'd convert location and characters too
-        else:
-            # Already a SceneGenerationResult
-            description = scene.description
             
         payload = {
             "storyId": str(self.story_uuid),
             "message": "Scene generation complete.",
-            "description": description,
+            "description": scene.description,
         }
         await self._send_update("SCENE_COMPLETE", payload)
 

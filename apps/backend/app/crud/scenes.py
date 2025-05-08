@@ -126,54 +126,6 @@ def update_scene_status(db: Session, scene_id: int, status: str) -> Scene:
     
     return scene
 
-def update_scene_with_generated_data(
-    db: Session, 
-    scene_id: int, 
-    description: str,
-    location_id: Optional[int] = None
-) -> Scene:
-    """
-    Update a scene with generated data
-    
-    Args:
-        db: Database session
-        scene_id: ID of the scene to update
-        description: Scene description
-        location_id: ID of the location (optional)
-        
-    Returns:
-        The updated scene
-    """
-    scene = db.query(Scene).filter(Scene.id == scene_id).first()
-    if not scene:
-        raise ValueError(f"Scene with ID {scene_id} not found")
-    
-    scene.description = description
-    if location_id is not None:
-        scene.location_id = location_id
-    
-    db.commit()
-    db.refresh(scene)
-    
-    return scene
-
-
-
-def mark_scene_as_failed(db: Session, scene_id: int) -> Optional[Scene]:
-    """
-    Mark a scene as failed
-    
-    Args:
-        db: Database session
-        scene_id: ID of the scene to update
-        
-    Returns:
-        The updated scene or None if not found
-    """
-    try:
-        return update_scene_status(db, scene_id, "failed")
-    except ValueError:
-        return None
 
 def create_or_update_scene_summary(
     db: Session, 

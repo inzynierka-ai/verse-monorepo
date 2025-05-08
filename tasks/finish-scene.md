@@ -51,11 +51,11 @@ This feature implements the "Finish Scene" functionality, allowing players to co
   - Show appropriate loading states during generation
 
 ## 7. Testing
-- [ ] Write tests for status transitions
-- [ ] Test complete flow from finishing a scene to generating a new one
-- [ ] Verify error handling when scene generation fails
+- [X] Write tests for status transitions
+- [X] Test complete flow from finishing a scene to generating a new one
+- [X] Verify error handling when scene generation fails
 
 ## 8. Documentation
-- [ ] Document the scene lifecycle (statuses and transitions)
-- [ ] Update API documentation to reflect new endpoints
-- [ ] Create developer guide for scene transition implementation
+- [X] Document the scene lifecycle (statuses and transitions)
+- [X] Update API documentation to reflect new endpoints
+- [X] Create developer guide for scene transition implementation
