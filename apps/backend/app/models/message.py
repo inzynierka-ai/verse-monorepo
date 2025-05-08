@@ -18,4 +18,4 @@ class Message(Base):
     character = relationship("Character", back_populates="messages")  
 
     def __str__(self):
-        return f"{self.character.name}: {self.content}"
+        return f"{self.character.name if self.role == "assistant" else self.role}: {self.content}"

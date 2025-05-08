@@ -18,6 +18,12 @@ def save_memory(db: Session, character_id: int, scene_id: int, text: str):
     db.refresh(memory)
     return memory
 
+def get_memory(db: Session, memory_uuid: str):
+    stmt = select(CharacterMemory).where(CharacterMemory.uuid == memory_uuid)
+    memory = db.execute(stmt).scalar_one_or_none()
+    if not memory:
+        raise HTTPException(status_code=404, detail="Memory not found")
+    return memory
 
 def get_similar_memories(db: Session, character_id: int, query_embedding: list[float], top_n: int = 3):
     stmt = (
