@@ -1,6 +1,7 @@
 import { sceneRoute } from '@/router';
 import { useNavigate } from '@tanstack/react-router';
 import { useLatestScene } from '@/services/api/hooks/useLatestScene';
+import { useCompleteScene } from '@/services/api/hooks/useCompleteScene';
 import Button from '@/common/components/Button/Button';
 import { Character } from '@/types/character.types';
 import { useState } from 'react';
@@ -12,6 +13,7 @@ const SceneView = () => {
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
 
   const { data: scene, isLoading, error } = useLatestScene(storyId);
+  const { mutate: completeScene, isPending: isCompleting } = useCompleteScene();
 
   const handleCharacterClick = (character: Character) => {
     navigate({
@@ -25,8 +27,18 @@ const SceneView = () => {
   };
 
   const handleFinishScene = () => {
-    // This will be implemented later
-    console.log('Finish scene clicked');
+    completeScene(
+      { storyId, sceneId },
+      {
+        onSuccess: () => {
+          // Navigate to the GameView after successfully completing the scene
+          navigate({ to: '/play/$storyId', params: { storyId }, replace: true });
+        },
+        onError: (error) => {
+          console.error('Failed to complete scene:', error);
+        },
+      },
+    );
   };
 
   const toggleDescription = () => {
@@ -43,13 +55,8 @@ const SceneView = () => {
   }
 
   if (error || !scene) {
-    return (
-      <div className={styles.error}>
-        <h2>Error loading scene</h2>
-        <p>{error instanceof Error ? error.message : 'Failed to fetch scene data.'}</p>
-        <Button onClick={handleBackToStories}>Return to Stories</Button>
-      </div>
-    );
+    navigate({ to: '/play/$storyId', params: { storyId }, replace: true });
+    return null;
   }
 
   const npcCharacters = scene.characters.filter((character) => character.role === 'npc');
@@ -116,9 +123,9 @@ const SceneView = () => {
               ))}
             </div>
             <div className={styles.finishSceneContainer}>
-              <button className={styles.finishButton} onClick={handleFinishScene}>
-                Finish Scene
-              </button>
+              <Button variant="danger" fullWidth onClick={handleFinishScene} disabled={isCompleting}>
+                {isCompleting ? 'Completing Scene...' : 'Finish Scene'}
+              </Button>
             </div>
           </div>
         </div>

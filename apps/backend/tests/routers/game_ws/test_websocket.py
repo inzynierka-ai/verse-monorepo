@@ -11,7 +11,7 @@ from fastapi.websockets import WebSocket
 
 from app.main import app
 from app.schemas.story_generation import Story, Character
-from app.routers.game_ws.router import game_handler as app_game_handler
+from app.routers.game_ws.router import GameMessageHandler
 
 
 @pytest.fixture
@@ -47,6 +47,7 @@ def sample_story() -> Story:
     """Create a sample story for testing"""
     return Story(
         description="A medieval kingdom with castles and villages",
+        title="The Kingdom of Astoria",
         rules=["Magic is rare", "Politics are dangerous"]
     )
 
@@ -62,7 +63,8 @@ def sample_character() -> Character:
         goals=["Clear my name", "Return to the kingdom"],
         relationships=[],
         imageUrl="https://localhost:8000/media/comfyui/test.png",
-        role="player"
+        role="player",
+        uuid="12345678-1234-5678-1234-567812345678"
     )
 
 
@@ -150,8 +152,8 @@ async def test_websocket_initialization_flow(
     
     mock_handler.handle = mock_handle
     
-    # Patch the game_handler object's handlers list
-    with patch.object(app_game_handler, 'handlers', [mock_handler]):
+    # Patch the GameMessageHandler's handlers list
+    with patch('app.routers.game_ws.router.GameMessageHandler._create_default_handlers', return_value=[mock_handler]):
         # Connect to the WebSocket and test
         with test_client.websocket_connect("/ws/game") as websocket:
             # Send initialization message
@@ -175,4 +177,4 @@ async def test_websocket_initialization_flow(
             assert "name" in response4["payload"]
             
             response5 = websocket.receive_json()  # INITIALIZATION_COMPLETE
-            assert response5["type"] == "INITIALIZATION_COMPLETE" 
+            assert response5["type"] == "INITIALIZATION_COMPLETE"

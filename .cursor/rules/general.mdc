@@ -3,4 +3,5 @@ description:
 globs: 
 alwaysApply: true
 ---
-- Ensure you clean up after yourself.  
+- Ensure you clean up after yourself.
+- Execute scripts inside the docker container

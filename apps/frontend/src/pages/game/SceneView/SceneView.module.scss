@@ -377,47 +377,6 @@
   margin-bottom: 1rem;
 }
 
-.finishButton {
-  background: linear-gradient(90deg, #e74c3c, #c0392b);
-  color: white;
-  padding: 1rem 2.5rem;
-  font-size: 1.1rem;
-  font-weight: 600;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
-  box-shadow: 0 5px 15px rgba(#e74c3c, 0.4);
-  width: 100%;
-  
-  &::after {
-    content: '';
-    position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: linear-gradient(transparent, rgba(255, 255, 255, 0.2), transparent);
-    transform: rotate(30deg);
-    transition: 0.6s;
-  }
-  
-  &:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 20px rgba(#e74c3c, 0.5);
-    
-    &::after {
-      left: 100%;
-    }
-  }
-  
-  &:active {
-    transform: translateY(0);
-  }
-}
-
 .loading {
   display: flex;
   flex-direction: column;

@@ -1,6 +1,6 @@
 import { gameRoute } from '@/router';
 import { useNavigate } from '@tanstack/react-router';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import SceneGenerationView from './SceneGenerationView';
 import { Scene } from '@/types/scene.types';
 import Button from '@/common/components/Button/Button';
@@ -11,15 +11,14 @@ import styles from './GameView.module.scss';
 
 const GameView = () => {
   const { storyId } = gameRoute.useParams();
-  console.log('storyId', storyId);
   const navigate = useNavigate();
-  const [message, setMessage] = useState('');
   const queryClient = useQueryClient();
+  const [generationStarted, setGenerationStarted] = useState(false);
 
   const { data: currentScene, isLoading, error, isError } = useLatestScene(storyId || '');
 
   // Determine if we need to generate a new scene
-  // 404 error means no scene exists yet
+  // 404 error means no active scene exists yet (could be completed or not created yet)
   const errorMessage = error instanceof Error ? error.message : '';
   const needsGeneration = isError && errorMessage.includes('404');
 
@@ -27,15 +26,22 @@ const GameView = () => {
     (scene: Scene) => {
       // Invalidate the query to fetch the latest scene
       queryClient.invalidateQueries({ queryKey: ['latest-scene', storyId] });
+      setGenerationStarted(false);
     },
     [queryClient, storyId],
   );
 
-  const handleSendMessage = () => {
-    if (message.trim() && storyId && currentScene) {
-      setMessage('');
+  const startGeneration = useCallback(() => {
+    setGenerationStarted(true);
+    console.log('Starting scene generation for story:', storyId);
+  }, [storyId]);
+
+  useEffect(() => {
+    // Automatically start generation if needed and not already started
+    if (needsGeneration && !generationStarted) {
+      startGeneration();
     }
-  };
+  }, [needsGeneration, generationStarted, startGeneration]);
 
   if (isLoading) {
     return (
@@ -56,15 +62,9 @@ const GameView = () => {
     );
   }
 
-  if (needsGeneration) {
+  if (needsGeneration || generationStarted) {
     return (
-      <SceneGenerationView
-        storyId={storyId}
-        onSceneComplete={handleSceneComplete}
-        startGeneration={() => {
-          console.log('GameView instructing SceneGenerationView to start generation.');
-        }}
-      />
+      <SceneGenerationView storyId={storyId} onSceneComplete={handleSceneComplete} startGeneration={startGeneration} />
     );
   }
 

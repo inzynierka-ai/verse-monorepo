@@ -131,10 +131,10 @@ class GameMessageHandler:
             Dictionary of handler name to handler class
         """
         return {
-                "authentication": AuthenticationHandler,
-                "initialization": GameInitializationHandler,
-            }
-
+            "authentication": AuthenticationHandler,
+            "initialization": GameInitializationHandler,
+        }
+    
     def _create_default_handlers(self) -> List[BaseMessageHandler]:
         """
         Create instances of the default handlers.
@@ -144,8 +144,9 @@ class GameMessageHandler:
         """
         factory = self.handler_factory()
         return [
-                    factory["authentication"](db_session=self.db_session), 
-                    factory["initialization"](db_session=self.db_session)
+            factory["authentication"](db_session=self.db_session),  # Auth handler should be first
+            factory["initialization"](db_session=self.db_session),
+            # Add more handlers here as they're implemented
         ]
     
     async def connect(self, websocket: WebSocket):
