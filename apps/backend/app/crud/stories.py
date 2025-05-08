@@ -1,6 +1,7 @@
 import uuid
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, contains_eager
 from app.models.story import Story
+from app.models.character import Character
 from app.schemas import story as story_schema
 from fastapi import HTTPException
 
@@ -10,6 +11,17 @@ def get_story(db: Session, story_uuid: uuid.UUID, user_id: int):
     if not story:
         raise HTTPException(status_code=404, detail=f"Story not found")
     return story
+
+def get_user_stories(db: Session, user_id: int):
+    """Get all stories for a user, with the player character pre-loaded if available."""
+    stories = (
+        db.query(Story)
+        .outerjoin(Character, (Story.id == Character.story_id) & (Character.role == "player"))
+        .options(contains_eager(Story.characters))
+        .filter(Story.user_id == user_id)
+        .all()
+    )
+    return stories
 
 def get_story_by_uuid(db: Session, story_uuid: uuid.UUID, user_id: int) -> Story:
     """Get a story by its UUID, ensuring it belongs to the user."""

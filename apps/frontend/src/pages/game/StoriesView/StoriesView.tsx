@@ -45,7 +45,10 @@ const StoriesView = (): ReactElement => {
           {stories.map((story) => (
             <Link key={story.uuid} className={styles.storyItem} to="/play/$storyId" params={{ storyId: story.uuid }}>
               <div className={styles.storyTitle}>{story.title}</div>
-              <div className={styles.storyDescription}>{story.description}</div>
+              <div className={styles.storyPlayerCharacter}>
+                <img src={story.player_character.image_dir} alt={story.player_character.name} />
+              </div>
+              <div className={styles.storyDescription}>{story.brief_description}</div>
             </Link>
           ))}
         </div>
