@@ -34,26 +34,24 @@ class StoryGenerator:
         story_uuid = str(uuid.uuid4())
         
         # Construct story object with all required fields
-        story_data = {
-            "user_id": user_id,
-            "title": story_details.title,
-            "description": description,
-            "brief_description": story_details.brief_description,
-            "rules": story_details.rules,
-            "uuid": story_uuid,
-            "id": None  # Default value
-        }
+        story_data = Story(
+            user_id=user_id,
+            title=story_details.title,
+            description=description,
+            brief_description=story_details.brief_description,
+            rules=story_details.rules,
+            uuid=story_uuid,
+        )
         
         # Save to database if session is available
         if self.db_session:
-            db_story = self._save_story_to_db(Story(**story_data))
+            db_story = self._save_story_to_db(story_data)
             if db_story:
                 # Update with database ID
-                story_data["id"] = db_story.id
+                story_data.id = db_story.id
         
         # Always return a Story object with all required fields
-        return Story(**story_data)
-    
+        return story_data
     def _save_story_to_db(self, story: Story) -> StoryModel:
         """
         Save the generated story to the database.
@@ -77,7 +75,7 @@ class StoryGenerator:
             
             if self.db_session is None:
                 logging.warning("No database session available, story not saved")
-                return None
+                raise ValueError("No database session available, story not saved")
             self.db_session.add(db_story)
             self.db_session.commit()
             logging.info(f"Story {story.title} saved to database with ID {db_story.id}")
@@ -87,7 +85,7 @@ class StoryGenerator:
             logging.exception(f"Failed to save story to database: {str(e)}")
             if self.db_session is not None and hasattr(self.db_session, 'is_active') and self.db_session.is_active:
                 self.db_session.rollback()
-            return None
+            raise ValueError("Failed to save story to database")
 
     async def _generate_story_description(self, story_input: StoryInput) -> str:
         """
@@ -147,7 +145,7 @@ class StoryGenerator:
 
         1. A catchy, engaging title (max 50 characters)
         2. A brief summary of the story (3-4 sentences)
-        3. A list of 5-8 key rules or principles that govern how this world functions
+        3. A list of 3-5 key rules or principles that govern how this world functions
         
         Format your response as valid JSON with the following structure:
         {{

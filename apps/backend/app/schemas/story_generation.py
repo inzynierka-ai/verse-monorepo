@@ -85,7 +85,7 @@ class CharacterFromLLM(BaseModel):
 class Character(CharacterFromLLM):
     """Final character output structure"""
     model_config = ConfigDict(from_attributes=True)
-    imageUrl: str = Field(...,
+    image_dir: str = Field(...,
                          description="URL of the generated image for this character")
     role: Literal["player", "npc"] = Field(
         ..., description="Character's role in the story (player or npc)")
@@ -109,7 +109,7 @@ class Location(LocationFromLLM):
     """Final location output structure"""
     id: Optional[int] = Field(None,
                                description="Location ID in the database")
-    imageUrl: str = Field(...,
+    image_dir: str = Field(...,
                          description="URL of the generated image for this location")
     uuid: str = Field(
         ..., description="Unique identifier for the location")

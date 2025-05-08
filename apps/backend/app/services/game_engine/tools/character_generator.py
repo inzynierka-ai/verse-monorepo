@@ -137,7 +137,7 @@ class CharacterGenerator:
         # 6. Create complete Character object with UUID
         character = Character(
             **character_from_llm.model_dump(),
-            imageUrl=image_url,
+            image_dir=image_url,
             role="player" if is_player else "npc",
             uuid=character_uuid
         )
@@ -191,7 +191,7 @@ class CharacterGenerator:
                 goals=", ".join(character.goals) if hasattr(character, 'goals') and character.goals else "",
                 speaking_style="", # Not in schema, add if needed
                 relationships=relationships_str,
-                image_dir=character.imageUrl,
+                image_dir=character.image_dir,
                 image_prompt=image_prompt,
                 relationship_level=0,  # Default starting level
                 story_id=story_id,

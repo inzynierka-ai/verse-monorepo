@@ -42,8 +42,9 @@ def sample_character() -> Character:
         backstory="Grew up in an underground bunker",
         goals=["Find water", "Establish a safe settlement"],
         relationships=[],
-        imageUrl="https://localhost:8000/media/comfyui/test.png",
-        role="player"
+        image_dir="https://localhost:8000/media/comfyui/test.png",
+        role="player",
+        uuid="12345678-1234-5678-1234-567812345678"
     )
 
 

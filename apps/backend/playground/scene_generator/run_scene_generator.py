@@ -39,7 +39,7 @@ async def create_sample_data() -> Dict[str, Any]:
         personalityTraits=["curious", "intelligent", "somewhat arrogant"],
         goals=["Discover the source of magic's return", "Learn rare spells"],
         relationships=[],
-        imageUrl=""
+        image_dir=""
     )
     
     # Create a list of characters
@@ -53,7 +53,7 @@ async def create_sample_data() -> Dict[str, Any]:
             personalityTraits=["stubborn", "loyal", "perfectionist"],
             goals=["Create the most powerful enchanted weapon in the realm"],
             relationships=[],
-            imageUrl=""
+            image_dir=""
         ),
         Character(
             name="Sylvia Nightshade",
@@ -64,7 +64,7 @@ async def create_sample_data() -> Dict[str, Any]:
             personalityTraits=["secretive", "calculating", "protective"],
             goals=["Find a way to control wild magic", "Protect common folk from magical dangers"],
             relationships=[],
-            imageUrl=""
+            image_dir=""
         ),
         Character(
             name="Zephyr",
@@ -75,7 +75,7 @@ async def create_sample_data() -> Dict[str, Any]:
             personalityTraits=["playful", "fickle", "loyal"],
             goals=["Experience everything the material world has to offer"],
             relationships=[],
-            imageUrl=""
+            image_dir=""
         )
     ]
     
@@ -86,7 +86,7 @@ async def create_sample_data() -> Dict[str, Any]:
             description="A tall, translucent tower made of crystalline material that changes color with the time of day. Home to various mages studying the return of magic.",
             uuid=str(uuid.uuid4()),
             rules=["Magic is amplified within these walls", "All visitors must register with the tower guardian"],
-            imageUrl="",
+            image_dir="",
             id=1
         ),
         Location(
@@ -94,7 +94,7 @@ async def create_sample_data() -> Dict[str, Any]:
             description="A bustling dwarven marketplace filled with stalls selling enchanted items. The air is thick with smoke from forges and the smell of magical reagents.",
             uuid=str(uuid.uuid4()),
             rules=["All trades must be witnessed by a market official", "No casting offensive spells"],
-            imageUrl="",
+            image_dir="",
             id=2
         ),
         Location(
@@ -102,7 +102,7 @@ async def create_sample_data() -> Dict[str, Any]:
             description="A dense forest where the trees seem to communicate with each other. Magical creatures have taken residence here, and strange lights can be seen at night.",
             uuid=str(uuid.uuid4()),
             rules=["Don't harm the trees", "Beware of will-o'-wisps after dark"],
-            imageUrl="",
+            image_dir="",
             id=3
         ),
         Location(
@@ -110,7 +110,7 @@ async def create_sample_data() -> Dict[str, Any]:
             description="A hidden underground complex where the Shadow Conclave operates. Warded against magical detection and filled with artifacts that suppress arcane energies.",
             uuid=str(uuid.uuid4()),
             rules=["Speak only in whispers", "All magic must be approved by Sylvia"],
-            imageUrl="",
+            image_dir="",
             id=4
         )
     ]
