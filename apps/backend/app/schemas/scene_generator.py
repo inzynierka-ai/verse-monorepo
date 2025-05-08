@@ -1,6 +1,7 @@
 from typing import List, Optional, Dict, Any
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from app.schemas.story_generation import Story, Location, Character, Scene
+from app.models.scene import Scene as SceneModel
 
 class SceneGeneratorState(BaseModel):
     """State model for the Scene Generator Agent"""
@@ -26,7 +27,8 @@ class SceneGeneratorState(BaseModel):
     # Tool error messages
     location_generation_error: Optional[str] = None
     character_generation_error: Optional[str] = None
-    finalize_scene_error: Optional[str] = None 
+    finalize_scene_error: Optional[str] = None
+    
 
 class SceneGenerationResult(BaseModel):
     """Result model for the Scene Generator Agent"""

@@ -131,6 +131,7 @@ class GameMessageHandler:
             Dictionary of handler name to handler class
         """
         return {
+            "authentication": AuthenticationHandler,
             "initialization": GameInitializationHandler,
         }
     
@@ -143,6 +144,7 @@ class GameMessageHandler:
         """
         factory = self.handler_factory()
         return [
+            factory["authentication"](db_session=self.db_session),  # Auth handler should be first
             factory["initialization"](db_session=self.db_session),
             # Add more handlers here as they're implemented
         ]

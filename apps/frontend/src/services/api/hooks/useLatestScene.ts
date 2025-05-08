@@ -7,5 +7,6 @@ export const useLatestScene = (storyId: string) => {
     queryKey: ['latest-scene', storyId],
     queryFn: async () => await apiClient.get(`/stories/${storyId}/scene/latest`),
     enabled: !!storyId,
+    retry: false,
   });
 };

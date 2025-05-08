@@ -7,8 +7,10 @@ from pydantic import BaseModel
 
 from app.models.character import Character as CharacterOrmModel
 from app.models.location import Location as LocationOrmModel
+from app.models.scene import Scene as SceneOrmModel
 from app.schemas.story_generation import Character as CharacterSchema
 from app.schemas.story_generation import Location as LocationSchema
+from app.schemas.story_generation import Scene as SceneSchema
 
 logger = logging.getLogger(__name__)
 
@@ -53,13 +55,10 @@ class ModelConverter:
         except Exception as e:
             logger.error(f"Failed to convert ORM model to dict: {e}")
             orm_dict = {}
-            
         # Apply any default values
         if defaults:
             for key, value in defaults.items():
-                if key not in orm_dict or orm_dict[key] is None:
-                    orm_dict[key] = value
-                    
+                orm_dict[key] = value
         try:
             # Convert to Pydantic model
             return pydantic_model.model_validate(orm_dict)
@@ -70,8 +69,6 @@ class ModelConverter:
     @staticmethod
     def character_orm_to_pydantic(
         character_orm: CharacterOrmModel,
-        ensure_uuid: bool = True,
-        default_image_url: str = "/placeholder.png"
     ) -> CharacterSchema:
         """
         Converts a Character ORM model to a Character Pydantic model.
@@ -86,15 +83,10 @@ class ModelConverter:
         """
             
         # Prepare defaults
-        defaults: Dict[str, Any] = {}
+        defaults: Dict[str, Any] = {
+            "imageUrl": character_orm.image_dir
+        }
         
-        # Ensure UUID exists
-        if ensure_uuid and not getattr(character_orm, "uuid", None):
-            defaults["uuid"] = str(uuid.uuid4())
-            
-        # Ensure imageUrl exists
-        if not getattr(character_orm, "imageUrl", None):
-            defaults["imageUrl"] = default_image_url
             
         # Handle relationships conversion
         relationships = getattr(character_orm, "relationships", None)
@@ -132,7 +124,6 @@ class ModelConverter:
         elif isinstance(getattr(character_orm, "goals", None), str):
             goals_str = getattr(character_orm, "goals", "")
             defaults["goals"] = [goal.strip() for goal in goals_str.split(",") if goal.strip()]
-        
         # Ensure role is properly set
         if not getattr(character_orm, "role", None) or getattr(character_orm, "role", "") not in ["player", "npc"]:
             defaults["role"] = "npc"
@@ -149,19 +140,7 @@ class ModelConverter:
             logger.error(f"Character ORM data: {character_orm.__dict__ if hasattr(character_orm, '__dict__') else character_orm}")
             logger.error(f"Applied defaults: {defaults}")
             
-            # Fall back to manual creation with minimal required fields
-            return CharacterSchema(
-                name=getattr(character_orm, "name", "Unknown"),
-                description=getattr(character_orm, "description", "No description available"),
-                backstory=getattr(character_orm, "backstory", "No backstory available"),
-                goals=defaults.get("goals", []),
-                relationships=defaults.get("relationships", []),
-                imageUrl=defaults.get("imageUrl", default_image_url),
-                role=defaults.get("role", "npc"),
-                uuid=defaults.get("uuid", str(uuid.uuid4())),
-                personalityTraits=defaults.get("personalityTraits", [])
-            )
-
+            raise e
     @staticmethod
     def location_orm_to_pydantic(
         location_orm: LocationOrmModel,
@@ -179,8 +158,6 @@ class ModelConverter:
         Returns:
             LocationSchema: The Pydantic model representation
         """
-        if location_orm is None:
-            raise ValueError("Cannot convert None to Location model")
             
         # Prepare defaults
         defaults: Dict[str, Any] = {}
@@ -238,8 +215,7 @@ def convert_character(
         CharacterSchema: The Pydantic model representation
     """
     return ModelConverter.character_orm_to_pydantic(
-        character_orm,
-        default_image_url=default_image_url
+        character_orm
     )
 
 
@@ -320,4 +296,38 @@ def convert_locations(
             logger.error(f"Failed to convert location {getattr(location_orm, 'name', 'unknown')}: {e}")
             # Skip this location or handle the error as needed
             
-    return result 
+    return result
+
+def convert_scene(
+    scene_orm: SceneOrmModel
+) -> SceneSchema:
+    """
+    Convert a Scene ORM model to a Scene Pydantic model.
+    
+    Args:
+        scene_orm: The Scene ORM model
+        
+    Returns:
+        SceneSchema: The Pydantic model representation
+    """
+    if not scene_orm:
+        raise ValueError("Cannot convert None to Scene model")
+    
+    try:
+        
+        location_schema = convert_location(scene_orm.location) 
+        characters_schema = convert_characters(scene_orm.characters)
+        
+        # Create the Scene schema
+        return SceneSchema(
+            description=str(scene_orm.description),
+            summary=str(getattr(scene_orm, 'summary', None) or ""),
+            location=location_schema,
+            characters=characters_schema
+        )
+    except Exception as e:
+        # Log detailed error info for debugging
+        logger.error(f"Scene conversion failed: {e}")
+        logger.error(f"Scene ORM data: {scene_orm.__dict__ if hasattr(scene_orm, '__dict__') else scene_orm}")
+        raise e
+        
