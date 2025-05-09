@@ -8,9 +8,10 @@ class CharacterMemory(Base):
 
     id = Column(Integer, primary_key=True)
     character_id = Column(Integer, ForeignKey("characters.id"), nullable=False)
-    scene_id = Column(Integer, ForeignKey("scenes.id"), nullable=True)
+    scene_id = Column(Integer, ForeignKey("scenes.id"), nullable=False)
     memory_text = Column(Text, nullable=False)
-    embedding = Column(Vector(1536), nullable=False)  # or 768, depending on your model
+    embedding = Column(Vector(1536), nullable=False)
+    uuid = Column(Text, unique=True, nullable=False)
 
     character = relationship("Character", back_populates="memories")
     scene = relationship("Scene")

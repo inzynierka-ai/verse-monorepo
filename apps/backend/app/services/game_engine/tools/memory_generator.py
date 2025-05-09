@@ -1,4 +1,5 @@
 import logging
+import uuid
 from typing import Optional, List
 from sqlalchemy.orm import Session
 from app.schemas.message import Message
@@ -43,7 +44,7 @@ class MemoryGenerator:
                     - Key questions or mysteries discussed
                     - Places or items mentioned with significance
 
-                    Please return a list of **concise memory statements** from {{character_name}}'s point of view, using first-person (e.g., "The player helped me..." or "I now trust them less...").
+                    Please return a list of **concise memory statements** from {character_name}'s point of view, using first-person (e.g., "The player helped me..." or "I now trust them less...").
 
                     Only include things that are truly meaningful or likely to affect future interactions.
                     
@@ -84,7 +85,8 @@ class MemoryGenerator:
                 character_id=character_id,
                 scene_id=scene_id,
                 memory_text=memory,
-                embedding=get_embedding(memory)
+                embedding=get_embedding(memory),
+                uuid=uuid.uuid4()
             )
 
             #add the memory to the session
