@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List
 from app.schemas import character as character_schema
 from app.schemas.character_memory import CharacterMemory
+from app.schemas.character_memory import CharacterMemoryCreate
 from app.db.session import get_db
 from app.crud.character_memories import get_memory
 from app.crud.character_memories import save_memory
@@ -19,8 +20,6 @@ async def get_memory_by_uuid(memory_uuid: str, db: Session = Depends(get_db)):
     if not memory:
         raise HTTPException(status_code=404, detail=f"Memory with UUID {memory_uuid} not found")    
     return memory
-
-from app.schemas.character_memory import CharacterMemoryCreate
 
 @router.post("/", response_model=CharacterMemory)
 async def create_character_memory(
