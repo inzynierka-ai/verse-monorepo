@@ -9,6 +9,14 @@ def get_messages(db: Session):
     """Get all messages"""
     return db.query(Message).all()
 
+def get_messages_by_scene(db: Session, scene_uuid: str):
+    """Get messages by scene"""
+    scene = get_scene_by_uuid(db, scene_uuid)
+    if not scene:
+        empty_list: List[Message] = []
+        return empty_list
+    return db.query(Message).filter(Message.scene_id == scene.id).order_by(Message.id).all()
+
 def create_message(db: Session, message: message_schema.MessageCreate):
     db_message = Message(
         scene_id = message.scene_id,

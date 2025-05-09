@@ -3,7 +3,7 @@ from sqlalchemy.orm import relationship
 from app.db.session import Base
 from sqlalchemy.orm import Mapped
 from typing import List
-from app.models.associations import  scene_character_association
+from app.models.associations import scene_character_association
 
 
 class Character(Base):
@@ -28,3 +28,4 @@ class Character(Base):
     story = relationship("Story", back_populates="characters")
     messages = relationship("Message", back_populates="character")
     scenes: Mapped[List["Scene"]] = relationship(secondary=scene_character_association, back_populates="characters") # type: ignore
+    memories = relationship("CharacterMemory", back_populates="character", lazy="dynamic")

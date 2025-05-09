@@ -10,6 +10,7 @@ from app.services.users import get_user
 from app.schemas.user import User
 from app.services.auth import get_current_user
 from app.services.scene_service import SceneService
+from app.services.game_engine.orchestrators.memory_manager import MemoryManager
 
 router = APIRouter(
     prefix="/stories",
@@ -76,7 +77,7 @@ def get_latest_scene(
     return latest_scene
 
 @router.patch("/{story_uuid}/scenes/{scene_uuid}/complete", response_model=scene_schema.Scene)
-def complete_scene(
+async def complete_scene(  # Make this function async
     story_uuid: uuid.UUID,
     scene_uuid: uuid.UUID,
     db: Session = Depends(get_db),
@@ -89,6 +90,10 @@ def complete_scene(
     # Get the story ID as an integer
     story_id = cast(int, story.id)
     
+    memory_manager = MemoryManager(db_session=db)
+    # Add await keyword here
+    character_memories = await memory_manager.create_memories(db, scene_uuid)
+
     # Mark the scene as completed
     scene_service = SceneService()
     completed_scene = scene_service.mark_scene_completed(db, scene_uuid, story_id)
