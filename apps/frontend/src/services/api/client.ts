@@ -38,8 +38,7 @@ export const apiClient = {
       // Handle unauthorized errors
       if (response.status === 401) {
         localStorage.removeItem('authToken');
-        // Optional: redirect to login page
-        // window.location.href = '/login';
+        window.location.href = '/login';
       }
 
       if (!response.ok) {

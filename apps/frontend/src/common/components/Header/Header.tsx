@@ -8,7 +8,11 @@ import { useNavigate } from '@tanstack/react-router';
 export const Header = (): ReactElement => {
   const { isLoggedIn, removeCredentials } = useAuth();
   const navigate = useNavigate();
-  console.log(isLoggedIn);
+  
+  const handleLogout = () => {
+    removeCredentials();
+    navigate({ to: '/' });
+  };
 
   return (
     <header className={styles.header}>
@@ -18,7 +22,7 @@ export const Header = (): ReactElement => {
           {isLoggedIn ? (
             <div className={styles.userInfo}>
               <span>You are logged in</span>
-              <button className={styles.logoutButton} onClick={removeCredentials}>
+              <button className={styles.logoutButton} onClick={handleLogout}>
                 Logout
               </button>
             </div>
