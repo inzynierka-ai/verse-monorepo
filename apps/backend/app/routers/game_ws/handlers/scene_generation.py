@@ -20,7 +20,7 @@ from app.schemas.story_generation import (
     Character as CharacterGenerationSchema,
     Location as LocationGenerationSchema
 )
-from app.utils.model_converters import convert_character, convert_characters, convert_locations, convert_scene
+from app.utils.model_converters import convert_character, convert_characters, convert_locations, convert_scenes
 from app.schemas.scene_generator import SceneGenerationResult
 
 logger = logging.getLogger(__name__)
@@ -124,14 +124,6 @@ class SceneGenerationHandler:
             logger.exception(f"Database error fetching latest active scene for story ID {story_id}: {e}")
             raise
 
-    def _fetch_latest_completed_scene(self, story_id: int) -> Optional[SceneModel]:
-        """Fetches the latest completed scene from the database."""
-        try:
-            return self.scene_service.fetch_latest_completed_scene(self.db_session, story_id)
-        except Exception as e:
-            logger.exception(f"Database error fetching latest completed scene for story ID {story_id}: {e}")
-            raise
-
     def _is_scene_complete(self, scene: SceneModel) -> bool:
         """Checks if a fetched scene is considered complete."""
         return str(scene.status) == "completed"
@@ -155,6 +147,7 @@ class SceneGenerationHandler:
 
             generation_input_story = StoryGenerationSchema(
                 title=story_data.title,
+                brief_description=story_data.brief_description,
                 description=story_data.description or "",
                 rules=story_data.rules.split('\n') if story_data.rules else [],
                 user_id=story_data.user_id,
@@ -187,23 +180,23 @@ class SceneGenerationHandler:
                     locations_pool_schema = convert_locations(locations_orm)
 
                     # Fetch the latest completed scene to use as context
-                    previous_scene_data = None
+                    previous_scenes_data = None
                     try:
-                        previous_completed_scene = self._fetch_latest_completed_scene(story_data.id)
-                        if previous_completed_scene:
-                            logger.info(f"Found previous completed scene {previous_completed_scene.id} for story {self.story_uuid}")
+                        previous_completed_scenes = self.scene_service.fetch_completed_scenes(self.db_session, story_data.id)
+                        if previous_completed_scenes:
+                            logger.info(f"Found previous completed scenes {previous_completed_scenes} for story {self.story_uuid}")
                             
                             # Use the converter utility for scene conversion
-                            previous_scene_data = convert_scene(previous_completed_scene)
+                            previous_scenes_data = convert_scenes(previous_completed_scenes)
                     except Exception as e:
                         logger.warning(f"Error fetching previous completed scene: {e}. Continuing without previous scene context.")
-                        previous_scene_data = None
+                        previous_scenes_data = None
 
                     assert self.agent is not None
                     final_scene_data = await self.agent.generate_scene(
                         characters=characters_pool_schema,
                         locations=locations_pool_schema,
-                        previous_scene=previous_scene_data,
+                        previous_scenes=previous_scenes_data,
                     )
                     logger.info(f"Final scene data received from agent: {final_scene_data}")
 

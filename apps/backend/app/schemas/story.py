@@ -6,8 +6,8 @@ from app.schemas.character import PlayerCharacterRead
 class StoryBase(BaseModel):
     user_id: int
     title: str
-    description: Optional[str] = None
-    brief_description: Optional[str] = None
+    description: str
+    brief_description: str
     rules: Optional[str] = None
     uuid: str
 

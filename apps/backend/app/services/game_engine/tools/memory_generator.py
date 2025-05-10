@@ -2,8 +2,6 @@ import logging
 import uuid
 from typing import Optional, List
 from sqlalchemy.orm import Session
-from app.schemas.message import Message
-from app.crud.messages import get_messages_by_scene
 from app.services.llm import LLMService, ModelName
 from app.utils.json_service import JSONService
 from app.models.character_memory import CharacterMemory as CharacterMemoryModel

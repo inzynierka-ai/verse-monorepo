@@ -298,36 +298,40 @@ def convert_locations(
             
     return result
 
-def convert_scene(
-    scene_orm: SceneOrmModel
-) -> SceneSchema:
+def convert_scenes(
+    scene_orms: List[SceneOrmModel]
+) -> List[SceneSchema]:
     """
-    Convert a Scene ORM model to a Scene Pydantic model.
+    Convert a list of Scene ORM models to a list of Scene Pydantic models.
     
     Args:
-        scene_orm: The Scene ORM model
+        scene_orms: List of Scene ORM models
         
     Returns:
-        SceneSchema: The Pydantic model representation
+        List[SceneSchema]: List of converted Pydantic models
     """
-    if not scene_orm:
+    if not scene_orms:
         raise ValueError("Cannot convert None to Scene model")
     
-    try:
+    result: List[SceneSchema] = []
+    
+    for scene_orm in scene_orms:
+        try:
+            location_schema = convert_location(scene_orm.location) 
+            characters_schema = convert_characters(scene_orm.characters)
+            
+            # Create the Scene schema
+            scene_schema = SceneSchema(
+                description=str(scene_orm.description),
+                summary=str(getattr(scene_orm, 'summary', None) or ""),
+                location=location_schema,
+                characters=characters_schema
+            )
+            result.append(scene_schema)
+        except Exception as e:
+            logger.error(f"Scene conversion failed: {e}")
+            logger.error(f"Scene ORM data: {scene_orm.__dict__ if hasattr(scene_orm, '__dict__') else scene_orm}")
+            raise e
         
-        location_schema = convert_location(scene_orm.location) 
-        characters_schema = convert_characters(scene_orm.characters)
-        
-        # Create the Scene schema
-        return SceneSchema(
-            description=str(scene_orm.description),
-            summary=str(getattr(scene_orm, 'summary', None) or ""),
-            location=location_schema,
-            characters=characters_schema
-        )
-    except Exception as e:
-        # Log detailed error info for debugging
-        logger.error(f"Scene conversion failed: {e}")
-        logger.error(f"Scene ORM data: {scene_orm.__dict__ if hasattr(scene_orm, '__dict__') else scene_orm}")
-        raise e
+    return result
         
