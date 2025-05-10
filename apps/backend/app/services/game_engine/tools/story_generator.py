@@ -6,7 +6,8 @@ from sqlalchemy.orm import Session
 from app.services.llm import LLMService, ModelName
 from app.schemas.story_generation import (
     Story,
-    StoryInput
+    StoryInput,
+    StoryDetails
 )
 from app.utils.json_service import JSONService
 from app.models.story import Story as StoryModel
@@ -26,35 +27,31 @@ class StoryGenerator:
         # Generate story description
         description = await self._generate_story_description(story_input)
         
-        # Generate story rules
-        rules = await self._generate_story_rules(description)
-
-        # Create title from input
-        title = f"{story_input.theme}, {story_input.genre}, {story_input.year}"
+        # Generate story details (title, brief description, rules)
+        story_details = await self._generate_story_details(description, story_input)
         
         # Generate UUID
         story_uuid = str(uuid.uuid4())
         
         # Construct story object with all required fields
-        story_data = {
-            "user_id": user_id,
-            "title": title,
-            "description": description,
-            "rules": rules,
-            "uuid": story_uuid,
-            "id": None  # Default value
-        }
+        story_data = Story(
+            user_id=user_id,
+            title=story_details.title,
+            description=description,
+            brief_description=story_details.brief_description,
+            rules=story_details.rules,
+            uuid=story_uuid,
+        )
         
         # Save to database if session is available
         if self.db_session:
-            db_story = self._save_story_to_db(Story(**story_data))
+            db_story = self._save_story_to_db(story_data)
             if db_story:
                 # Update with database ID
-                story_data["id"] = db_story.id
+                story_data.id = db_story.id
         
         # Always return a Story object with all required fields
-        return Story(**story_data)
-    
+        return story_data
     def _save_story_to_db(self, story: Story) -> StoryModel:
         """
         Save the generated story to the database.
@@ -71,13 +68,14 @@ class StoryGenerator:
                 user_id=story.user_id,
                 title=story.title,
                 description=story.description,
+                brief_description=story.brief_description,
                 rules=", ".join(story.rules),
                 uuid=story.uuid
             )
             
             if self.db_session is None:
                 logging.warning("No database session available, story not saved")
-                return None
+                raise ValueError("No database session available, story not saved")
             self.db_session.add(db_story)
             self.db_session.commit()
             logging.info(f"Story {story.title} saved to database with ID {db_story.id}")
@@ -87,7 +85,7 @@ class StoryGenerator:
             logging.exception(f"Failed to save story to database: {str(e)}")
             if self.db_session is not None and hasattr(self.db_session, 'is_active') and self.db_session.is_active:
                 self.db_session.rollback()
-            return None
+            raise ValueError("Failed to save story to database")
 
     async def _generate_story_description(self, story_input: StoryInput) -> str:
         """
@@ -107,7 +105,7 @@ class StoryGenerator:
         Year: {story_input.year}
         Setting: {story_input.setting}
         
-        Provide a comprehensive description that covers:
+        Provide a comprehensive but concise description (300-400 words) that covers:
         - The physical environment and geography
         - Social structure and power dynamics
         - Technology level and key innovations
@@ -131,37 +129,42 @@ class StoryGenerator:
         
         return await self.llm_service.extract_content(response)
     
-    async def _generate_story_rules(self, description: str) -> List[str]:
+    async def _generate_story_details(self, description: str, story_input: StoryInput) -> StoryDetails:
         """
-        Generate a list of rules that govern the story.
+        Generate title, brief description, and rules for the story.
         
         Args:
             description: The detailed story description
+            story_input: The original story input parameters
             
         Returns:
-            List of story rules
+            StoryDetails object containing title, brief description and rules
         """
-        prompt = """
-        Based on the story description create a list of 5-8 key rules or principles that govern how this story functions. These should include:
+        prompt = f"""
+        Based on the story description below and the original parameters (Theme: {story_input.theme}, Genre: {story_input.genre}, Year: {story_input.year}, Setting: {story_input.setting}), create:
+
+        1. A catchy, engaging title (max 50 characters)
+        2. A brief summary of the story (3-4 sentences)
+        3. A list of 3-5 key rules or principles that govern how this world functions
         
-        - Physical laws (if different from our story)
-        - Social norms and taboos
-        - Economic principles
-        - Power structures
-        - Any supernatural or technological constraints
-        
-        Format your response as a JSON array of strings, where each string contains a distinct rule explained in 1-2 sentences.
-        
-        Example format:
-        [
-            "Gravity is 1.5 times Earth normal, making physical activities more strenuous and affecting architecture.",
-            "Mind-reading is possible but strictly regulated by the governing council."
-        ]
+        Format your response as valid JSON with the following structure:
+        {{
+            "title": "Your Engaging Title",
+            "brief_description": "Your 3-4 sentence summary...",
+            "rules": [
+                "Rule 1 explained in 1-2 sentences",
+                "Rule 2 explained in 1-2 sentences",
+                etc.
+            ]
+        }}
+
+        Story description:
+        {description}
         """
         
         messages = [
-            self.llm_service.create_message("system", prompt),
-            self.llm_service.create_message("user", description)
+            self.llm_service.create_message("system", "You are an expert storybuilder creating concise, engaging story elements for interactive fiction."),
+            self.llm_service.create_message("user", prompt)
         ]
         
         response = await self.llm_service.generate_completion(
@@ -173,5 +176,6 @@ class StoryGenerator:
         
         content = await self.llm_service.extract_content(response)
         
-        rule_items = JSONService.parse_and_validate_string_list(content)
-        return rule_items
+        # Parse and validate the response
+        story_details = JSONService.parse_and_validate_json_response(content, StoryDetails)
+        return story_details

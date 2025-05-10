@@ -62,7 +62,7 @@ def sample_character() -> Character:
         backstory="Was framed for treason and exiled",
         goals=["Clear my name", "Return to the kingdom"],
         relationships=[],
-        imageUrl="https://localhost:8000/media/comfyui/test.png",
+        image_dir="https://localhost:8000/media/comfyui/test.png",
         role="player",
         uuid="12345678-1234-5678-1234-567812345678"
     )

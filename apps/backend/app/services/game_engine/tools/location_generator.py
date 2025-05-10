@@ -60,7 +60,7 @@ class LocationGenerator:
         # 6. Create the final location with image URL and UUID
         location = Location(
             **location_from_llm.model_dump(),
-            imageUrl=image_url,
+            image_dir=image_url,
             uuid=location_uuid
         )
         
@@ -237,7 +237,7 @@ class LocationGenerator:
                 name=location.name,
                 description=location.description,
                 rules=", ".join(location.rules) if hasattr(location, 'rules') and location.rules else "",
-                image_dir=location.imageUrl,
+                image_dir=location.image_dir,
                 image_prompt=image_prompt,
                 story_id=story_id,
                 uuid=location.uuid

@@ -84,7 +84,7 @@ class ModelConverter:
             
         # Prepare defaults
         defaults: Dict[str, Any] = {
-            "imageUrl": character_orm.image_dir
+            "image_dir": character_orm.image_dir
         }
         
             
@@ -166,9 +166,9 @@ class ModelConverter:
         if ensure_uuid and not getattr(location_orm, "uuid", None):
             defaults["uuid"] = str(uuid.uuid4())
             
-        # Ensure imageUrl exists
-        if not getattr(location_orm, "imageUrl", None):
-            defaults["imageUrl"] = default_image_url
+        # Ensure image_dir exists
+        if not getattr(location_orm, "image_dir", None):
+            defaults["image_dir"] = default_image_url
             
         # Set default rules if missing
         if not getattr(location_orm, "rules", None):
@@ -194,7 +194,7 @@ class ModelConverter:
                 name=getattr(location_orm, "name", "Unknown Location"),
                 description=getattr(location_orm, "description", "No description available"),
                 rules=defaults.get("rules", []),
-                imageUrl=defaults.get("imageUrl", default_image_url),
+                image_dir=defaults.get("image_dir", default_image_url),
                 uuid=defaults.get("uuid", str(uuid.uuid4())),
                 id=getattr(location_orm, "id", None)
             )

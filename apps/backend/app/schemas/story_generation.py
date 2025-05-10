@@ -24,13 +24,20 @@ class StoryInput(BaseModel):
     setting: str = Field(..., description="The physical environment specifics (e.g., space station, underwater city, desert outpost)")
 
 
-class Story(BaseModel):
-    description: str
-    rules: List[str]
-    user_id: Optional[int] = None
+class StoryDetails(BaseModel):
     title: str
-    uuid: Optional[str] = None
-    id: Optional[int] = None  # Add this field
+    brief_description: str
+    rules: List[str]
+
+
+class Story(BaseModel):
+    id: Optional[int] = None
+    user_id: int
+    title: str
+    description: str
+    brief_description: str
+    rules: List[str]
+    uuid: str
 
 class StoryGenerationInput(BaseModel):
     """Input for generating a story"""
@@ -78,7 +85,7 @@ class CharacterFromLLM(BaseModel):
 class Character(CharacterFromLLM):
     """Final character output structure"""
     model_config = ConfigDict(from_attributes=True)
-    imageUrl: str = Field(...,
+    image_dir: str = Field(...,
                          description="URL of the generated image for this character")
     role: Literal["player", "npc"] = Field(
         ..., description="Character's role in the story (player or npc)")
@@ -102,7 +109,7 @@ class Location(LocationFromLLM):
     """Final location output structure"""
     id: Optional[int] = Field(None,
                                description="Location ID in the database")
-    imageUrl: str = Field(...,
+    image_dir: str = Field(...,
                          description="URL of the generated image for this location")
     uuid: str = Field(
         ..., description="Unique identifier for the location")
