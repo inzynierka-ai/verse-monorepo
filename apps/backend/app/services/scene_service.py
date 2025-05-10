@@ -128,17 +128,12 @@ class SceneService:
 Please provide a short summary of the following scene. 
 Focus on key events, how interactions impact relationships between characters, and any important facts that should be remembered from this scene.
 The summary should be a concise narrative.
-
-Scene context:
-{formatted_messages}
 """
         
         # Create a new list for LLM messages, not to be confused with the input 'messages'
         llm_api_messages = [
-            self.llm_service.create_message("system", prompt)
-            # No user message with formatted_messages directly here, it's part of the system prompt now.
-            # If you intend to send the formatted messages as a separate user message, uncomment the next line.
-            # self.llm_service.create_message("user", formatted_messages) 
+            self.llm_service.create_message("system", prompt),
+            self.llm_service.create_message("user", formatted_messages)
         ]
         
         llm_response = await self.llm_service.generate_completion(
