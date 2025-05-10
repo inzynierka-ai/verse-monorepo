@@ -155,6 +155,7 @@ class SceneGenerationHandler:
 
             generation_input_story = StoryGenerationSchema(
                 title=story_data.title,
+                brief_description=story_data.brief_description,
                 description=story_data.description or "",
                 rules=story_data.rules.split('\n') if story_data.rules else [],
                 user_id=story_data.user_id,
@@ -203,7 +204,7 @@ class SceneGenerationHandler:
                     final_scene_data = await self.agent.generate_scene(
                         characters=characters_pool_schema,
                         locations=locations_pool_schema,
-                        previous_scene=previous_scene_data,
+                        previous_scenes=previous_scene_data,
                     )
                     logger.info(f"Final scene data received from agent: {final_scene_data}")
 

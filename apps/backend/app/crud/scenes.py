@@ -205,3 +205,13 @@ def create_complete_scene(
     db.refresh(db_scene)
     
     return db_scene
+
+def update_scene_summary(db: Session, scene_id: int, summary: str) -> Scene:
+    """Update the summary of a scene"""
+    scene = db.query(Scene).filter(Scene.id == scene_id).first()
+    if not scene:
+        raise ValueError(f"Scene with ID {scene_id} not found")
+    scene.summary = summary
+    db.commit()
+    db.refresh(scene)
+    return scene
