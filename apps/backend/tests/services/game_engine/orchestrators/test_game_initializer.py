@@ -79,8 +79,9 @@ def sample_character() -> Character:
         backstory="Once a promising engineer, now searching for purpose",
         goals=["Find clean water source", "Build a safe community"],
         relationships=[],
-        imageUrl="https://localhost:8000/media/comfyui/test.png",
-        role="player"
+        image_dir="https://localhost:8000/media/comfyui/test.png",
+        role="player",
+        uuid="12345678-1234-5678-1234-567812345678"
     )
 
 

@@ -32,7 +32,10 @@ const StoryGenerationCompleted = ({ story, character, onReset }: StoryGeneration
       {story && (
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>Story</h2>
-          <p className={styles.storyDescription}>{story.description}</p>
+
+          {/* Display brief description first */}
+          <h3>Summary</h3>
+          <p className={styles.storyBriefDescription}>{story.brief_description}</p>
 
           {story.rules.length > 0 && (
             <>
@@ -52,13 +55,13 @@ const StoryGenerationCompleted = ({ story, character, onReset }: StoryGeneration
           <h2 className={styles.sectionTitle}>{character.name}</h2>
           <div className={styles.characterInfo}>
             <div className={styles.characterImageContainer}>
-              <img src={character.imageUrl} alt={`${character.name}`} className={styles.characterImage} />
+              <img src={character.image_dir} alt={`${character.name}`} className={styles.characterImage} />
             </div>
             <p>{character.description}</p>
             <div>
               <h3>Personality Traits</h3>
               <div>
-                {character.personalityTraits.map((trait, index) => (
+                {character.personalityTraits?.map((trait, index) => (
                   <span key={index} className={styles.trait}>
                     {trait}
                   </span>
@@ -109,4 +112,4 @@ const StoryGenerationCompleted = ({ story, character, onReset }: StoryGeneration
   );
 };
 
-export default StoryGenerationCompleted; 
+export default StoryGenerationCompleted;
