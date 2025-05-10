@@ -21,9 +21,9 @@ class SceneService:
         """Fetch the latest active scene for a story"""
         return scenes.get_latest_active_scene_by_story(db, story_id)
     
-    def fetch_latest_completed_scene(self, db: Session, story_id: int) -> Optional[Scene]:
-        """Fetch the latest completed scene for a story"""
-        return scenes.get_latest_completed_scene_by_story(db, story_id)
+    def fetch_completed_scenes(self, db: Session, story_id: int) -> List[Scene]:
+        """Fetch all completed scenes for a story"""
+        return scenes.get_completed_scenes_by_story(db, story_id)
     
     async def mark_scene_completed(self, db: Session, scene_uuid: uuid.UUID, story_id: int) -> Optional[Scene]:
         """Mark a scene as completed and return the updated scene"""
@@ -43,17 +43,17 @@ class SceneService:
         scene_model = scenes.get_scene_with_messages(db, scene_id)
         
         if scene_model is None:
-            return
+            raise ValueError(f"Scene with ID {scene_id} not found")
             
         if getattr(scene_model, "status") != "completed":
-            return
+            raise ValueError(f"Scene with ID {scene_id} is not completed")
 
         scene_schema = SceneSchema.model_validate(scene_model)
         
         messages = scene_schema.messages
         
         if not messages:
-            return
+            raise ValueError(f"Scene with ID {scene_id} has no messages")
         
         summary_text = await self._summarize_scene_messages(db, messages)
         

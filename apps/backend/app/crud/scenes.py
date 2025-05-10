@@ -73,6 +73,21 @@ def get_latest_completed_scene_by_story(db: Session, story_id: int) -> Optional[
 
     return latest_completed_scene
 
+def get_completed_scenes_by_story(db: Session, story_id: int) -> List[Scene]:
+    """Fetch all completed scenes for a story"""
+    completed_scenes = db.query(Scene).options(
+        joinedload(Scene.location),
+        joinedload(Scene.characters),
+        joinedload(Scene.messages)
+    ).filter(
+        Scene.story_id == story_id,
+        Scene.status == "completed"
+    ).order_by(
+        desc(Scene.id)
+    ).all()
+
+    return completed_scenes
+
 def mark_scene_as_completed(db: Session, scene_uuid: uuid.UUID, story_id: int) -> Optional[Scene]:
     """Mark a scene as completed and return the updated scene"""
     scene = db.query(Scene).options(

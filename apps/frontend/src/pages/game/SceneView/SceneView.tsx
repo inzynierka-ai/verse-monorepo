@@ -122,11 +122,13 @@ const SceneView = () => {
                 </div>
               ))}
             </div>
-            <div className={styles.finishSceneContainer}>
-              <Button variant="danger" fullWidth onClick={handleFinishScene} disabled={isCompleting}>
-                {isCompleting ? 'Completing Scene...' : 'Finish Scene'}
-              </Button>
-            </div>
+            {scene.messages.length > 0 && (
+              <div className={styles.finishSceneContainer}>
+                <Button variant="danger" fullWidth onClick={handleFinishScene} disabled={isCompleting}>
+                  {isCompleting ? 'Completing Scene...' : 'Finish Scene'}
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -625,33 +625,36 @@ class SceneGeneratorAgent:
             """
             available_locations_str += loc_str
         
-        # Format the previous scene if available
-        previous_scene_str = "None"
-        if self.state.previous_scene:
-            scene = self.state.previous_scene
-            characters_xml = ""
-            for character in scene.characters:
-                characters_xml += f"""
-                <character>
-                    <name>{character.name}</name>
-                    <uuid>{character.uuid}</uuid>
-                </character>
+        # Format the previous scenes if available
+        previous_scenes_str = "None"
+
+        if self.state.previous_scenes:
+            scenes: List[str] = []
+            for scene in self.state.previous_scenes:
+                characters_xml = ""
+                for character in scene.characters:
+                    characters_xml += f"""
+                    <character>
+                        <name>{character.name}</name>
+                        <uuid>{character.uuid}</uuid>
+                    </character>
                 """
             
-            previous_scene_str = f"""
-            <scene>
-                <location>
-                    <name>{scene.location.name}</name>
-                    <uuid>{scene.location.uuid}</uuid>
-                </location>
-                <characters>
-                    {characters_xml}
-                </characters>
-                <description>{scene.description}</description>
-                # TODO: Split summary into key events and sentiment or change db to the single string
-                <summary>{scene.summary}</summary>
-            </scene>
-            """
+                previous_scene_str = f"""
+                <scene>
+                    <location>
+                        <name>{scene.location.name}</name>
+                        <uuid>{scene.location.uuid}</uuid>
+                    </location>
+                    <characters>
+                        {characters_xml}
+                    </characters>
+                    <description>{scene.description}</description>
+                    <summary>{scene.summary}</summary>
+                </scene>
+                """
+                scenes.append(previous_scene_str)
+            previous_scenes_str = "".join(scenes)
         
         # Format error messages
         error_messages = ""
@@ -678,7 +681,7 @@ class SceneGeneratorAgent:
                 <description>{self.state.player.description}</description>
             </player>
             
-            <previous_scene>{previous_scene_str}</previous_scene>
+            <previous_scenes>{previous_scenes_str}</previous_scenes>
             
             <current_state>
                 <selected_location>

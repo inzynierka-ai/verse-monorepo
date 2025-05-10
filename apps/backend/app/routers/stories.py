@@ -101,7 +101,7 @@ def get_latest_scene(
     
     return latest_scene
 
-@router.patch("/{story_uuid}/scenes/{scene_uuid}/complete", response_model=scene_schema.Scene)
+@router.patch("/{story_uuid}/scenes/{scene_uuid}/complete")
 async def complete_scene(  # Make this function async
     story_uuid: uuid.UUID,
     scene_uuid: uuid.UUID,
@@ -121,10 +121,10 @@ async def complete_scene(  # Make this function async
 
     # Mark the scene as completed
     scene_service = SceneService()
-    completed_scene = scene_service.mark_scene_completed(db, scene_uuid, story_id)
+    completed_scene = await scene_service.mark_scene_completed(db, scene_uuid, story_id)
     
     # Handle not found cases
     if not completed_scene:
         raise HTTPException(status_code=404, detail="Scene not found or already completed")
     
-    return completed_scene
+    return {"message": "Scene completed successfully"}
