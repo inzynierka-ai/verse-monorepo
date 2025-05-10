@@ -1,7 +1,7 @@
 import logging
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import desc
-from app.models.scene import Scene, SceneSummary
+from app.models.scene import Scene
 from app.crud import characters as characters_crud
 
 from typing import List, Optional, Dict, Any
@@ -126,49 +126,6 @@ def update_scene_status(db: Session, scene_id: int, status: str) -> Scene:
     
     return scene
 
-
-def create_or_update_scene_summary(
-    db: Session, 
-    scene_id: int, 
-    summary_data: Dict[str, Any]
-) -> SceneSummary:
-    """
-    Create or update a scene summary
-    
-    Args:
-        db: Database session
-        scene_id: ID of the scene to summarize
-        summary_data: Dictionary containing summary data
-        
-    Returns:
-        The created or updated SceneSummary object
-    """
-    # Check if a summary already exists for this scene
-    existing_summary = db.query(SceneSummary).filter(
-        SceneSummary.scene_id == scene_id
-    ).first()
-    
-    if existing_summary:
-        # Update existing summary
-        for key, value in summary_data.items():
-            setattr(existing_summary, key, value)
-        summary = existing_summary
-    else:
-        # Create new summary
-        summary = SceneSummary(
-            scene_id=scene_id,
-            total_messages=summary_data["total_messages"],
-            character_participation=summary_data["character_participation"],
-            key_events=summary_data["key_events"],
-            sentiment=summary_data["sentiment"],
-            relationships=summary_data["relationships"]
-        )
-        db.add(summary)
-    
-    db.commit()
-    db.refresh(summary)
-    
-    return summary
 
 def add_characters_to_scene(db: Session, scene_id: int, character_uuids: List[str]):
     """

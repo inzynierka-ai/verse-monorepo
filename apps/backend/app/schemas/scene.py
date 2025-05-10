@@ -1,23 +1,10 @@
-from typing import List, Dict, Any, Optional
+from typing import List, Optional
 from pydantic import BaseModel, ConfigDict
 
 from pydantic import BaseModel
 from app.schemas.message import Message
 from app.schemas.character import Character
 from app.schemas.location import Location
-
-class SceneSummaryBase(BaseModel):
-    total_messages: int
-    character_participation: Dict[str, int]
-    key_events: List[Any]
-    sentiment: Dict[str, Any]
-    relationships: Dict[str, Any]
-
-class SceneSummary(SceneSummaryBase):
-    id: int
-    scene_id: int
-    
-    model_config = ConfigDict(from_attributes=True)
 
 class Scene(BaseModel):
     id: int
@@ -29,7 +16,7 @@ class Scene(BaseModel):
     location: Location
     characters: List[Character]
     messages: List[Message]
-    summary: Optional[SceneSummary] = None
+    summary: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
 

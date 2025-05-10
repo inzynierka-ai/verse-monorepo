@@ -169,11 +169,10 @@ class SceneGeneratorAgent:
         
     @observe(name="generate_scene")
     async def generate_scene(
-        self, 
-        characters: List[Character], 
-        locations: List[Location], 
-        previous_scene: Optional[Scene] = None,
-        relevant_conversations: Optional[List[Dict[str, Any]]] = None
+        self,
+        characters: List[Character],
+        locations: List[Location],
+        previous_scenes: Optional[List[Scene]] = None,
     ) -> SceneGenerationResult:
         """
         Generate a new scene for the game
@@ -193,8 +192,7 @@ class SceneGeneratorAgent:
             player=self.player,
             characters_pool=characters,
             locations_pool=locations,
-            previous_scene=previous_scene,
-            relevant_conversations=relevant_conversations or [],
+            previous_scenes=previous_scenes,
             selected_characters=[],
             active_actions={},
         )

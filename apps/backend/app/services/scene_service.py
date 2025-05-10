@@ -51,8 +51,6 @@ class SceneService:
         # 2. Implement summarization logic
         summary_data = self._summarize_scene_messages(messages)
         
-        # 3. Store summary data using the CRUD module
-        scenes.create_or_update_scene_summary(db, scene_id, summary_data)
         
         # Future enhancement: Update character relationships based on interactions
     
