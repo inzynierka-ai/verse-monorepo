@@ -12,7 +12,7 @@ from app.models.story import Story
 from app.crud.messages import get_messages_by_scene
 from app.crud.stories import get_story_by_id
 from app.crud.scenes import get_scene_by_uuid
-from app.crud.world_entities import get_all_entity_names, get_related_entities
+from app.crud.world_entities import get_entity_names_by_story_id, get_related_entities
 
 
 class WorldEntityService:
@@ -57,7 +57,7 @@ class WorldEntityService:
         """
         Filter out any entity names that are already defined in the database.
         """
-        known = get_all_entity_names(self.db_session)
+        known = get_entity_names_by_story_id(self.db_session, self.story.id)
         return [name for name in entity_names if name.lower() not in {k.lower() for k in known}]
 
     async def describe_entity(self, entity_name: str, scene_text: str, related_entities: List[Dict]) -> Optional[Dict[str, Any]]:
@@ -71,30 +71,34 @@ class WorldEntityService:
         related_str = "\n".join([f"{e['name']}: {e['description']}" for e in related_entities])
 
         system_prompt = f"""
-        You are building a glossary entry for the term "{entity_name}" in a fictional game world.
+        > You are building a glossary entry for the term "{entity_name}" in a fictional game world.
 
-        This game world has its own unique lore, characters, and settings. The term "{entity_name}" is a concept or term that characters in the world would know about.
+        > This game world has its own unique lore, characters, and settings. The term "{entity_name}" is a concept or term that characters in the world would know about.
 
-        Here is the description of the world/story:
+        > Here is the description of the world/story:
         {self.story.description}
 
-        The term was encountered in this scene:
+        > The term was encountered in this scene:
         ---
         {scene_text}
         ---
 
-        Here are known, related world concepts:
+        > Here are known, related world concepts:
         {related_str if related_entities else 'None'}
 
-        Task:
+        > Task:
         - Write a short canonical description (1–3 sentences) that could be added to a world glossary.
         - Be concise, specific, and avoid repeating known concepts.
         - Assume the reader is a character in the world who already knows general context.
         - The term must be defined in a way that is useful for all characters in the world.
         - The definition must only include information that would be common knowledge to characters in the world.
         - Especially, it must avoid referring to any characters or situations that are not famous or well-known in the world.
+        - As this description will become canonical, feel free to use your own creativity to fill in the gaps where information is not present.
+        - You are co-authoring the world with the user, so feel free to add your own creative flair.
+        - Keep the style of the description consistent with the world and its lore.
+        - Make the format encyclopedic, as if it were a Wikipedia entry - but brief and to the point.
 
-        Output format:
+        > Output format:
         {{
             "name": "{entity_name}",
             "description": "Your generated description here."
@@ -247,7 +251,7 @@ class WorldEntityService:
 
         saved_ids = []
         for name in new_names:
-            related = get_related_entities(self.db_session, name)
+            related = get_related_entities(self.db_session, name, self.story.id)
             description_data = await self.describe_entity(name, conversation_text, related)
 
             if description_data:
