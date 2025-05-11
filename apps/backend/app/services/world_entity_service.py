@@ -151,7 +151,6 @@ class WorldEntityService:
                 discovered_in_scene=scene_uuid,
                 story_id=story_id,
                 created_at=current_time,
-                updated_at=current_time  # If you have this field
             )
 
             self.db_session.add(db_entity)
@@ -197,6 +196,10 @@ class WorldEntityService:
         )
         
         last_processed_entity = last_entity_query.first()
+        if last_processed_entity:
+            logging.info(f"Last processed entity: {last_processed_entity.name} at {last_processed_entity.created_at}")
+        else:
+            logging.info("No previously processed entities found for this scene.")
         
         # Get messages
         if last_processed_entity and hasattr(last_processed_entity, 'created_at'):
@@ -211,7 +214,7 @@ class WorldEntityService:
                 
                 # Get messages newer than our last entity creation
                 messages = self.db_session.query(Message).filter(
-                    Message.scene_uuid == scene_uuid,  # Use scene_uuid instead of scene.id
+                    Message.scene_id == scene.id,
                     timestamp_field > last_processed_time
                 ).order_by(timestamp_field).all()
                 
@@ -239,6 +242,8 @@ class WorldEntityService:
         if not new_names:
             logging.info(f"No new entities found in scene {scene_uuid}.")
             return []
+        
+        logging.info(f"Detected new entities: {new_names}")
 
         saved_ids = []
         for name in new_names:
