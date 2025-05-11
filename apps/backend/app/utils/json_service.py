@@ -97,6 +97,33 @@ class JSONService:
         return result
     
     @staticmethod
+    def parse_and_validate_single_object(response: str, required_keys: List[str]) -> Dict[str, Any]:
+        """
+        Parse a JSON response and validate that it's an object with all required keys.
+        
+        Args:
+            response: The LLM response text
+            required_keys: List of keys that must be present in the object
+            
+        Returns:
+            Dictionary containing the validated object
+            
+        Raises:
+            ValueError: If the response is not a valid JSON object or missing required keys
+        """
+        data = JSONService.parse_json_response(response)
+        
+        if not isinstance(data, dict):
+            raise ValueError(f"Expected JSON object but got {type(data).__name__}")
+        
+        # Check if all required keys are present
+        for key in required_keys:
+            if key not in data:
+                raise ValueError(f"Required key '{key}' missing from JSON object")
+        
+        return data
+    
+    @staticmethod
     def parse_and_validate_string_list(response: str) -> List[str]:
         """
         Parse a JSON response and validate it as a list of strings.
