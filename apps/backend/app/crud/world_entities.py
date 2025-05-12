@@ -12,7 +12,7 @@ def get_entity_by_id(db: Session, entity_id: int) -> WorldEntityModel | None:
     """
     return db.query(WorldEntityModel).filter(WorldEntityModel.id == entity_id).first()
 
-def get_entities_by_story_id(db: Session, story_id: int) -> List[Dict]:
+def get_entities_by_story_id(db: Session, story_id: int) -> List[WorldEntity]:
     """
     Get all world entities by story ID.
     
@@ -27,16 +27,17 @@ def get_entities_by_story_id(db: Session, story_id: int) -> List[Dict]:
     
     # Return data in the format expected by the schema
     return [
-        {
-            "id": e.id,
-            "name": e.name,
-            "story_id": e.story_id,  # Add this!
-            "canonical_description": e.canonical_description,  # Use correct field name
-            "embedding": e.embedding.tolist() if e.embedding is not None else None,
-            "aliases": e.aliases or [],
-            "discovered_in_scene": e.discovered_in_scene,
-            "created_at": e.created_at
-        } 
+return [
+        WorldEntity(
+            id=e.id,
+            name=e.name,
+            story_id=e.story_id,  # Add this!
+            canonical_description=e.canonical_description,  # Use correct field name
+            embedding=e.embedding.tolist() if e.embedding is not None else None,
+            aliases=e.aliases or [],
+            discovered_in_scene=e.discovered_in_scene,
+            created_at=e.created_at
+        )
         for e in entities
     ]
 
