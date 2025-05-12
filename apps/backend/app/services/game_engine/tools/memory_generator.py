@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from app.services.llm import LLMService, ModelName
 from app.utils.json_service import JSONService
 from app.models.character_memory import CharacterMemory as CharacterMemoryModel
-from app.utils.embedding import get_embedding
+from app.utils.embedding import simplify_text_for_embedding, get_embedding
 from app.crud.messages import get_messages_by_scene_and_character
 
 
@@ -87,7 +87,7 @@ class MemoryGenerator:
                 character_id=character_id,
                 scene_id=scene_id,
                 memory_text=memory,
-                embedding=get_embedding(memory),
+                embedding=get_embedding(simplify_text_for_embedding(memory)),
                 uuid=uuid.uuid4()
             )
 
