@@ -56,7 +56,11 @@ Generate a character draft based on this description.
 """
 
 # Second step: Convert narrative to JSON structure
-CREATE_CHARACTER_JSON_SYSTEM_PROMPT = """
+def CREATE_CHARACTER_JSON_SYSTEM_PROMPT(is_player: bool):
+    personality_traits_field = '"personalityTraits": ["string", "string"],  // Array of personality trait names as strings' if is_player else ""
+    relationship_level_field = '"relationshipLevel": 0,  // Numeric level of relationship intensity (0-100) 0-20 - stranger or enemy, 20-40 - acquaintance, 40-60 - friend, 60-80 - close friend, 80-100 - family' if is_player else ""
+    
+    return f"""
 Create a structured JSON representation of character based on the detailed narrative descriptions.
 Return only valid JSON and nothing else.
 
@@ -64,21 +68,14 @@ IMPORTANT: All JSON keys MUST use camelCase formatting (e.g., personalityTraits,
 
 The JSON should be an single character object, following this structure:
 ```json
-{
+{{
   "name": "string",  // Preserve the original name
   "description": "string",  // Expanded detailed description
-  "personalityTraits": ["string", "string"],  // Array of personality trait names as strings
+  {personality_traits_field}
   "backstory": "string",  // Character's origin story and history
   "goals": ["string"],  // List of character's goals
-  "relationships": [
-    {
-      "name": "string",  // Name of the related character
-      "level": 0,  // Numeric level of relationship intensity (0-10)
-      "type": "string",  // Type of relationship (friend, enemy, mentor, etc.)
-      "backstory": "string"  // Brief description of the relationship
-    }
-  ],
-}
+  {relationship_level_field}
+}}
 ```
 
 Extract all relevant information from the provided character descriptions and organize them into this JSON structure.

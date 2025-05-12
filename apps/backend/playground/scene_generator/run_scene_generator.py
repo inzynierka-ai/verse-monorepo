@@ -38,7 +38,6 @@ async def create_sample_data() -> Dict[str, Any]:
         uuid=str(uuid.uuid4()),
         personalityTraits=["curious", "intelligent", "somewhat arrogant"],
         goals=["Discover the source of magic's return", "Learn rare spells"],
-        relationships=[],
         image_dir=""
     )
     
@@ -52,7 +51,7 @@ async def create_sample_data() -> Dict[str, Any]:
             uuid=str(uuid.uuid4()),
             personalityTraits=["stubborn", "loyal", "perfectionist"],
             goals=["Create the most powerful enchanted weapon in the realm"],
-            relationships=[],
+
             image_dir=""
         ),
         Character(
@@ -63,7 +62,7 @@ async def create_sample_data() -> Dict[str, Any]:
             uuid=str(uuid.uuid4()),
             personalityTraits=["secretive", "calculating", "protective"],
             goals=["Find a way to control wild magic", "Protect common folk from magical dangers"],
-            relationships=[],
+
             image_dir=""
         ),
         Character(
@@ -74,7 +73,7 @@ async def create_sample_data() -> Dict[str, Any]:
             uuid=str(uuid.uuid4()),
             personalityTraits=["playful", "fickle", "loyal"],
             goals=["Experience everything the material world has to offer"],
-            relationships=[],
+
             image_dir=""
         )
     ]

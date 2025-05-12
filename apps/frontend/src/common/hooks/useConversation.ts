@@ -2,14 +2,12 @@ import { useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useWebSocket } from './webSockets/useWebSocket';
 import { sendWebSocketMessage } from '@/utils/webSocket';
-import { Message, Analysis } from '@/types/chat';
+import { Message } from '@/types/message.types';
 import { messagesQueryKey } from './useMessages';
-import { analysisQueryKey } from './useAnalysis';
 
 interface ConversationMessage {
-  type: 'chat_chunk' | 'chat_complete' | 'analysis';
+  type: 'chat_chunk' | 'chat_complete';
   content?: string;
-  analysis?: Analysis;
 }
 
 interface UseConversationProps {
@@ -53,11 +51,6 @@ export const useConversation = ({
             });
             break;
           }
-          case 'analysis':
-            if (message.analysis) {
-              queryClient.setQueryData(analysisQueryKey(sceneId), message.analysis);
-            }
-            break;
           case 'chat_complete':
             break;
         }
@@ -106,11 +99,7 @@ export const useConversation = ({
       return sendWebSocketMessage(socket, {
         sceneId,
         characterId,
-        messages: updatedMessages.map((msg) => ({
-          role: msg.role,
-          content: msg.content,
-          threadId: msg.threadId,
-        })),
+        messages: updatedMessages,
       });
     },
     [socket, sceneId, characterId, queryClient],
