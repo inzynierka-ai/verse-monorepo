@@ -119,7 +119,7 @@ class WorldEntityService:
         content = await self.llm_service.extract_content(response)
         return JSONService.parse_and_validate_json_response(content, WorldEntityFromLLM)
 
-    def save_entity_to_db(self, entity: Dict[str, str], scene: Optional[Scene] = None) -> Optional[int]:
+    def save_entity_to_db(self, entity: WorldEntityFromLLM, scene: Optional[Scene] = None) -> Optional[int]:
         """
         Save an entity to the database.
         
@@ -140,7 +140,7 @@ class WorldEntityService:
                 logging.error("No story ID available, cannot save entity.")
                 return None
                 
-            embedding = get_embedding(entity["description"])
+            embedding = get_embedding(entity.description)
             
             # Convert scene.id to scene.uuid for discovered_in_scene field
             scene_uuid = scene.uuid if scene else None
@@ -149,8 +149,8 @@ class WorldEntityService:
             current_time = datetime.utcnow()
 
             db_entity = WorldEntityModel(
-                name=entity["name"],
-                canonical_description=entity["description"],
+                name=entity.name,
+                canonical_description=entity.description,
                 embedding=embedding,
                 discovered_in_scene=scene_uuid,
                 story_id=story_id,
@@ -159,7 +159,7 @@ class WorldEntityService:
 
             self.db_session.add(db_entity)
             self.db_session.commit()
-            logging.info(f"Saved new world entity: {entity['name']} at {current_time}")
+            logging.info(f"Saved new world entity: {entity.name} at {current_time}")
             return db_entity.id
 
         except Exception as e:

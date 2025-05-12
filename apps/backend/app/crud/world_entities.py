@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from typing import List, Dict
 from app.models.world_entity import WorldEntity as WorldEntityModel
+from app.schemas.world_entity import WorldEntity
 
 def get_entity_names_by_story_id(db: Session, story_id: int) -> List[str]:
     entities = db.query(WorldEntityModel).filter(WorldEntityModel.story_id == story_id).all()
@@ -27,7 +28,6 @@ def get_entities_by_story_id(db: Session, story_id: int) -> List[WorldEntity]:
     
     # Return data in the format expected by the schema
     return [
-return [
         WorldEntity(
             id=e.id,
             name=e.name,
