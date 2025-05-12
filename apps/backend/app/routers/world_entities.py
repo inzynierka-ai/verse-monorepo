@@ -19,7 +19,7 @@ router = APIRouter(
     tags=["world_entities"],
 )
 
-@router.get("/{story_id}", response_model=List[WorldEntity])
+@router.get("/stories/{story_id}", response_model=List[WorldEntity])
 async def list_all_world_entites_by_story_id(
     db: Session = Depends(get_db),
     story_id: int = None,
