@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { Message } from '@/types/chat';
+import { Message } from '@/types/message.types';
 import { apiClient } from '@/services/api';
 
 export const messagesQueryKey = (sceneId: string, characterId: string) => ['game', 'messages', sceneId, characterId];

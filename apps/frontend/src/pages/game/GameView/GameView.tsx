@@ -2,7 +2,6 @@ import { gameRoute } from '@/router';
 import { useNavigate } from '@tanstack/react-router';
 import { useState, useCallback, useEffect } from 'react';
 import SceneGenerationView from './SceneGenerationView';
-import { Scene } from '@/types/scene.types';
 import Button from '@/common/components/Button/Button';
 import { useLatestScene } from '@/services/api/hooks/useLatestScene';
 import { useQueryClient } from '@tanstack/react-query';
@@ -22,14 +21,11 @@ const GameView = () => {
   const errorMessage = error instanceof Error ? error.message : '';
   const needsGeneration = isError && errorMessage.includes('404');
 
-  const handleSceneComplete = useCallback(
-    (scene: Scene) => {
-      // Invalidate the query to fetch the latest scene
-      queryClient.invalidateQueries({ queryKey: ['latest-scene', storyId] });
-      setGenerationStarted(false);
-    },
-    [queryClient, storyId],
-  );
+  const handleSceneComplete = useCallback(() => {
+    // Invalidate the query to fetch the latest scene
+    queryClient.invalidateQueries({ queryKey: ['latest-scene', storyId] });
+    setGenerationStarted(false);
+  }, [queryClient, storyId]);
 
   const startGeneration = useCallback(() => {
     setGenerationStarted(true);
@@ -63,9 +59,7 @@ const GameView = () => {
   }
 
   if (needsGeneration || generationStarted) {
-    return (
-      <SceneGenerationView storyId={storyId} onSceneComplete={handleSceneComplete} startGeneration={startGeneration} />
-    );
+    return <SceneGenerationView storyId={storyId} onSceneComplete={handleSceneComplete} />;
   }
 
   if (!currentScene) {

@@ -18,14 +18,12 @@ const Chat = () => {
   const navigate = useNavigate();
   const { data: scene, isLoading: isLoadingScene, error } = useLatestScene(storyId);
   const [message, setMessage] = useState('');
-  const [isConnected, setIsConnected] = useState(false);
   const createWorldEntities = useCreateWorldEntities();
 
   // Setup scene and real-time messaging with WebSocket
   const { sendMessage, isConnected: wsConnected } = useConversation({
     sceneId,
     characterId,
-    onConnectionChange: setIsConnected,
   });
 
   const playerCharacter = scene?.characters.find((c) => c.role === 'player');
