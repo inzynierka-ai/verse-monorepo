@@ -1,3 +1,4 @@
+import logging
 from typing import List, AsyncGenerator, Dict, Any, Literal
 from fastapi import WebSocket
 from sqlalchemy.orm import Session
@@ -38,7 +39,7 @@ class ConversationService:
         )
 
 
-        system_prompt = self._build_character_prompt(db, character, scene)
+        system_prompt = await self._build_character_prompt(db, character, scene)
         
         # Convert messages to the format expected by the LLM service
         formatted_messages = [
@@ -98,23 +99,28 @@ class ConversationService:
         
     
     
-    def _build_character_prompt(self, db:Session, character: Character, scene: Scene) -> str:
+    async def _build_character_prompt(self, db:Session, character: Character, scene: Scene) -> str:
         """Build a system prompt for the character"""
         # Get location information
+        story = scene.story
 
-        simplified_last_message = simplify_text_for_embedding(scene.messages[-1]["content"])
+        player_character = next((char for char in scene.characters if char.role == "player"), None)
+        player_name = player_character.name if player_character else "unknown player"
+
+        simplified_last_message = await simplify_text_for_embedding(scene.messages[-1].content)
         last_message_embedding = get_embedding(simplified_last_message)
 
         # Get character memories
         memory_manager = MemoryManager(db_session=db)
-        memories = memory_manager.get_relevant_memories(character_id=character.id, 
+        memories = await memory_manager.get_relevant_memories(character_id=character.id, 
                                                         current_scene_id=scene.id, 
                                                         last_message_embedding=last_message_embedding)
 
         location_info = f"You are currently at {scene.location.name}. {scene.location.description}" if scene.location else ""
         # Get relevant world entities
-        world_entity_service = WorldEntityService(db_session=db, story_id=scene.story_id)
-        world_entities = world_entity_service.get_relevant_world_entities(scene, simplified_last_message, last_message_embedding)
+        # world_entity_service = WorldEntityService(db_session=db, story_id=scene.story_id)
+        # world_entities = world_entity_service.get_relevant_world_entities(scene, simplified_last_message, last_message_embedding)
+        world_entities = []
 
 
         character_prompt = f"""
@@ -126,7 +132,7 @@ class ConversationService:
         You are in the following situation:
         {scene.description}
 
-        You are currently speaking with the player character named {scene.player.name}. Speak and act according to your personality, goals, and knowledge. Do **not** narrate or explain your behavior unless it is in-character to do so.
+        You are currently speaking with the player character named {player_name}. Speak and act according to your personality, goals, and knowledge. Do **not** narrate or explain your behavior unless it is in-character to do so.
 
         Memories of past interactions (which you remember as real experiences):
         {chr(10).join(['- ' + memory for memory in memories])}
@@ -146,6 +152,7 @@ class ConversationService:
         """
 
         # Combine character prompt with location information
+        logging.info(f"Character prompt for {character.name}: {character_prompt}")
         return character_prompt
     
     async def save_message(self, db: Session, scene_id: Any, 

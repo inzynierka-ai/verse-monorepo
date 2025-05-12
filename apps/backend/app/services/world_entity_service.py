@@ -53,12 +53,12 @@ class WorldEntityService:
         content = await self.llm_service.extract_content(response)
         return JSONService.parse_and_validate_string_list(content)
     
-    def get_relevant_world_entities(scene, simplified_last_message, last_message_embedding):
+    def get_relevant_world_entities(self, scene, simplified_last_message, last_message_embedding):
         """
         Get relevant world entities based on the last message and scene context.
         """
         #TODO: Implement this function to retrieve relevant world entities
-        pass
+        return []
 
     def filter_known_entities(self, entity_names: List[str]) -> List[str]:
         """
