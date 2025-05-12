@@ -53,19 +53,6 @@ class StoryOutput(BaseModel):
                          description="Generated story information")
 
 
-# Character models
-class CharacterRelationship(BaseModel):
-    """A relationship between characters"""
-    name: str = Field(...,
-                      description="Name of the related character")
-    level: int = Field(...,
-                       description="Level or strength of the relationship")
-    type: str = Field(...,
-                      description="Type of relationship (friend, enemy, etc.)")
-    backstory: str = Field(
-        ..., description="Backstory of the relationship")
-
-
 class CharacterFromLLM(BaseModel):
     """Character in the generated story"""
     name: str = Field(...,
@@ -78,9 +65,8 @@ class CharacterFromLLM(BaseModel):
                            description="Character's backstory")
     goals: List[str] = Field(...,
                              description="Character's goals")
-    relationships: List[CharacterRelationship] = Field(
-        ..., description="Character's relationships")
-
+    relationshipLevel: Optional[int] = Field(None,
+                                  description="Relationship level with the player character")
 
 class Character(CharacterFromLLM):
     """Final character output structure"""

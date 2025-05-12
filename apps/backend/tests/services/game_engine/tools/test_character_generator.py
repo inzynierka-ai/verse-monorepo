@@ -7,7 +7,6 @@ from app.schemas.story_generation import (
     Story, 
     Character, 
     CharacterFromLLM,
-    CharacterRelationship
 )
 from app.services.llm import LLMService
 
@@ -45,6 +44,10 @@ def test_story():
     return Story(
         description="A test story description",
         rules=["Rule 1", "Rule 2"],
+        uuid="test_uuid",
+        user_id=1,
+        title="Test Story",
+        brief_description="A test story brief description"
     )
 
 
@@ -59,13 +62,7 @@ async def test_generate_character(
     # Mock the LLM service responses
     character_description = "This is a detailed character description."
     
-    # Create a valid CharacterRelationship object
-    relationship = CharacterRelationship(
-        name="John Smith",  
-        level=5,
-        type="friend",
-        backstory="Old childhood friends"
-    )
+
     
     # Define a character with valid relationships
     character_from_llm = CharacterFromLLM(
@@ -74,7 +71,7 @@ async def test_generate_character(
         personalityTraits=["Brave", "Intelligent"],
         backstory="A mysterious background with many secrets",
         goals=["Find the truth", "Protect their family"],
-        relationships=[relationship]
+        relationshipLevel=5
     )
     
     image_prompt = "A detailed image of Test Character standing tall with brown hair."
@@ -99,8 +96,6 @@ async def test_generate_character(
     # Assertions
     assert isinstance(result, Character)
     assert result.name == "Test Character"
-    assert len(result.relationships) == 1
-    assert result.relationships[0].name == "John Smith"
     
     # Verify expected calls
     assert mock_llm_service.generate_completion.call_count == 3
