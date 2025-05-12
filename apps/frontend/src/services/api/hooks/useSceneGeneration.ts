@@ -54,7 +54,6 @@ export interface SceneGenerationState {
 interface UseSceneGenerationProps {
   storyId: string;
   onConnectionChange?: (isConnected: boolean) => void;
-  enabled?: boolean; // To control connection attempts
 }
 
 interface UseSceneGenerationReturn {
@@ -68,7 +67,6 @@ interface UseSceneGenerationReturn {
 export const useSceneGeneration = ({
   storyId,
   onConnectionChange,
-  enabled = true,
 }: UseSceneGenerationProps): UseSceneGenerationReturn => {
   const [internalState, setInternalState] = useState<SceneGenerationState>({
     status: 'idle',

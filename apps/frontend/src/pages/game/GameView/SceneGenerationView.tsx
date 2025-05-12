@@ -8,10 +8,9 @@ import { useEffect } from 'react';
 interface SceneGenerationViewProps {
   storyId: string;
   onSceneComplete: (scene: Scene) => void;
-  startGeneration: () => void; // Prop to trigger the generation start
 }
 
-const SceneGenerationView = ({ storyId, onSceneComplete, startGeneration }: SceneGenerationViewProps) => {
+const SceneGenerationView = ({ storyId, onSceneComplete }: SceneGenerationViewProps) => {
   const {
     state,
     start,
