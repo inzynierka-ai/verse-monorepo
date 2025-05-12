@@ -1,5 +1,6 @@
 import { useNavigate, useParams } from '@tanstack/react-router';
 import { useLatestScene } from '@/services/api/hooks/useLatestScene';
+import { useCreateWorldEntities } from '@/services/api/hooks/useCreateWorldEntities';
 import { useState } from 'react';
 
 import Input from '@/common/components/Input/Input';
@@ -18,6 +19,7 @@ const Chat = () => {
   const { data: scene, isLoading: isLoadingScene, error } = useLatestScene(storyId);
   const [message, setMessage] = useState('');
   const [isConnected, setIsConnected] = useState(false);
+  const createWorldEntities = useCreateWorldEntities();
 
   // Setup scene and real-time messaging with WebSocket
   const { sendMessage, isConnected: wsConnected } = useConversation({
@@ -41,11 +43,18 @@ const Chat = () => {
     }
   };
 
-  const handleBackToScene = () => {
-    navigate({
-      to: '/play/$storyId/scenes/$sceneId',
-      params: { storyId, sceneId },
-    });
+  const handleBackToScene = async () => {
+    createWorldEntities.mutate(
+      { sceneUuid: sceneId },
+      {
+        onSettled: () => {
+          navigate({
+            to: '/play/$storyId/scenes/$sceneId',
+            params: { storyId, sceneId },
+          });
+        },
+      },
+    );
   };
 
   if (isLoadingScene) {
@@ -80,8 +89,13 @@ const Chat = () => {
     >
       <div className={styles.gameContainer}>
         <div className={styles.topBar}>
-          <Button onClick={handleBackToScene} className={styles.backButton} variant="secondary">
-            ← Back to Scene
+          <Button
+            onClick={handleBackToScene}
+            className={styles.backButton}
+            variant="secondary"
+            disabled={createWorldEntities.isPending}
+          >
+            {createWorldEntities.isPending ? 'Processing...' : '← Back to Scene'}
           </Button>
           {scene.location && <div className={styles.locationName}>{scene.location.name}</div>}
         </div>
