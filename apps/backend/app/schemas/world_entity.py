@@ -18,6 +18,10 @@ class WorldEntity(WorldEntityBase):
         orm_mode = True
         from_attributes = True
 
+class WorldEntityFromLLM(BaseModel):
+    name: str
+    description: str
+
 class WorldEntityCreate(BaseModel):
     story_id: int
     name: str  

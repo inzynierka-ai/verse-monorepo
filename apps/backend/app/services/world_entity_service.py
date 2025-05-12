@@ -13,7 +13,7 @@ from app.crud.messages import get_messages_by_scene
 from app.crud.stories import get_story_by_id
 from app.crud.scenes import get_scene_by_uuid
 from app.crud.world_entities import get_entity_names_by_story_id, get_related_entities
-
+from app.schemas.world_entity import WorldEntityFromLLM
 
 class WorldEntityService:
     def __init__(self, llm_service: Optional[LLMService] = None, db_session: Optional[Session] = None, story_id: Optional[int] = None):
@@ -117,7 +117,7 @@ class WorldEntityService:
         )
 
         content = await self.llm_service.extract_content(response)
-        return JSONService.parse_and_validate_single_object(content, required_keys=["name", "description"])
+        return JSONService.parse_and_validate_json_response(content, WorldEntityFromLLM)
 
     def save_entity_to_db(self, entity: Dict[str, str], scene: Optional[Scene] = None) -> Optional[int]:
         """
