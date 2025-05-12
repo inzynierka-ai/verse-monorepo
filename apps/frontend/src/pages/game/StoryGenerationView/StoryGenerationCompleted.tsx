@@ -4,7 +4,6 @@ import Button from '@/common/components/Button';
 
 import { Character } from '@/types/character.types';
 
-import { useState } from 'react';
 import { Story } from '@/types/story.types';
 
 interface StoryGenerationCompletedProps {
@@ -80,19 +79,6 @@ const StoryGenerationCompleted = ({ story, character, onReset }: StoryGeneration
                 <ul>
                   {character.goals.map((goal, index) => (
                     <li key={index}>{goal}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {character.relationships.length > 0 && (
-              <div>
-                <h3>Relationships</h3>
-                <ul>
-                  {character.relationships.map((rel, index) => (
-                    <li key={index}>
-                      <strong>{rel.name}</strong> ({rel.type}) - {rel.backstory}
-                    </li>
                   ))}
                 </ul>
               </div>

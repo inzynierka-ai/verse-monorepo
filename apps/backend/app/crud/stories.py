@@ -12,6 +12,13 @@ def get_story(db: Session, story_uuid: uuid.UUID, user_id: int):
         raise HTTPException(status_code=404, detail=f"Story not found")
     return story
 
+def get_story_by_id(db: Session, story_id: int):
+    """Get a story by its ID"""
+    story = db.query(Story).filter(Story.id == story_id).first()
+    if not story:
+        raise HTTPException(status_code=404, detail=f"Story with ID {story_id} not found")
+    return story
+
 def get_user_stories(db: Session, user_id: int):
     """Get all stories for a user, with the player character pre-loaded if available."""
     stories = (

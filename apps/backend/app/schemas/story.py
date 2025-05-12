@@ -7,7 +7,7 @@ class StoryBase(BaseModel):
     user_id: int
     title: str
     description: str
-    brief_description: str
+    brief_description: Optional[str] = None
     rules: Optional[str] = None
     uuid: str
 
