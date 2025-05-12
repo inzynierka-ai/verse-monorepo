@@ -9,7 +9,7 @@ from app.models.world_entity import WorldEntity as WorldEntityModel
 from app.models.message import Message
 from app.models.scene import Scene
 from app.models.story import Story
-from app.crud.messages import get_messages_by_scene
+from app.crud.messages import get_messages_by_scene, get_messages_after_timestamp
 from app.crud.stories import get_story_by_id
 from app.crud.scenes import get_scene_by_uuid
 from app.crud.world_entities import get_entity_names_by_story_id, get_related_entities
@@ -205,31 +205,16 @@ class WorldEntityService:
         else:
             logging.info("No previously processed entities found for this scene.")
         
-        # Get messages
-        if last_processed_entity and hasattr(last_processed_entity, 'created_at'):
-            # Get last processing time
-            last_processed_time = last_processed_entity.created_at
-            
-            # Check that timestamp is not None before using it in comparison
-            if last_processed_time:
-                # Check if timestamp is the correct field name
-                # You may need to change 'timestamp' to 'created_at' depending on your Message model
-                timestamp_field = Message.created_at if hasattr(Message, 'created_at') else Message.timestamp
-                
-                # Get messages newer than our last entity creation
-                messages = self.db_session.query(Message).filter(
-                    Message.scene_id == scene.id,
-                    timestamp_field > last_processed_time
-                ).order_by(timestamp_field).all()
-                
-                logging.info(f"Processing {len(messages)} new messages since {last_processed_time}")
-            else:
-                # If created_at is None, get all messages
-                messages = get_messages_by_scene(db=self.db_session, scene_uuid=scene_uuid)
-                logging.info(f"Processing all messages (no valid timestamp found)")
+        # Get messages since last processing time (if available)
+        last_processed_time = last_processed_entity.created_at if last_processed_entity and hasattr(last_processed_entity, 'created_at') else None
+        
+        # Use the new common function to get messages after timestamp
+        messages = get_messages_after_timestamp(db=self.db_session, scene_uuid=scene_uuid, timestamp=last_processed_time)
+        
+        # Log appropriate message based on whether we're using a timestamp filter
+        if last_processed_time:
+            logging.info(f"Processing {len(messages)} new messages since {last_processed_time}")
         else:
-            # First time processing this scene
-            messages = get_messages_by_scene(db=self.db_session, scene_uuid=scene_uuid)
             logging.info(f"Processing all {len(messages)} messages (first run)")
         
         if not messages:
