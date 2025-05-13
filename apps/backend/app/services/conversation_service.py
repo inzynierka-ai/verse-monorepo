@@ -129,6 +129,18 @@ class ConversationService:
         Your name is {character.name}. Here is your character description:
         {character.description}
 
+        Your backstory:
+        {character.backstory}
+
+        Your personality traits:
+        {character.personality_traits}  
+
+        Your goals in the story:
+        {character.goals}
+
+        Your speaking style:
+        {character.speaking_style}
+
         You are in the following situation:
         {scene.description}
 

@@ -7,7 +7,8 @@ from app.services.game_engine.tools.memory_generator import MemoryGenerator
 from app.models.character import Character
 from app.models.scene import Scene
 from app.db.session import Session
-
+from pgvector.sqlalchemy import Vector
+from sqlalchemy import text
 
 class MemoryManager:
 
@@ -19,9 +20,9 @@ class MemoryManager:
         self.memory_generator = MemoryGenerator(db_session=self.db_session)
 
     async def get_relevant_memories(self, character_id: int, current_scene_id: int, 
-                                last_message_embedding: list[float], 
-                                max_memories: int = 5, 
-                                similarity_threshold: float = 0.75) -> List[str]:
+                            last_message_embedding: list[float], 
+                            max_memories: int = 5, 
+                            similarity_threshold: float = 0.75) -> List[str]:
         """
         Retrieves relevant memories for a character based on semantic similarity to the last message.
         
@@ -33,27 +34,26 @@ class MemoryManager:
             similarity_threshold: Minimum similarity score to consider a memory relevant (default: 0.75)
             
         Returns:
-            List of relevant memory dictionaries with memory_text, scene_id, created_at, and similarity
+            List of relevant memory texts as strings
         """
         if not self.db_session:
             logging.error("No database session available, cannot retrieve relevant memories")
             return []
             
         try:
-            from sqlalchemy import text
-            from app.models.character_memory import CharacterMemory
-            from app.models.scene import Scene
+            
+            # Convert Python list to a native pgvector Vector for proper comparison
+            embedding_vector = Vector(last_message_embedding)
             
             # Define the query using raw SQL for the vector operations
             # The <-> operator returns negative cosine similarity, so we negate it to get positive similarity
-            # (where higher values = more similar)
             query = text("""
                 WITH similarity_results AS (
                     SELECT 
                         cm.id,
                         cm.memory_text,
                         cm.scene_id, 
-                        cm.created_at,
+                        cm.uuid,
                         1 - (cm.embedding <-> :embedding) AS similarity
                     FROM 
                         character_memories cm
@@ -70,7 +70,7 @@ class MemoryManager:
                     sr.memory_text,
                     sr.scene_id,
                     s.name AS scene_name,
-                    sr.created_at,
+                    sr.uuid,
                     sr.similarity
                 FROM 
                     similarity_results sr
@@ -82,7 +82,7 @@ class MemoryManager:
             result = self.db_session.execute(
                 query,
                 {
-                    "embedding": last_message_embedding,
+                    "embedding": embedding_vector,
                     "character_id": character_id,
                     "current_scene_id": current_scene_id,
                     "threshold": similarity_threshold,
@@ -97,7 +97,7 @@ class MemoryManager:
                     "memory_text": row[1],
                     "scene_id": row[2],
                     "scene_name": row[3],
-                    "created_at": row[4],
+                    "uuid": row[4],
                     "similarity": float(row[5])  # Convert Decimal to float
                 }
                 for row in result
@@ -111,6 +111,8 @@ class MemoryManager:
             logging.error(f"Error retrieving relevant memories: {str(e)}")
             traceback.print_exc()
             return []
+            
+        
     async def create_memories(self, db_session: Session, scene_uuid: uuid.UUID):
         """
         Creates memories for all characters in the current scene.
@@ -147,7 +149,7 @@ class MemoryManager:
                     
                     for memory in memories:
                         print(f"DEBUG: Saving memory: {memory}")
-                        memory_id = self.memory_generator.save_memory_to_db(memory, scene.id, character.id)
+                        memory_id = await self.memory_generator.save_memory_to_db(memory, scene.id, character.id)
                         if memory_id:
                             memories_created.append(memory_id)
                             print(f"DEBUG: Memory saved with ID: {memory_id}")

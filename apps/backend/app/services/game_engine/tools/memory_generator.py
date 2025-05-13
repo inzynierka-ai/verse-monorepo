@@ -76,7 +76,7 @@ class MemoryGenerator:
         memories = JSONService.parse_and_validate_string_list(content)
         return memories
     
-    def save_memory_to_db(self, memory: str, scene_id:int, character_id: int) -> None:
+    async def save_memory_to_db(self, memory: str, scene_id:int, character_id: int) -> None:
         """
         Save the generated memories to the database.
         """
