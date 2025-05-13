@@ -108,6 +108,7 @@ class ConversationService:
         player_name = player_character.name if player_character else "unknown player"
 
         simplified_last_message = await simplify_text_for_embedding(scene.messages[-1].content)
+        logging.info(f"Simplified last message: {simplified_last_message}")
         last_message_embedding = get_embedding(simplified_last_message)
 
         # Get character memories
@@ -118,9 +119,8 @@ class ConversationService:
 
         location_info = f"You are currently at {scene.location.name}. {scene.location.description}" if scene.location else ""
         # Get relevant world entities
-        # world_entity_service = WorldEntityService(db_session=db, story_id=scene.story_id)
-        # world_entities = world_entity_service.get_relevant_world_entities(scene, simplified_last_message, last_message_embedding)
-        world_entities = []
+        world_entity_service = WorldEntityService(db_session=db, story_id=scene.story_id)
+        world_entities = await world_entity_service.get_relevant_world_entities(scene, simplified_last_message, last_message_embedding)
 
 
         character_prompt = f"""
@@ -153,7 +153,7 @@ class ConversationService:
         {location_info}
 
         Relevant world entities and lore:
-        {chr(10).join([f"- {entity.name}: {entity.description}" for entity in world_entities])}
+        {chr(10).join([f"- {entity.name}: {entity.canonical_description}" for entity in world_entities])}
 
         Strict Rules:
         - Stay completely in character. Never refer to being an AI, LLM, or model.

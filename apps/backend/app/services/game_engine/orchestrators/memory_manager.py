@@ -22,7 +22,7 @@ class MemoryManager:
     async def get_relevant_memories(self, character_id: int, current_scene_id: int, 
                             last_message_embedding: list[float], 
                             max_memories: int = 5, 
-                            similarity_threshold: float = 0.75) -> List[str]:
+                            similarity_threshold: float = 0.1) -> List[str]:
         """
         Retrieves relevant memories for a character based on semantic similarity to the last message.
         
@@ -31,7 +31,7 @@ class MemoryManager:
             current_scene_id: ID of the current scene (to exclude memories from this scene)
             last_message_embedding: Vector embedding of the last message/context
             max_memories: Maximum number of memories to return (default: 5)
-            similarity_threshold: Minimum similarity score to consider a memory relevant (default: 0.75)
+            similarity_threshold: Minimum similarity score to consider a memory relevant (default: 0.1)
             
         Returns:
             List of relevant memory texts as strings
@@ -41,41 +41,42 @@ class MemoryManager:
             return []
             
         try:
-            
             # Convert Python list to a native pgvector Vector for proper comparison
-            embedding_vector = Vector(last_message_embedding)
+            embedding_vector = str(last_message_embedding)
             
-            # Define the query using raw SQL for the vector operations
-            # The <-> operator returns negative cosine similarity, so we negate it to get positive similarity
+            logging.info(f"Searching for memories for character_id={character_id}, current_scene_id={current_scene_id}")
+            
+            # First, let's check how many memories this character has in total
+            count_query = text("""
+                SELECT COUNT(*) FROM character_memories 
+                WHERE character_id = :character_id
+            """)
+            
+            total_count = self.db_session.execute(
+                count_query,
+                {"character_id": character_id}
+            ).scalar()
+            
+            logging.info(f"Total memories for character {character_id}: {total_count}")
+            
+            # Modified query to get all memories with their similarity scores
+            # Removed the similarity threshold filter to see all memories
             query = text("""
-                WITH similarity_results AS (
-                    SELECT 
-                        cm.id,
-                        cm.memory_text,
-                        cm.scene_id, 
-                        cm.uuid,
-                        1 - (cm.embedding <-> :embedding) AS similarity
-                    FROM 
-                        character_memories cm
-                    WHERE 
-                        cm.character_id = :character_id
-                        AND cm.scene_id != :current_scene_id
-                        AND (1 - (cm.embedding <-> :embedding)) > :threshold
-                    ORDER BY 
-                        similarity DESC
-                    LIMIT :limit
-                )
                 SELECT 
-                    sr.id,
-                    sr.memory_text,
-                    sr.scene_id,
-                    s.name AS scene_name,
-                    sr.uuid,
-                    sr.similarity
+                    cm.id,
+                    cm.memory_text,
+                    cm.scene_id, 
+                    cm.uuid,
+                    1 - (cm.embedding <-> :embedding) AS similarity
                 FROM 
-                    similarity_results sr
+                    character_memories cm
                 JOIN 
-                    scenes s ON sr.scene_id = s.id
+                    scenes s ON cm.scene_id = s.id
+                WHERE 
+                    cm.character_id = :character_id
+                    AND cm.scene_id != :current_scene_id
+                ORDER BY 
+                    similarity DESC
             """)
             
             # Execute the query with parameters
@@ -84,34 +85,40 @@ class MemoryManager:
                 {
                     "embedding": embedding_vector,
                     "character_id": character_id,
-                    "current_scene_id": current_scene_id,
-                    "threshold": similarity_threshold,
-                    "limit": max_memories
+                    "current_scene_id": current_scene_id
                 }
             ).fetchall()
             
-            # Format the results
-            memories = [
-                {
+            # Format the results and log each memory with its similarity
+            all_memories = []
+            for row in result:
+                memory = {
                     "id": row[0],
                     "memory_text": row[1],
                     "scene_id": row[2],
-                    "scene_name": row[3],
-                    "uuid": row[4],
-                    "similarity": float(row[5])  # Convert Decimal to float
+                    "uuid": row[3],
+                    "similarity": float(row[4])  # Convert Decimal to float
                 }
-                for row in result
-            ]
+                all_memories.append(memory)
+                logging.info(f"Memory: {memory['id']}, Text: '{memory['memory_text'][:50]}...', Similarity: {memory['similarity']:.4f}")
             
-            logging.info(f"Retrieved {len(memories)} relevant memories for character {character_id}")
-            memory_texts = [memory["memory_text"] for memory in memories]
+            logging.info(f"Retrieved {len(all_memories)} total memories before threshold filtering")
+            
+            # Now filter by threshold for the actual return value
+            filtered_memories = [m for m in all_memories if m["similarity"] > similarity_threshold]
+            logging.info(f"After filtering (threshold={similarity_threshold}): {len(filtered_memories)} memories qualify")
+            
+            # Return the top memories up to max_memories
+            top_memories = filtered_memories[:max_memories]
+            memory_texts = [memory["memory_text"] for memory in top_memories]
+            
             return memory_texts
             
         except Exception as e:
             logging.error(f"Error retrieving relevant memories: {str(e)}")
             traceback.print_exc()
             return []
-            
+                
         
     async def create_memories(self, db_session: Session, scene_uuid: uuid.UUID):
         """

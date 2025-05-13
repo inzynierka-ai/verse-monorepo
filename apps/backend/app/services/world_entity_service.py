@@ -13,7 +13,7 @@ from app.crud.messages import get_messages_by_scene, get_messages_after_timestam
 from app.crud.stories import get_story_by_id
 from app.crud.scenes import get_scene_by_uuid
 from app.crud.world_entities import get_entity_names_by_story_id, get_related_entities
-from app.schemas.world_entity import WorldEntityFromLLM
+from app.schemas.world_entity import WorldEntityFromLLM, WorldEntity
 
 class WorldEntityService:
     def __init__(self, llm_service: Optional[LLMService] = None, db_session: Optional[Session] = None, story_id: Optional[int] = None):
@@ -25,6 +25,10 @@ class WorldEntityService:
         """
         Extract potential world entity names (terms or concepts) from the scene.
         """
+        if not conversation_text or conversation_text.strip() == "":
+            logging.warning("Empty conversation text provided for entity extraction, returning empty list")
+            return []
+            
         system_prompt = """
         You are a language model assisting with building a game world's glossary.
 
@@ -34,7 +38,7 @@ class WorldEntityService:
 
         Return only the **distinct names** of the terms, not descriptions.
 
-        Format: A JSON list of strings, e.g.:
+        Format: A JSON array of strings, e.g.:
         ["Arasaka", "London", "The One Ring", "Death Star", "The Spice", "Anakin", "Horcruxes"]
         """
 
@@ -43,22 +47,89 @@ class WorldEntityService:
             self.llm_service.create_message("user", f"Scene Transcript:\n{conversation_text}")
         ]
 
-        response = await self.llm_service.generate_completion(
-            messages=messages,
-            model=ModelName.GEMINI_2_FLASH_LITE,
-            temperature=0.3,
-            stream=False
-        )
+        try:
+            response = await self.llm_service.generate_completion(
+                messages=messages,
+                model=ModelName.GEMINI_2_FLASH_LITE,
+                temperature=0.3,
+                stream=False
+            )
 
-        content = await self.llm_service.extract_content(response)
-        return JSONService.parse_and_validate_string_list(content)
+            content = await self.llm_service.extract_content(response)
+            
+            if not content or content.strip() == "":
+                logging.warning("Empty content returned from LLM for entity extraction, returning empty list")
+                return []
+                
+            return JSONService.parse_and_validate_string_list(content)
+        except Exception as e:
+            logging.error(f"Error extracting entity names: {str(e)}")
+            return []  # Return empty list on error rather than crashing
     
-    def get_relevant_world_entities(self, scene, simplified_last_message, last_message_embedding):
+    async def get_relevant_world_entities(self, scene: Scene, simplified_last_message: str, last_message_embedding: List[float]) -> List[WorldEntity]:
         """
         Get relevant world entities based on the last message and scene context.
+        
+        Args:
+            scene: The current scene
+            simplified_last_message: A simplified version of the last message
+            last_message_embedding: Vector embedding of the last message
+            
+        Returns:
+            List of relevant WorldEntity objects
         """
-        #TODO: Implement this function to retrieve relevant world entities
-        return []
+        if not self.db_session or not self.story:
+            logging.warning("No DB session or story context available for entity retrieval")
+            return []
+            
+        entities = []
+        
+        # Step 1: Use the existing extract_entity_names function to extract entities from the message
+        entity_names = await self.extract_entity_names(simplified_last_message)
+        
+        if entity_names:
+            # Query database for entities matching these names
+            for name in entity_names:
+                name_query = (
+                    self.db_session.query(WorldEntityModel)
+                    .filter(WorldEntityModel.story_id == self.story.id)
+                    .filter(WorldEntityModel.name.ilike(f"%{name}%"))
+                )
+                
+                name_entities = name_query.all()
+                for entity in name_entities:
+                    # Convert DB model to schema and add to results if not already there
+                    entity_schema = WorldEntity.from_orm(entity)
+                    if entity_schema not in entities:
+                        entities.append(entity_schema)
+        
+        # Step 2: Find semantically similar entities using vector search
+        if last_message_embedding:
+            embedding_vector = str(last_message_embedding)
+            from sqlalchemy import text
+            
+            max_results = 5
+            
+            # Vector similarity search using pgvector's built-in <=> operator
+            # This is the cosine distance operator (smaller value = more similar)
+            vector_query = (
+                self.db_session.query(WorldEntityModel)
+                .filter(WorldEntityModel.story_id == self.story.id)
+                .filter(WorldEntityModel.embedding.is_not(None))
+                .order_by(
+                    text("embedding <=> :embedding")
+                )
+                .params(embedding=embedding_vector)
+                .limit(max_results)
+            )
+            
+            vector_entities = vector_query.all()
+            for entity in vector_entities:
+                entity_schema = WorldEntity.from_orm(entity)
+                if entity_schema not in entities:
+                    entities.append(entity_schema)
+        
+        return entities
 
     def filter_known_entities(self, entity_names: List[str]) -> List[str]:
         """
@@ -98,7 +169,7 @@ class WorldEntityService:
         - Be concise, specific, and avoid repeating known concepts.
         - Assume the reader is a character in the world who already knows general context.
         - The term must be defined in a way that is useful for all characters in the world.
-        - The definition must only include information that would be common knowledge to characters in the world.
+        - The definition must only include information that would be *common* knowledge to characters in the world.
         - Especially, it must avoid referring to any characters or situations that are not famous or well-known in the world.
         - As this description will become canonical, feel free to use your own creativity to fill in the gaps where information is not present.
         - You are co-authoring the world with the user, so feel free to add your own creative flair.

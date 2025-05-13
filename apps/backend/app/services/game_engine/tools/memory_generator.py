@@ -87,7 +87,7 @@ class MemoryGenerator:
                 character_id=character_id,
                 scene_id=scene_id,
                 memory_text=memory,
-                embedding=get_embedding(simplify_text_for_embedding(memory)),
+                embedding=get_embedding(await simplify_text_for_embedding(memory)),
                 uuid=uuid.uuid4()
             )
 
