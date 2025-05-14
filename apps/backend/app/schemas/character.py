@@ -11,7 +11,6 @@ class CharacterBase(BaseModel):
     backstory: Optional[str] = None
     goals: Optional[str] = None
     speaking_style: Optional[str] = None
-    relationships: Optional[str] = None
     image_dir: Optional[str] = None
     image_prompt: Optional[str] = None
     relationship_level: Optional[int] = None

@@ -18,10 +18,9 @@ class Character(Base):
     backstory = Column(String) # character's backstory
     goals = Column(String) # character's goals in the story
     speaking_style = Column(String) # character's speaking style, e.g., formal, informal, etc.
-    relationships = Column(String) # relationships with other characters
     image_dir = Column(String) # directory where all character images are stored
     image_prompt = Column(String) # this might not be necessary to store in db
-    relationship_level = Column(Integer) # on hold for now
+    relationship_level = Column(Integer) # relationship level with the player character
     story_id = Column(Integer, ForeignKey('stories.id'), nullable=False)
     uuid = Column(String, nullable=False)
     

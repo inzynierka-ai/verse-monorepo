@@ -126,7 +126,7 @@ class CharacterGenerator:
         character_description = await self._describe_character(character_draft, story, character_uuid)
         
         # 3. Create character JSON from description
-        character_from_llm = await self._create_character_json(character_description, character_uuid)
+        character_from_llm = await self._create_character_json(character_description, character_uuid, is_player)
         
         # 4. Generate image prompt for the character
         image_prompt = await self._generate_image_prompt(character_from_llm.name, character_description, story.description, character_uuid)
@@ -170,18 +170,7 @@ class CharacterGenerator:
             personality_traits = ""
             if hasattr(character, 'personalityTraits') and character.personalityTraits is not None:
                 personality_traits = ", ".join(character.personalityTraits)
-                
-            # For relationships, serialize to string if it exists
-            relationships_str = ""
-            if hasattr(character, 'relationships') and character.relationships:
-                # Convert relationships to JSON string
-                import json
-                try:
-                    relationships_str = json.dumps(character.relationships)
-                except Exception as e:
-                    logging.warning(f"Failed to convert relationships to JSON: {str(e)}")
-                    relationships_str = ""
-            
+                            
             # Create a database model from the character schema
             db_character = CharacterModel(
                 name=character.name,
@@ -192,10 +181,9 @@ class CharacterGenerator:
                 backstory=character.backstory,
                 goals=", ".join(character.goals) if hasattr(character, 'goals') and character.goals else "",
                 speaking_style="", # Not in schema, add if needed
-                relationships=relationships_str,
                 image_dir=character.image_dir,
                 image_prompt=image_prompt,
-                relationship_level=0,  # Default starting level
+                relationship_level=character.relationshipLevel,
                 story_id=story_id,
                 uuid=character.uuid  # Use the UUID from character object
             )
@@ -317,7 +305,8 @@ class CharacterGenerator:
     async def _create_character_json(
         self,
         character_description: str,
-        character_uuid: str
+        character_uuid: str,
+        is_player: bool
     ) -> CharacterFromLLM:
         """
         Generate a detailed character profile based on character description.
@@ -333,7 +322,7 @@ class CharacterGenerator:
         )
 
         messages = [
-            self.llm_service.create_message("system", CREATE_CHARACTER_JSON_SYSTEM_PROMPT),
+            self.llm_service.create_message("system", CREATE_CHARACTER_JSON_SYSTEM_PROMPT(is_player=is_player)),
             self.llm_service.create_message("user", user_prompt)
         ]
 

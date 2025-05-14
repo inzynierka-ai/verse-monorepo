@@ -87,33 +87,6 @@ class ModelConverter:
             "brief_description": getattr(character_orm, "brief_description", None)
         }
         
-            
-        # Handle relationships conversion
-        relationships = getattr(character_orm, "relationships", None)
-        if relationships is None or (isinstance(relationships, str) and not relationships):
-            defaults["relationships"] = []
-        elif isinstance(relationships, str):
-            try:
-                # Try to parse relationships if they're a string
-                # This depends on your actual format, adjust as needed
-                # Example assumes comma-separated "name:level:type:backstory" format
-                relationships_list = []
-                for rel_str in relationships.split(","):
-                    if rel_str.strip():
-                        parts = rel_str.split(":")
-                        if len(parts) >= 4:
-                            rel = {
-                                "name": parts[0].strip(),
-                                "level": int(parts[1].strip()),
-                                "type": parts[2].strip(),
-                                "backstory": parts[3].strip()
-                            }
-                            relationships_list.append(rel)
-                defaults["relationships"] = relationships_list
-            except Exception as e:
-                logger.warning(f"Failed to parse relationships string: {e}")
-                defaults["relationships"] = []
-        
         # Set default personality traits if missing
         if not getattr(character_orm, "personalityTraits", None):
             defaults["personalityTraits"] = []

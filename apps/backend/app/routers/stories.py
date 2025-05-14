@@ -2,7 +2,7 @@ import logging
 import uuid
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
-from typing import List, cast, Optional
+from typing import List, cast, Optional, Dict, Any
 from app.schemas.story import StoryCreate, StoryRead, StoryWithPlayerCharacterRead
 from app.schemas import scene as scene_schema
 from app.schemas.character import PlayerCharacterRead
@@ -12,6 +12,10 @@ from app.schemas.user import User
 from app.services.auth import get_current_user
 from app.services.scene_service import SceneService
 from app.services.game_engine.orchestrators.memory_manager import MemoryManager
+from app.services.relationship_analysis import RelationshipAnalysisResult, RelationshipAnalysisService
+from app.crud import scenes
+from app.schemas.message import Message
+
 
 router = APIRouter(
     prefix="/stories",
@@ -116,9 +120,41 @@ async def complete_scene(  # Make this function async
     story_id = cast(int, story.id)
     
     memory_manager = MemoryManager(db_session=db)
-    # Add await keyword here
-    character_memories = await memory_manager.create_memories(db, scene_uuid)
+    
+    await memory_manager.create_memories(db, scene_uuid)
 
+    # Get scene data to analyze relationships
+    scene = scenes.get_scene_by_uuid(db, str(scene_uuid))
+    if not scene:
+        raise HTTPException(status_code=404, detail="Scene not found")
+    
+    # Analyze relationship for each character in the scene
+    relationship_analyzer = RelationshipAnalysisService(db)
+    
+    relationship_updates: List[RelationshipAnalysisResult] = []
+    
+    # Process and analyze relationships only if there are characters and messages
+    if scene.characters and scene.messages:
+        for character in scene.characters:
+            # Extract message data from ORM objects to pass to relationship analyzer
+            # The analyzer expects a list of message data, not ORM objects
+            relevant_messages: List[Message] = []
+            
+            for message in scene.messages:
+                if message.character_id == character.id:
+                    # Use the message data directly from the ORM object
+                    relevant_messages.append(message)
+            if relevant_messages:
+                relevant_messages.reverse()
+                # Analyze relationship and update the database
+                relationship_result = await relationship_analyzer.analyze_relationship(
+                    character.id, 
+                    relevant_messages,
+                    update_db=True
+                )
+                if isinstance(relationship_result, RelationshipAnalysisResult):
+                    relationship_updates.append(relationship_result)
+    
     # Mark the scene as completed
     scene_service = SceneService()
     completed_scene = await scene_service.mark_scene_completed(db, scene_uuid, story_id)

@@ -1,10 +1,3 @@
-export interface CharacterRelationship {
-  name: string;
-  level: number;
-  type: string;
-  backstory: string;
-}
-
 export interface Character {
   uuid: string;
   name: string;
@@ -15,5 +8,5 @@ export interface Character {
   personalityTraits?: string[];
   backstory: string;
   goals: string[];
-  relationships: CharacterRelationship[];
+  relationshipLevel?: number;
 }
