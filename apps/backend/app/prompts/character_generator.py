@@ -66,7 +66,7 @@ The JSON should be an single character object, following this structure:
 ```json
 {
   "name": "string",  // Preserve the original name
-  "description": "string",  // Expanded detailed description
+  "briefDescription": "string",  // 3-4 sentence summary for display
   "personalityTraits": ["string", "string"],  // Array of personality trait names as strings
   "backstory": "string",  // Character's origin story and history
   "goals": ["string"],  // List of character's goals
@@ -77,7 +77,7 @@ The JSON should be an single character object, following this structure:
       "type": "string",  // Type of relationship (friend, enemy, mentor, etc.)
       "backstory": "string"  // Brief description of the relationship
     }
-  ],
+  ]
 }
 ```
 

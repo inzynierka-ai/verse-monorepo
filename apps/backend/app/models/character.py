@@ -13,6 +13,7 @@ class Character(Base):
     name = Column(String)
     role = Column(String) #player or npc
     description = Column(String) # brief description of character
+    brief_description = Column(String) # shorter 3-4 sentence description for UI display
     personality_traits = Column(String) # character's personality traits
     backstory = Column(String) # character's backstory
     goals = Column(String) # character's goals in the story
