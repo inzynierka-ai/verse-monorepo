@@ -24,6 +24,9 @@ const StoryGenerationCompleted = ({ story, character, onReset }: StoryGeneration
     navigate({ to: `/play/${story.uuid}`, replace: true });
   };
 
+  console.log('Story:', story);
+  console.log('Character:', character);
+
   return (
     <div className={styles.content}>
       <h1 className={styles.title}>Your Story Awaits</h1>
@@ -56,7 +59,13 @@ const StoryGenerationCompleted = ({ story, character, onReset }: StoryGeneration
             <div className={styles.characterImageContainer}>
               <img src={character.image_dir} alt={`${character.name}`} className={styles.characterImage} />
             </div>
-            <p>{character.description}</p>
+
+            {/* Krótki opis zamiast pełnego */}
+            <div>
+              <h3>Summary</h3>
+              <p className={styles.characterBriefDescription}>{character.briefDescription}</p>
+            </div>
+
             <div>
               <h3>Personality Traits</h3>
               <div>

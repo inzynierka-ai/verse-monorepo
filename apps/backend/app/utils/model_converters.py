@@ -81,10 +81,10 @@ class ModelConverter:
         Returns:
             CharacterSchema: The Pydantic model representation
         """
-            
         # Prepare defaults
         defaults: Dict[str, Any] = {
-            "image_dir": character_orm.image_dir
+            "image_dir": character_orm.image_dir,
+            "brief_description": getattr(character_orm, "brief_description", None)
         }
         
         # Set default personality traits if missing
@@ -307,4 +307,3 @@ def convert_scenes(
             raise e
         
     return result
-        
