@@ -26,7 +26,7 @@ class StoryInput(BaseModel):
 
 class StoryDetails(BaseModel):
     title: str
-    brief_description: str
+    briefDescription: str
     rules: List[str]
 
 
@@ -55,10 +55,8 @@ class StoryOutput(BaseModel):
 
 class CharacterFromLLM(BaseModel):
     """Character in the generated story"""
-    name: str = Field(...,
-                      description="Character name")
-    description: str = Field(...,
-                             description="Detailed description of the character")
+    name: str = Field(..., description="Character name")
+    briefDescription: str = Field(..., description="Short 3-4 sentence description for UI display")
     personalityTraits: Optional[List[str]] = Field(
         None, description="Character's personality traits")
     backstory: str = Field(...,
@@ -70,6 +68,7 @@ class CharacterFromLLM(BaseModel):
 
 class Character(CharacterFromLLM):
     """Final character output structure"""
+    description: str = Field(..., description="Detailed description of the character")
     model_config = ConfigDict(from_attributes=True)
     image_dir: str = Field(...,
                          description="URL of the generated image for this character")

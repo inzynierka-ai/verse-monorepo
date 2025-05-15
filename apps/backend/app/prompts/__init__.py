@@ -4,7 +4,9 @@ Prompt templates for various agents in the story generation system.
 
 from app.prompts.story_generation import (
     DESCRIBE_STORY_SYSTEM_PROMPT,
-    CREATE_STORY_JSON_SYSTEM_PROMPT,
+    DESCRIBE_STORY_USER_PROMPT,
+    CREATE_STORY_DETAILS_JSON_SYSTEM_PROMPT,
+    CREATE_STORY_DETAILS_JSON_USER_PROMPT,
 )
 from app.prompts.character_generator import (
     CHARACTER_GENERATOR_USER_PROMPT_TEMPLATE,
@@ -70,7 +72,9 @@ Ensure the JSON is valid and properly formatted. The field names must exactly ma
 
 __all__ = [
     'DESCRIBE_STORY_SYSTEM_PROMPT',
-    'CREATE_STORY_JSON_SYSTEM_PROMPT',
+    'DESCRIBE_STORY_USER_PROMPT',
+    'CREATE_STORY_DETAILS_JSON_SYSTEM_PROMPT',
+    'CREATE_STORY_DETAILS_JSON_USER_PROMPT',
     'CHARACTER_GENERATOR_USER_PROMPT_TEMPLATE',
     'DESCRIBE_CHARACTER_SYSTEM_PROMPT',
     'CREATE_CHARACTER_JSON_SYSTEM_PROMPT',

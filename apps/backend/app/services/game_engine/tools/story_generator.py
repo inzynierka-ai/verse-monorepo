@@ -1,34 +1,58 @@
+import json
 import logging
 import uuid
-from typing import Optional, List
+from typing import Optional
 from sqlalchemy.orm import Session
+
+from langfuse.decorators import observe, langfuse_context # type: ignore
 
 from app.services.llm import LLMService, ModelName
 from app.schemas.story_generation import (
     Story,
-    StoryInput,
-    StoryDetails
+    StoryDetails,
+    StoryGenerationInput
 )
 from app.utils.json_service import JSONService
 from app.models.story import Story as StoryModel
+from app.prompts.story_generation import (
+    DESCRIBE_STORY_SYSTEM_PROMPT,
+    DESCRIBE_STORY_USER_PROMPT,
+    CREATE_STORY_DETAILS_JSON_SYSTEM_PROMPT,
+    CREATE_STORY_DETAILS_JSON_USER_PROMPT
+)
+from app.services.moderations import ModerationsService
 
 class StoryGenerator:
     """
     Service for generating story description and rules.
+    It now takes the full StoryGenerationInput to provide context from both
+    the desired story elements and the player character draft.
     """
     def __init__(self, llm_service: Optional[LLMService] = None, db_session: Optional[Session] = None):
         self.llm_service = llm_service or LLMService()
         self.db_session = db_session
+        self.moderation_service = ModerationsService(openai_client=self.llm_service.openai_client)
 
-    async def generate_story(self, user_id: int, story_input: StoryInput) -> Story:
+    @observe(name="generate_story")
+    async def generate_story(self, user_id: int, story_gen_input: StoryGenerationInput) -> Story:
         """
-        Generates a detailed story from user input.
+        Generates a detailed story from user input (including story and character draft).
         """
-        # Generate story description
-        description = await self._generate_story_description(story_input)
+        # Generate story description using both story and character draft from story_gen_input
+        langfuse_context.update_current_trace(input=story_gen_input)
+
+        violated_categories = await self.moderation_service.process_moderation(story_gen_input.model_dump_json())
+        if violated_categories:
+            logging.warning(f"Violated categories: {violated_categories}")
+            langfuse_context.update_current_trace(metadata={"violated_categories": violated_categories})
+            langfuse_context.update_current_trace(output={"ERROR": "Violated categories"})
+            raise ValueError(f"Sorry, we can't generate your story because it contains content that is not allowed. Please try again with different description. Reason: {', '.join(violated_categories.keys())}")
+
+        description = await self._generate_story_description(story_gen_input)
         
-        # Generate story details (title, brief description, rules)
-        story_details = await self._generate_story_details(description, story_input)
+        # Generate story details (title, brief description, rules) using the generated description
+        # and the original story_gen_input for context.
+        story_details = await self._generate_story_details(description, story_gen_input)
         
         # Generate UUID
         story_uuid = str(uuid.uuid4())
@@ -38,7 +62,7 @@ class StoryGenerator:
             user_id=user_id,
             title=story_details.title,
             description=description,
-            brief_description=story_details.brief_description,
+            brief_description=story_details.briefDescription,
             rules=story_details.rules,
             uuid=story_uuid,
         )
@@ -48,17 +72,17 @@ class StoryGenerator:
             db_story = self._save_story_to_db(story_data)
             if db_story:
                 # Update with database ID
-                story_data.id = db_story.id
+                story_data.id = db_story.id # type: ignore
         
         # Always return a Story object with all required fields
         return story_data
+
     def _save_story_to_db(self, story: Story) -> StoryModel:
         """
         Save the generated story to the database.
         
         Args:
             story: The generated Story object
-            story_input: Basic story parameters provided by user
             
         Returns:
             The saved Story object with its ID
@@ -87,90 +111,75 @@ class StoryGenerator:
                 self.db_session.rollback()
             raise ValueError("Failed to save story to database")
 
-    async def _generate_story_description(self, story_input: StoryInput) -> str:
+    async def _generate_story_description(self, story_gen_input: StoryGenerationInput) -> str:
         """
-        Generate a detailed description of the story.
+        Generate a detailed description of the story using story and character inputs.
         
         Args:
-            story_input: Basic story input from user
+            story_gen_input: The full story generation input, including story parameters
+                             and player character draft.
             
         Returns:
-            Detailed story description
+            Detailed story description as a string.
         """
-        prompt = f"""
-        Create a detailed and immersive description of a story with the following parameters:
-        
-        Theme: {story_input.theme}
-        Genre: {story_input.genre}
-        Year: {story_input.year}
-        Setting: {story_input.setting}
-        
-        Provide a comprehensive but concise description (300-400 words) that covers:
-        - The physical environment and geography
-        - Social structure and power dynamics
-        - Technology level and key innovations
-        - Major conflicts or tensions
-        - Unique cultural elements
-        
-        Focus on creating a cohesive, believable story that would serve as an engaging backdrop for interactive storytelling.
-        """
+        system_prompt_content = DESCRIBE_STORY_SYSTEM_PROMPT.format(
+            theme=story_gen_input.story.theme,
+            genre=story_gen_input.story.genre,
+            year=story_gen_input.story.year,
+            setting=story_gen_input.story.setting,
+            character_name=story_gen_input.playerCharacter.name,
+            character_age=story_gen_input.playerCharacter.age,
+            character_appearance=story_gen_input.playerCharacter.appearance,
+            character_background=story_gen_input.playerCharacter.background
+        )
         
         messages = [
-            self.llm_service.create_message("system", "You are an expert storybuilder for interactive fiction. Create detailed, immersive stories that are internally consistent and rich with storytelling potential."),
-            self.llm_service.create_message("user", prompt)
+            self.llm_service.create_message("system", system_prompt_content),
+            self.llm_service.create_message("user", DESCRIBE_STORY_USER_PROMPT) 
         ]
         
         response = await self.llm_service.generate_completion(
             messages=messages,
-            model=ModelName.GPT41_MINI,
-            temperature=0.7,
+            model=ModelName.GPT41,
+            temperature=0.9,
             stream=False
         )
         
         return await self.llm_service.extract_content(response)
     
-    async def _generate_story_details(self, description: str, story_input: StoryInput) -> StoryDetails:
+    async def _generate_story_details(self, description: str, story_gen_input: StoryGenerationInput) -> StoryDetails:
         """
-        Generate title, brief description, and rules for the story.
+        Generate title, brief description, and rules for the story based on its description
+        and original input parameters.
         
         Args:
-            description: The detailed story description
-            story_input: The original story input parameters
+            description: The detailed story description generated previously.
+            story_gen_input: The full story generation input for context.
             
         Returns:
-            StoryDetails object containing title, brief description and rules
+            StoryDetails object containing title, brief description, and rules.
         """
-        prompt = f"""
-        Based on the story description below and the original parameters (Theme: {story_input.theme}, Genre: {story_input.genre}, Year: {story_input.year}, Setting: {story_input.setting}), create:
-
-        1. A catchy, engaging title (max 50 characters)
-        2. A brief summary of the story (3-4 sentences)
-        3. A list of 3-5 key rules or principles that govern how this world functions
-        
-        Format your response as valid JSON with the following structure:
-        {{
-            "title": "Your Engaging Title",
-            "brief_description": "Your 3-4 sentence summary...",
-            "rules": [
-                "Rule 1 explained in 1-2 sentences",
-                "Rule 2 explained in 1-2 sentences",
-                etc.
-            ]
-        }}
-
-        Story description:
-        {description}
-        """
+        system_prompt_content = CREATE_STORY_DETAILS_JSON_SYSTEM_PROMPT.format(
+            theme=story_gen_input.story.theme,
+            genre=story_gen_input.story.genre,
+            year=story_gen_input.story.year,
+            setting=story_gen_input.story.setting,
+            character_name=story_gen_input.playerCharacter.name,
+            character_age=story_gen_input.playerCharacter.age,
+            character_appearance=story_gen_input.playerCharacter.appearance,
+            character_background=story_gen_input.playerCharacter.background,
+            generated_story_description=description
+        )
         
         messages = [
-            self.llm_service.create_message("system", "You are an expert storybuilder creating concise, engaging story elements for interactive fiction."),
-            self.llm_service.create_message("user", prompt)
+            self.llm_service.create_message("system", system_prompt_content),
+            self.llm_service.create_message("user", CREATE_STORY_DETAILS_JSON_USER_PROMPT)
         ]
         
         response = await self.llm_service.generate_completion(
             messages=messages,
             model=ModelName.GEMINI_2_FLASH_LITE,
-            temperature=0.5,
+            temperature=0.3,
             stream=False
         )
         

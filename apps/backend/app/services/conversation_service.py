@@ -1,4 +1,5 @@
 import logging
+import json
 from typing import List, AsyncGenerator, Dict, Any, Literal
 from fastapi import WebSocket
 from sqlalchemy.orm import Session
@@ -10,11 +11,16 @@ from app.services.memory_manager import MemoryManager
 from datetime import datetime
 from app.utils.embedding import simplify_text_for_embedding, get_embedding
 import uuid
+import logging
+
+from app.services.moderations import ModerationsService
+
+logger = logging.getLogger(__name__)
 
 class ConversationService:
     def __init__(self):
         self.llm_service = LLMService()
-    
+        self.moderation_service = ModerationsService(openai_client=self.llm_service.openai_client)
     async def manage_websocket(self, websocket: WebSocket):
         """Context manager for WebSocket connection handling"""
         await websocket.accept()
@@ -30,16 +36,18 @@ class ConversationService:
     async def process_message(self, db: Session, messages: List[Dict[str, Any]], 
                              character: Character, scene: Scene) -> AsyncGenerator[str, None]:
         """Process a message and generate a response"""
+        latest_message = messages[-1]["content"]
         await self.save_message(
             db=db,
             scene_id=scene.id,
             character_id=character.id,
-            content=messages[-1]["content"],
+            content=latest_message,
             role="user"
         )
-
-
-        system_prompt = await self._build_character_prompt(db, character, scene)
+        violated_categories = await self.moderation_service.process_moderation(latest_message)
+        if violated_categories:
+            logger.warning(f"Violated categories: {violated_categories}")
+        system_prompt = self._build_character_prompt(character, scene)
         
         # Convert messages to the format expected by the LLM service
         formatted_messages = [
@@ -50,13 +58,19 @@ class ConversationService:
         for msg in messages:
             formatted_messages.append(self.llm_service.create_message(msg["role"], msg["content"]))
         
+        # Prepare arguments for LLM service
+        llm_args: Dict[str, Any] = {
+            "messages": formatted_messages,
+            "model": ModelName.GPT41_MINI,
+            "temperature": 0.7,
+            "stream": True,
+        }
+
+        if violated_categories:
+            llm_args["metadata"] = {"violated_categories": json.dumps(violated_categories)}
+        
         # Get streaming response from LLM
-        response = await self.llm_service.generate_completion(
-            messages=formatted_messages,
-            model=ModelName.GPT41_MINI,
-            temperature=0.7,
-            stream=True
-        )
+        response = await self.llm_service.generate_completion(**llm_args)
         
         # Collect the full response while streaming chunks
         full_response = ""

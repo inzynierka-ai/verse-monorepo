@@ -129,7 +129,7 @@ class CharacterGenerator:
         character_from_llm = await self._create_character_json(character_description, character_uuid, is_player)
         
         # 4. Generate image prompt for the character
-        image_prompt = await self._generate_image_prompt(character_from_llm, story.description, character_uuid)
+        image_prompt = await self._generate_image_prompt(character_from_llm.name, character_description, story.description, character_uuid)
         
         # 5. Generate image for the character
         image_url = await self._generate_image(image_prompt)
@@ -137,6 +137,7 @@ class CharacterGenerator:
         # 6. Create complete Character object with UUID
         character = Character(
             **character_from_llm.model_dump(),
+            description=character_description,
             image_dir=image_url,
             role="player" if is_player else "npc",
             uuid=character_uuid
@@ -175,6 +176,7 @@ class CharacterGenerator:
                 name=character.name,
                 role=character.role,
                 description=character.description,
+                brief_description=character.briefDescription,  # Add the brief description
                 personality_traits=personality_traits,
                 backstory=character.backstory,
                 goals=", ".join(character.goals) if hasattr(character, 'goals') and character.goals else "",
@@ -261,7 +263,8 @@ class CharacterGenerator:
     @observe(name="generate_image_prompt")
     async def _generate_image_prompt(
         self,
-        character: CharacterFromLLM,
+        character_name: str,
+        character_description: str,
         story_description: str,
         character_uuid: str
     ) -> str:
@@ -276,8 +279,8 @@ class CharacterGenerator:
             A detailed image prompt for the character
         """
         user_prompt = CHARACTER_IMAGE_PROMPT_USER_TEMPLATE.format(
-            character_name=character.name,
-            character_description=character.description,
+            character_name=character_name,
+            character_description=character_description,
             story_description=story_description
         )
 
@@ -342,9 +345,10 @@ class CharacterGenerator:
 
             if not character:
                 raise ValueError("No character data found in response")
-
+                
             return character
         except Exception as e:
+            logging.error(f"Error processing character data: {str(e)}")
             raise ValueError(
                 f"Failed to parse character data: {str(e)}, raw response: {response_text}") from e
 

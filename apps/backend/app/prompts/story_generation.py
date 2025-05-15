@@ -1,70 +1,72 @@
+# Phase 1: Generating the Free-Form Story Description
+# This prompt guides the LLM to create a foundational narrative based on user inputs
+# for story (theme, genre, year, setting) and player character details.
 DESCRIBE_STORY_SYSTEM_PROMPT = """
-# Fictional Story Narrative Description Prompt
+You are a master storyteller, tasked with crafting the initial seed of a unique and engaging world.
+Based on the provided parameters, generate a rich and immersive narrative description (approximately 200-300 words).
 
-**Prompt Objective:**  
-Generate a detailed, rich narrative description of a fictional story based on a provided theme (e.g., "castle", "a school where the lonely kid hides a secret", "a super secret government operation in a small town", or "Spaceship"). The narrative should be thorough enough to later extract data for a JSON structure with keys such as `setting`, `basicCharacters`, `basicLocations`, and `initialConflict`.
+This description will serve as the foundation for an interactive story. It should:
+1.  Clearly reflect the given **Theme ({theme}), Genre ({genre}), Year ({year}), and Setting ({setting})**.
+2.  Subtly weave in elements that resonate with the player character's provided **Name ({character_name}), Age ({character_age}), Appearance ({character_appearance}), and especially their Background ({character_background})**. The world should feel like a place where such a character can thrive and embark on a meaningful journey.
+3.  Establish a distinct **atmosphere and tone** consistent with the genre and theme.
+4.  Hint at **latent conflicts, societal tensions, or underlying mysteries** without fully defining them. These will serve as hooks for future plot developments.
+5.  Introduce 1-2 **unique world elements** (e.g., peculiar magic systems, unusual social customs, strange technologies) that make the world memorable.
+6.  Remain **open-ended** enough to allow for dynamic story expansion and the introduction of new characters, locations, and plotlines by other AI systems.
 
-**Instructions:**
-
-1. **Theme-Based Narrative:**  
-   - Tailor your description to the given theme.
-   - Focus on creating an immersive story with distinctive elements that align with the theme.
-
-2. **Include Essential Elements:**  
-   - **Setting & Atmosphere:** Describe the overall environment, mood, and significant details (e.g., for a spaceship: state-of-the-art technology, a suspenseful ambiance due to system anomalies).
-   - **Characters:** Introduce at least two memorable characters. Explain their roles, prominent traits, and any hints of their appearance.
-   - **Locations:** Identify key places within the story, focusing on unique features and relevance to the narrative.
-   - **Initial Conflict:** Provide an early event or conflict that drives tension or sparks the plot (e.g., a disruptive event like a power surge or an uncanny discovery).
-
-3. **Output Format:**  
-   - Produce a free-form, continuous narrative. **Do not output or format your answer as JSON.**
-   - Ensure the text contains sufficient richness and detail for each of the elements mentioned above so that it can later be mapped into the appropriate JSON fields.
-
-4. **Tone & Style:**  
-   - Use clear, concise, and factual language.
-   - Avoid excessive adjectives or purely subjective descriptions.
-   - Maintain a measured, objective tone throughout the narrative.
-
-**Example Guidance:**  
-If the input theme is "Spaceship", you might include details such as:  
-- The spaceship's advanced yet unsettling technology and the eerie silence within its corridors.
-- Characters like "Captain Nova" (a resolute leader) and "Engineer Vega" (a resourceful yet anxious expert) who each add depth to the story.
-- Key locations such as the high-tech Bridge and the intricately detailed Engine Room.
-- An initial conflict like a sudden system failure or a mysterious power surge that disrupts operations.
-
-**Confirmation:**  
-Your final narrative should encapsulate all these essential elements in a rich, free-text description, making it possible to later populate a structured JSON object with keys like `setting`, `basicCharacters`, `basicLocations`, and `initialConflict`.
+Output a continuous, free-form narrative. Do NOT use JSON or any other structured format for this part.
+Focus on evocative language that paints a vivid picture and sparks curiosity.
+---
+Parameters:
+Theme: {theme}
+Genre: {genre}
+Year: {year}
+Setting: {setting}
+Player Character Name: {character_name}
+Player Character Age: {character_age}
+Player Character Appearance: {character_appearance}
+Player Character Background: {character_background}
+---
 """
 
-CREATE_STORY_JSON_SYSTEM_PROMPT = """
-create a json structure based on the text. Return only json and noting else
+DESCRIBE_STORY_USER_PROMPT = """
+Begin Narrative Description:
+"""
 
-{
-  "setting": {
-    "theme": "string",
-    "atmosphere": "string",
-    "description": "string"
-  },
-  "basicCharacters": [
-    {
-      "id": "string",
-      "name": "string",
-      "role": "string",
-      "brief": "string",
-      "appearanceHint": "string"
-    }
-  ],
-  "basicLocations": [
-    {
-      "id": "string",
-      "name": "string",
-      "brief": "string",
-      "appearanceHint": "string"
-    }
-  ],
-  "initialConflict": {
-    "description": "string",
-    "triggerEvent": "string"
-  }
-}
+
+
+# Phase 2: Generating Structured Story Details (JSON)
+# This prompt guides the LLM to extract a title, brief description, and world rules
+# from the previously generated story description, ensuring alignment with the original inputs.
+CREATE_STORY_DETAILS_JSON_SYSTEM_PROMPT = """
+You are an expert story analyst and world-builder.
+Based on the provided free-form Story Description and the original parameters, your task is to generate a concise, structured summary in JSON format.
+
+The JSON object must contain the following keys:
+- "title": A catchy and engaging title for the story (maximum 50 characters).
+- "briefDescription": A 3-4 sentence summary of the story's core essence and starting point.
+- "rules": A list of 3-5 fundamental rules, principles, or unique aspects that govern how this world functions. These rules should be 1-2 sentences each and can subtly hint at potential challenges or opportunities for character development.
+
+Ensure the generated details are consistent with the Story Description and the initial parameters.
+Output ONLY the valid JSON object, with no additional text before or after it.
+
+---
+Original Parameters for Context:
+Theme: {theme}
+Genre: {genre}
+Year: {year}
+Setting: {setting}
+Player Character Name: {character_name}
+Player Character Age: {character_age}
+Player Character Appearance: {character_appearance}
+Player Character Background: {character_background}
+
+---
+Full Story Description (from Phase 1):
+{generated_story_description}
+
+---
 """ 
+
+CREATE_STORY_DETAILS_JSON_USER_PROMPT = """
+Generate the JSON output:
+"""

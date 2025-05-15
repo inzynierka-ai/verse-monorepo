@@ -70,7 +70,7 @@ The JSON should be an single character object, following this structure:
 ```json
 {{
   "name": "string",  // Preserve the original name
-  "description": "string",  // Expanded detailed description
+  "briefDescription": "string",  // 3-4 sentence summary for display
   {personality_traits_field}
   "backstory": "string",  // Character's origin story and history
   "goals": ["string"],  // List of character's goals

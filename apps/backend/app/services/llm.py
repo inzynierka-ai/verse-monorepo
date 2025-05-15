@@ -82,23 +82,36 @@ class LLMService:
         max_tokens: Optional[int] = None,
         stream: bool = False,
         metadata: Optional[Dict[str, str]] = None,
+        session_id: Optional[str] = None,
     ) -> AsyncGenerator[str, None] | str:
         """
         Generate a completion for the given messages.
         """
         # Add metadata to the current span
-        langfuse_context.update_current_observation(
-            metadata={
-                "model": model.model_id,
-                "provider": model.provider.value,
-                "temperature": temperature,
-                "max_tokens": max_tokens,
-                "stream": stream,
-                "messages_count": len(messages),
-                "metadata": metadata
-            }
+
+        trace_metadata = {
+            "model": model.model_id,
+            "provider": model.provider.value,
+            "temperature": temperature,
+            "max_tokens": max_tokens,
+            "stream": stream,
+        }
+        if metadata:
+            trace_metadata.update(metadata)
+                        
+            langfuse_context.update_current_observation(
+                level="WARNING" if "violated_categories" in metadata else "INFO", # type: ignore
+            )
+
+        langfuse_context.update_current_trace(
+            metadata=trace_metadata,
         )
 
+        if session_id:
+            langfuse_context.update_current_trace(
+                session_id=session_id
+            )
+            
         if stream:
             return self._stream_completion(
                 messages=messages,
@@ -123,12 +136,12 @@ class LLMService:
             if not response.choices:
                 # Pass the entire response object to the exception
                 raise ValueError(f"Error response received: {response}")
-
-            # Log the successful completion
             
             langfuse_context.update_current_observation(
+                usage=response.usage,
+            )
+            langfuse_context.update_current_trace(
                 output=response.choices[0].message.content,
-                usage=response.usage
             )
             
 
@@ -199,7 +212,7 @@ class LLMService:
         if tools:
             langfuse_metadata["tools_count"] = len(tools)
             
-        langfuse_context.update_current_observation(metadata=langfuse_metadata)
+        langfuse_context.update_current_trace(metadata=langfuse_metadata)
         
         try:
             # Get the appropriate client for this model
@@ -235,15 +248,12 @@ class LLMService:
             # Log the completion outcomes
             extracted_data = self._extract_response_data(response)
             
-            # Log to langfuse
-            usage_data = response.usage if hasattr(response, "usage") else None
-            langfuse_context.update_current_observation(
+            langfuse_context.update_current_trace(
                 output=response.to_dict()["output"],
                 metadata={
                     "function_calls": extracted_data.get("function_calls", []),
                     "has_function_calls": bool(extracted_data.get("function_calls"))
-                },
-                usage=usage_data
+                },    
             )
             
             return response
@@ -345,7 +355,7 @@ class LLMService:
     ) -> AsyncGenerator[str, None]:
         try:
             # Add metadata to the current span
-            langfuse_context.update_current_observation(
+            langfuse_context.update_current_trace(
                 metadata={
                     "model": model.model_id,
                     "provider": model.provider.value,
@@ -364,20 +374,34 @@ class LLMService:
                 messages=messages,
                 temperature=temperature,
                 max_tokens=max_tokens,
-                stream=True
+                stream=True,
+                stream_options={"include_usage": True}
             )
 
             full_response = ""
+            final_usage_data = None
+
             async for chunk in stream:
-                if chunk.choices[0].delta.content is not None:
-                    content = chunk.choices[0].delta.content
-                    full_response += content
-                    yield content
+                self.logger.info(f"Chunk: {chunk}")
+                if chunk.choices and len(chunk.choices) > 0:
+                    choice = chunk.choices[0]
+                    if choice.delta and choice.delta.content is not None:
+                        content_piece = choice.delta.content
+                        full_response += content_piece
+                        yield content_piece
+                
+                if chunk.usage:
+                    final_usage_data = chunk.usage
 
             # Log the complete streamed response when done
-            langfuse_context.update_current_observation(
+            langfuse_context.update_current_trace(
                 output=full_response
             )
+
+            if final_usage_data:
+                langfuse_context.update_current_observation(
+                    usage=final_usage_data
+                )
 
         except Exception as e:
             self.logger.error("Error in _stream_completion: %s", str(e))
