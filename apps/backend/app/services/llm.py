@@ -82,23 +82,33 @@ class LLMService:
         max_tokens: Optional[int] = None,
         stream: bool = False,
         metadata: Optional[Dict[str, str]] = None,
+        session_id: Optional[str] = None,
     ) -> AsyncGenerator[str, None] | str:
         """
         Generate a completion for the given messages.
         """
         # Add metadata to the current span
-        langfuse_context.update_current_observation(
-            metadata={
-                "model": model.model_id,
-                "provider": model.provider.value,
-                "temperature": temperature,
-                "max_tokens": max_tokens,
-                "stream": stream,
-                "messages_count": len(messages),
-                "metadata": metadata
-            }
+
+        trace_metadata = {
+            "model": model.model_id,
+            "provider": model.provider.value,
+            "temperature": temperature,
+            "max_tokens": max_tokens,
+            "stream": stream,
+        }
+        if metadata:
+            trace_metadata.update(metadata)
+
+        langfuse_context.update_current_trace(
+            input=messages[-1].get("content"),
+            metadata=trace_metadata
         )
 
+        if session_id:
+            langfuse_context.update_current_trace(
+                session_id=session_id
+            )
+            
         if stream:
             return self._stream_completion(
                 messages=messages,
@@ -126,9 +136,8 @@ class LLMService:
 
             # Log the successful completion
             
-            langfuse_context.update_current_observation(
+            langfuse_context.update_current_trace(
                 output=response.choices[0].message.content,
-                usage=response.usage
             )
             
 
@@ -199,7 +208,7 @@ class LLMService:
         if tools:
             langfuse_metadata["tools_count"] = len(tools)
             
-        langfuse_context.update_current_observation(metadata=langfuse_metadata)
+        langfuse_context.update_current_trace(metadata=langfuse_metadata, input=input_text)
         
         try:
             # Get the appropriate client for this model
@@ -237,7 +246,7 @@ class LLMService:
             
             # Log to langfuse
             usage_data = response.usage if hasattr(response, "usage") else None
-            langfuse_context.update_current_observation(
+            langfuse_context.update_current_trace(
                 output=response.to_dict()["output"],
                 metadata={
                     "function_calls": extracted_data.get("function_calls", []),
@@ -253,7 +262,7 @@ class LLMService:
             self.logger.error("API error in generate_response: %s", error_str)
             
             # Log the error to Langfuse
-            langfuse_context.update_current_observation(
+            langfuse_context.update_current_trace(
                 level="ERROR",
                 status_message=error_str
             )
@@ -345,7 +354,7 @@ class LLMService:
     ) -> AsyncGenerator[str, None]:
         try:
             # Add metadata to the current span
-            langfuse_context.update_current_observation(
+            langfuse_context.update_current_trace(
                 metadata={
                     "model": model.model_id,
                     "provider": model.provider.value,
@@ -375,14 +384,14 @@ class LLMService:
                     yield content
 
             # Log the complete streamed response when done
-            langfuse_context.update_current_observation(
+            langfuse_context.update_current_trace(
                 output=full_response
             )
 
         except Exception as e:
             self.logger.error("Error in _stream_completion: %s", str(e))
             # Log the error to Langfuse
-            langfuse_context.update_current_observation(
+            langfuse_context.update_current_trace(
                 level="ERROR",
                 status_message=str(e)
             )
