@@ -98,10 +98,14 @@ class LLMService:
         }
         if metadata:
             trace_metadata.update(metadata)
+                        
+            langfuse_context.update_current_observation(
+                level="WARNING" if "violated_categories" in metadata else "INFO", # type: ignore
+            )
 
         langfuse_context.update_current_trace(
             input=messages[-1].get("content"),
-            metadata=trace_metadata
+            metadata=trace_metadata,
         )
 
         if session_id:
@@ -135,7 +139,12 @@ class LLMService:
                 raise ValueError(f"Error response received: {response}")
 
             # Log the successful completion
+
+            self.logger.info(f"Metadata: {metadata}")
             
+            langfuse_context.update_current_observation(
+                usage=response.usage,
+            )
             langfuse_context.update_current_trace(
                 output=response.choices[0].message.content,
             )
@@ -244,15 +253,12 @@ class LLMService:
             # Log the completion outcomes
             extracted_data = self._extract_response_data(response)
             
-            # Log to langfuse
-            usage_data = response.usage if hasattr(response, "usage") else None
             langfuse_context.update_current_trace(
                 output=response.to_dict()["output"],
                 metadata={
                     "function_calls": extracted_data.get("function_calls", []),
                     "has_function_calls": bool(extracted_data.get("function_calls"))
-                },
-                usage=usage_data
+                },    
             )
             
             return response
@@ -262,7 +268,7 @@ class LLMService:
             self.logger.error("API error in generate_response: %s", error_str)
             
             # Log the error to Langfuse
-            langfuse_context.update_current_trace(
+            langfuse_context.update_current_observation(
                 level="ERROR",
                 status_message=error_str
             )
@@ -373,25 +379,39 @@ class LLMService:
                 messages=messages,
                 temperature=temperature,
                 max_tokens=max_tokens,
-                stream=True
+                stream=True,
+                stream_options={"include_usage": True}
             )
 
             full_response = ""
+            final_usage_data = None
+
             async for chunk in stream:
-                if chunk.choices[0].delta.content is not None:
-                    content = chunk.choices[0].delta.content
-                    full_response += content
-                    yield content
+                self.logger.info(f"Chunk: {chunk}")
+                if chunk.choices and len(chunk.choices) > 0:
+                    choice = chunk.choices[0]
+                    if choice.delta and choice.delta.content is not None:
+                        content_piece = choice.delta.content
+                        full_response += content_piece
+                        yield content_piece
+                
+                if chunk.usage:
+                    final_usage_data = chunk.usage
 
             # Log the complete streamed response when done
             langfuse_context.update_current_trace(
                 output=full_response
             )
 
+            if final_usage_data:
+                langfuse_context.update_current_observation(
+                    usage=final_usage_data
+                )
+
         except Exception as e:
             self.logger.error("Error in _stream_completion: %s", str(e))
             # Log the error to Langfuse
-            langfuse_context.update_current_trace(
+            langfuse_context.update_current_observation(
                 level="ERROR",
                 status_message=str(e)
             )
