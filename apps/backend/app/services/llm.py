@@ -213,7 +213,7 @@ class LLMService:
         if tools:
             langfuse_metadata["tools_count"] = len(tools)
             
-        langfuse_context.update_current_trace(metadata=langfuse_metadata, input=input_text)
+        langfuse_context.update_current_trace(metadata=langfuse_metadata)
         
         try:
             # Get the appropriate client for this model
