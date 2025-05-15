@@ -5,7 +5,6 @@ from typing import Optional, Dict
 from openai import AsyncOpenAI
 from openai.types import Moderation
 from tenacity import retry, stop_after_attempt, wait_exponential
-from langfuse.decorators import observe, langfuse_context  # type: ignore
 
 
 class ModerationModelName(str, Enum):
@@ -29,7 +28,6 @@ class ModerationsService:
         wait=wait_exponential(multiplier=1, min=4, max=10),
         reraise=True
     )
-    @observe(name="moderate_content", as_type="generation")
     async def moderate_content(
         self,
         input_text: str,
@@ -54,21 +52,10 @@ class ModerationsService:
         if metadata:
             trace_metadata.update(metadata)
 
-        langfuse_context.update_current_trace(
-            input=input_text,
-            metadata=trace_metadata
-        )
-        
         try:
             response = await self.openai_client.moderations.create(
                 model=model.value,
                 input=input_text,
-            )
-
-            # The response object from openai.moderations.create is already a Pydantic model
-            # (ModerationCreateResponse), so we can pass its dict representation to langfuse.
-            langfuse_context.update_current_trace(
-                output=response.model_dump() 
             )
 
             return response.results[0]
@@ -76,10 +63,6 @@ class ModerationsService:
         except Exception as api_error:
             error_str = str(api_error)
             self.logger.error("Moderation API error: %s", error_str)
-            langfuse_context.update_current_observation(
-                level="ERROR",
-                status_message=error_str
-            )
             raise ValueError(f"Moderation API error: {error_str}") from api_error
 
     def is_flagged(self, moderation_response: Moderation) -> bool:

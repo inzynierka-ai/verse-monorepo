@@ -137,10 +137,6 @@ class LLMService:
             if not response.choices:
                 # Pass the entire response object to the exception
                 raise ValueError(f"Error response received: {response}")
-
-            # Log the successful completion
-
-            self.logger.info(f"Metadata: {metadata}")
             
             langfuse_context.update_current_observation(
                 usage=response.usage,
