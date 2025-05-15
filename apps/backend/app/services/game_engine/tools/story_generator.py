@@ -1,3 +1,4 @@
+import json
 import logging
 import uuid
 from typing import Optional
@@ -19,6 +20,7 @@ from app.prompts.story_generation import (
     CREATE_STORY_DETAILS_JSON_SYSTEM_PROMPT,
     CREATE_STORY_DETAILS_JSON_USER_PROMPT
 )
+from app.services.moderations import ModerationsService
 
 class StoryGenerator:
     """
@@ -29,6 +31,7 @@ class StoryGenerator:
     def __init__(self, llm_service: Optional[LLMService] = None, db_session: Optional[Session] = None):
         self.llm_service = llm_service or LLMService()
         self.db_session = db_session
+        self.moderation_service = ModerationsService(openai_client=self.llm_service.openai_client)
 
     @observe(name="generate_story")
     async def generate_story(self, user_id: int, story_gen_input: StoryGenerationInput) -> Story:
@@ -37,6 +40,14 @@ class StoryGenerator:
         """
         # Generate story description using both story and character draft from story_gen_input
         langfuse_context.update_current_trace(input=story_gen_input)
+
+        violated_categories = await self.moderation_service.process_moderation(story_gen_input.model_dump_json())
+        if violated_categories:
+            logging.warning(f"Violated categories: {violated_categories}")
+            langfuse_context.update_current_trace(metadata={"violated_categories": violated_categories})
+            langfuse_context.update_current_trace(output={"ERROR": "Violated categories"})
+            raise ValueError(f"Sorry, we can't generate your story because it contains content that is not allowed. Please try again with different description. Reason: {', '.join(violated_categories.keys())}")
+
         description = await self._generate_story_description(story_gen_input)
         
         # Generate story details (title, brief description, rules) using the generated description

@@ -104,7 +104,6 @@ class LLMService:
             )
 
         langfuse_context.update_current_trace(
-            input=messages[-1].get("content"),
             metadata=trace_metadata,
         )
 

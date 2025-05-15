@@ -6,6 +6,8 @@ from openai import AsyncOpenAI
 from openai.types import Moderation
 from tenacity import retry, stop_after_attempt, wait_exponential
 
+from langfuse.decorators import observe # type: ignore
+
 
 class ModerationModelName(str, Enum):
     """
@@ -28,6 +30,7 @@ class ModerationsService:
         wait=wait_exponential(multiplier=1, min=4, max=10),
         reraise=True
     )
+    @observe(name="moderate_content")
     async def moderate_content(
         self,
         input_text: str,
@@ -65,6 +68,15 @@ class ModerationsService:
             self.logger.error("Moderation API error: %s", error_str)
             raise ValueError(f"Moderation API error: {error_str}") from api_error
 
+    async def process_moderation(self, input_text: str) -> Dict[str, bool] | None:
+        moderation_response = await self.moderate_content(input_text)
+        is_flagged = self.is_flagged(moderation_response)
+        if not is_flagged:
+            return None
+        violated_categories = self.get_violated_categories(moderation_response)
+        
+        return violated_categories
+    
     def is_flagged(self, moderation_response: Moderation) -> bool:
         """Checks if the moderation response is flagged.
 
