@@ -35,11 +35,14 @@ class WorldEntityService:
         Given a transcript of a conversation, extract a list of terms that refer to:
         - organizations, places, technologies, slang, factions, religions, or cultural concepts
         - anything that characters in the world would "know about" or reference with shared meaning
+        - only extract terms that are not general knowledge - e.g., clearly established outside of the game world
+        - avoid common nouns or adjectives that are not specific to the world
+        - avoid any terms that are not unique to the world or are too generic
 
         Return only the **distinct names** of the terms, not descriptions.
 
         Format: A JSON array of strings, e.g.:
-        ["Arasaka", "London", "The One Ring", "Death Star", "The Spice", "Anakin", "Horcruxes"]
+        ["Arasaka", "The One Ring", "Death Star", "The Spice", "Anakin", "Horcruxes"]
         """
 
         messages = [

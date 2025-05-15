@@ -6,7 +6,7 @@ from app.services.llm import LLMService, ModelName
 from app.models.character import Character
 from app.models.scene import Scene
 from app.services.world_entity_service import WorldEntityService
-from app.services.game_engine.orchestrators.memory_manager import MemoryManager
+from app.services.memory_manager import MemoryManager
 from datetime import datetime
 from app.utils.embedding import simplify_text_for_embedding, get_embedding
 import uuid
@@ -109,13 +109,12 @@ class ConversationService:
 
         simplified_last_message = await simplify_text_for_embedding(scene.messages[-1].content)
         logging.info(f"Simplified last message: {simplified_last_message}")
+        last_message = scene.messages[-1].content
         last_message_embedding = get_embedding(simplified_last_message)
 
         # Get character memories
         memory_manager = MemoryManager(db_session=db)
-        memories = await memory_manager.get_relevant_memories(character_id=character.id, 
-                                                        current_scene_id=scene.id, 
-                                                        last_message_embedding=last_message_embedding)
+        memories = await memory_manager.find_similar_memories(character_id=character.id, query=last_message)
 
         location_info = f"You are currently at {scene.location.name}. {scene.location.description}" if scene.location else ""
         # Get relevant world entities

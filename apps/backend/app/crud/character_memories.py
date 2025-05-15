@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.sql import func
 from sqlalchemy import select
 from app.utils.embedding import get_embedding  # Your wrapper around OpenAI or similar
+from fastapi import HTTPException
 from app.models.character_memory import CharacterMemory
 import uuid
 

@@ -11,7 +11,7 @@ from app.crud.stories import get_story, create_story as create_story_service, ge
 from app.schemas.user import User
 from app.services.auth import get_current_user
 from app.services.scene_service import SceneService
-from app.services.game_engine.orchestrators.memory_manager import MemoryManager
+from app.services.memory_manager import MemoryManager
 from app.services.relationship_analysis import RelationshipAnalysisResult, RelationshipAnalysisService
 from app.crud import scenes
 from app.schemas.message import Message
