@@ -26,7 +26,7 @@ class StoryInput(BaseModel):
 
 class StoryDetails(BaseModel):
     title: str
-    brief_description: str
+    briefDescription: str
     rules: List[str]
 
 

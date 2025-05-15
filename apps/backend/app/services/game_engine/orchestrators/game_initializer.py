@@ -77,7 +77,7 @@ class GameInitializer:
             InitialGameState with generated story and player character
         """
         # 1. Generate the story first
-        story = await self.story_generator.generate_story(user_id, user_input.story)
+        story = await self.story_generator.generate_story(user_id, user_input)
         
         # Call the callback if provided
         if on_story_generated:

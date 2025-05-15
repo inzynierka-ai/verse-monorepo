@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 class ConversationService:
     def __init__(self):
         self.llm_service = LLMService()
-    
+        self.moderation_service = ModerationsService(openai_client=self.llm_service.openai_client)
     async def manage_websocket(self, websocket: WebSocket):
         """Context manager for WebSocket connection handling"""
         await websocket.accept()
@@ -29,17 +29,6 @@ class ConversationService:
         """Verify that the scene ID in the message matches the current scene ID"""
         return message_scene_id == current_scene_id
     
-    async def _moderate_message(self, message: str) -> Dict[str, bool] | None:
-        """Moderate a message"""
-        moderation_service = ModerationsService(openai_client=self.llm_service.openai_client)
-        moderation_response = await moderation_service.moderate_content(message)
-        is_flagged = moderation_service.is_flagged(moderation_response)
-        if not is_flagged:
-            return None
-        violated_categories = moderation_service.get_violated_categories(moderation_response)
-        
-        return violated_categories
-    
     async def process_message(self, db: Session, messages: List[Dict[str, Any]], 
                              character: Character, scene: Scene) -> AsyncGenerator[str, None]:
         """Process a message and generate a response"""
@@ -51,7 +40,7 @@ class ConversationService:
             content=latest_message,
             role="user"
         )
-        violated_categories = await self._moderate_message(latest_message)
+        violated_categories = await self.moderation_service.process_moderation(latest_message)
         if violated_categories:
             logger.warning(f"Violated categories: {violated_categories}")
         system_prompt = self._build_character_prompt(character, scene)

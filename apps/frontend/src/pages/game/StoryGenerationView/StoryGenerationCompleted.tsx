@@ -97,11 +97,10 @@ const StoryGenerationCompleted = ({ story, character, onReset }: StoryGeneration
       )}
 
       <div className={styles.buttonContainer}>
-        <Button onClick={handleExploreStories}>Explore Stories</Button>
-        <Button onClick={handleBeginAdventure}>Begin adventure</Button>
         <Button onClick={onReset} variant="secondary">
           Create Another Story
         </Button>
+        <Button onClick={handleBeginAdventure}>Begin adventure</Button>
       </div>
     </div>
   );
