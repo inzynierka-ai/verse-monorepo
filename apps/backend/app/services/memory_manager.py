@@ -201,14 +201,14 @@ class MemoryManager:
             
             # Calculate and log similarity for each memory
             for memory in memories:
-                if hasattr(memory, 'embedding') and memory.embedding:
+                if hasattr(memory, 'embedding'):
                     # Convert memory embedding to numpy array
                     memory_embedding_np = np.array(memory.embedding).reshape(1, -1)
                     
                     # Calculate cosine similarity
                     similarity = cosine_similarity(query_embedding_np, memory_embedding_np)[0][0]
                     
-                    logging.info(f"Memory ID: {memory.uuid}, Similarity: {similarity:.4f}, Text: '{memory.text[:50]}...'")
+                    logging.info(f"Memory ID: {memory.uuid}, Similarity: {similarity:.4f}, Text: '{memory.memory_text[:50]}...'")
                 else:
                     logging.warning(f"Memory {memory.uuid} has no embedding")
 

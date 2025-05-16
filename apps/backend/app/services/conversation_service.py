@@ -47,7 +47,7 @@ class ConversationService:
         violated_categories = await self.moderation_service.process_moderation(latest_message)
         if violated_categories:
             logger.warning(f"Violated categories: {violated_categories}")
-        system_prompt = self._build_character_prompt(character, scene)
+        system_prompt = await self._build_character_prompt(db, character, scene)
         
         # Convert messages to the format expected by the LLM service
         formatted_messages = [
@@ -160,8 +160,8 @@ class ConversationService:
         You are currently speaking with the player character named {player_name}. Speak and act according to your personality, goals, and knowledge. Do **not** narrate or explain your behavior unless it is in-character to do so.
 
         Memories of past interactions (which you remember as real experiences):
-        {chr(10).join(['- ' + memory for memory in memories])}
-
+        {chr(10).join([f"- {memory.memory_text}" for memory in memories])}
+        
         Your current location:
         {location_info}
 
