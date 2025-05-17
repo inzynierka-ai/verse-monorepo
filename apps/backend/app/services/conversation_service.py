@@ -124,10 +124,10 @@ class ConversationService:
         player_name = player_character.name if player_character else "unknown player"
         logger.info(f"Player character identified as: {player_name}")
 
-        simplified_last_message = await optimize_text_for_embedding(scene.messages[-1].content)
-        logger.info(f"Simplified last message: {simplified_last_message[:100]}...")
+        optimized_last_message = await optimize_text_for_embedding(scene.messages[-1].content)
+        logger.info(f"Last message: {optimized_last_message[:100]}...")
         last_message = scene.messages[-1].content
-        last_message_embedding = get_embedding(simplified_last_message)
+        last_message_embedding = get_embedding(optimized_last_message)
         logger.info(f"Generated embedding of length: {len(last_message_embedding) if last_message_embedding else 'None'}")
 
         # Get character memories
@@ -147,10 +147,10 @@ class ConversationService:
         world_entity_service = WorldEntityService(db_session=db, story_id=scene.story_id)
         
         try:
-            logger.info(f"Calling get_relevant_world_entities with message length {len(simplified_last_message)} and embedding length {len(last_message_embedding) if last_message_embedding else 'None'}")
+            logger.info(f"Calling get_relevant_world_entities with message length {len(optimized_last_message)} and embedding length {len(last_message_embedding) if last_message_embedding else 'None'}")
             world_entities = await world_entity_service.get_relevant_world_entities(
                 scene, 
-                simplified_last_message, 
+                optimized_last_message, 
                 last_message_embedding
             )
             

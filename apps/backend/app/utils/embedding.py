@@ -32,7 +32,7 @@ async def optimize_text_for_embedding(text: str, llm_service: Optional[LLMServic
         llm_service: LLMService instance (if None, a new one will be created)
         
     Returns:
-        A simplified version of the text containing just the key terms and concepts
+        Optimized version of the message text containing just the key terms and concepts for embedding.
     """
     # If text is too short, return as is
     if len(text) < 100:
@@ -54,7 +54,7 @@ async def optimize_text_for_embedding(text: str, llm_service: Optional[LLMServic
     # Create the user prompt with the text
     user_prompt = f"Extract key terms from the following text:\n\n{text}"
     
-    # Generate the simplified text
+    # Generate the optimized text
     messages = [
         llm_service.create_message("system", system_prompt),
         llm_service.create_message("user", user_prompt)
@@ -67,9 +67,9 @@ async def optimize_text_for_embedding(text: str, llm_service: Optional[LLMServic
         stream=False
     )
     
-    simplified_text = await llm_service.extract_content(response)
+    optimized_text = await llm_service.extract_content(response)
     
     # Log the simplification for debugging
-    logging.debug(f"Original text ({len(text)} chars) simplified to ({len(simplified_text)} chars)")
+    logging.debug(f"Original text ({len(text)} chars) optimized to ({len(optimized_text)} chars)")
     
-    return simplified_text.strip()
+    return optimized_text.strip()
