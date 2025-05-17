@@ -76,6 +76,7 @@ class Character(CharacterFromLLM):
         ..., description="Character's role in the story (player or npc)")
     uuid: str = Field(
         ..., description="Unique identifier for the character")
+    immediate_goals: Optional[str] = Field(None, description="Character's immediate goals in the current context")
 
 
 # Location models

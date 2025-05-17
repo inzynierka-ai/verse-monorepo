@@ -103,16 +103,17 @@ class SceneGeneratorAgent:
                             "name": {"type": "string"},
                             "age": {"type": "integer"},
                             "appearance": {"type": "string"},
-                            "background": {"type": "string"}
+                            "background": {"type": "string"},
                         },
                         "required": ["name", "age", "appearance", "background"]
                     },
+                    "immediate_goals": {"type": "string", "description": "The character\'s immediate goals for the current situation or scene. It should be concise and instruct the character how to act in the scene."},
                     "existing_character_id": {
                         "type": "string",
                         "description": "UUID of existing character to use (optional)"
                     }
                 },
-                "required": []
+                "required": ["immediate_goals"]
             }
         })
         
@@ -451,6 +452,7 @@ class SceneGeneratorAgent:
             for character in self.state.characters_pool:
                 if str(character.uuid) == existing_char_uuid:
                     found_character = character
+                    found_character.immediate_goals = args["immediate_goals"]
                     break
 
             if not found_character:
@@ -547,6 +549,7 @@ class SceneGeneratorAgent:
                     story=self.story,
                     is_player=False
                 )
+                new_character.immediate_goals = args["immediate_goals"]
 
                 # Add to selected characters
                 current_characters = list(self.state.selected_characters)
@@ -601,6 +604,7 @@ class SceneGeneratorAgent:
                 <character>
                     <uuid>{character.uuid}</uuid>
                     <name>{character.name}</name>
+                    <immediate_goals>{character.immediate_goals}</immediate_goals>
                 </character>
                 """
                 characters.append(char_str)
@@ -739,25 +743,29 @@ class SceneGeneratorAgent:
             if location_id is None:
                 raise ValueError("Cannot create scene without location_id")
                 
-            # Collect character UUIDs instead of IDs
-            character_uuids: List[str] = [self.state.player.uuid]
+            # Collect character data (UUIDs and immediate_goals)
+            characters_data_for_db: List[Dict[str, Any]] = []
+            # Add player character
+            characters_data_for_db.append({"uuid": self.state.player.uuid, "immediate_goals": None})
+            
             for character in scene_result.characters:
                 character_uuid = getattr(character, 'uuid', None)
+                immediate_goals = getattr(character, 'immediate_goals', None)
                 if character_uuid is not None:
-                    character_uuids.append(str(character_uuid))
+                    characters_data_for_db.append({"uuid": str(character_uuid), "immediate_goals": immediate_goals})
                 else:
-                    logging.warning(f"Character {getattr(character, 'name', 'unknown')} has no UUID")
+                    logging.warning(f"Character {getattr(character, 'name', 'unknown')} has no UUID, cannot save immediate goals")
             
-            if not character_uuids:
-                logging.warning("No character UUIDs found to associate with the scene")
+            if not characters_data_for_db:
+                logging.warning("No character data found to associate with the scene")
             
-            # Create a complete scene in one operation using UUIDs
+            # Create a complete scene in one operation using character data
             db_scene = scenes_crud.create_complete_scene(
                 self.db_session,
                 story_id,
                 location_id,
                 scene_result.description,
-                character_uuids if character_uuids else None
+                characters_data_for_db if characters_data_for_db else None
             )
             
             # Log completion

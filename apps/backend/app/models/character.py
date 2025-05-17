@@ -23,6 +23,7 @@ class Character(Base):
     relationship_level = Column(Integer) # relationship level with the player character
     story_id = Column(Integer, ForeignKey('stories.id'), nullable=False)
     uuid = Column(String, nullable=False)
+    immediate_goals = Column(String, nullable=True) # Character's immediate goals
     
     # Relationships
     story = relationship("Story", back_populates="characters")
