@@ -7,7 +7,7 @@ from app.services.llm import LLMService, ModelName
 from app.schemas.message import Message as MessageSchema
 from app.schemas.scene import Scene as SceneSchema
 from app.crud.characters import get_character
-
+from langfuse.decorators import observe  # type: ignore
 
 class SceneService:
     def __init__(self):
@@ -104,7 +104,7 @@ class SceneService:
         # Join all sections with double newlines
         return "\n\n".join(formatted_sections) if formatted_sections else ""
 
-
+    @observe(name="summarize_scene_messages")
     async def _summarize_scene_messages(self, db: Session, messages: List[MessageSchema]) -> str:
         """
         Analyze messages from a scene and generate a summary using LLM.
