@@ -230,10 +230,39 @@ class WorldEntityService:
 
     def filter_known_entities(self, entity_names: List[str]) -> List[str]:
         """
-        Filter out any entity names that are already defined in the database.
+        Filter out any entity names that are already defined in the database,
+        either as primary names or as aliases.
         """
-        known = get_entity_names_by_story_id(self.db_session, self.story.id)
-        return [name for name in entity_names if name.lower() not in {k.lower() for k in known}]
+        # First get all entities for this story
+        all_entities = get_entity_names_by_story_id(self.db_session, self.story.id)
+        
+        # Create lookup sets for both names and aliases (converted to lowercase for case-insensitive matching)
+        known_names = {entity.name.lower() for entity in all_entities}
+        
+        # Gather all aliases across all entities
+        known_aliases = set()
+        for entity in all_entities:
+            if entity.aliases:
+                for alias in entity.aliases:
+                    known_aliases.add(alias.lower())
+        
+        # Log what we've collected
+        logging.info(f"Known entity names in story: {len(known_names)}")
+        logging.info(f"Known entity aliases in story: {len(known_aliases)}")
+        
+        # Filter out names that match either existing names or aliases
+        filtered_names = []
+        for name in entity_names:
+            name_lower = name.lower()
+            if name_lower in known_names:
+                logging.info(f"Filtering out '{name}' - matches existing entity name")
+                continue
+            if name_lower in known_aliases:
+                logging.info(f"Filtering out '{name}' - matches existing entity alias")
+                continue
+                          
+        logging.info(f"Original entity names: {len(entity_names)}, Filtered entity names: {len(filtered_names)}")
+        return filtered_names
 
     @observe(name="describe_entity")
     async def describe_entity(self, entity_name: str, scene_text: str, related_entities: List[Dict]) -> Optional[Dict[str, Any]]:

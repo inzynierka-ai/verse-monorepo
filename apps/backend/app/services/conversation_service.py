@@ -172,7 +172,19 @@ class ConversationService:
         # Prepare world entities section with error handling
         try:
             if world_entities and len(world_entities) > 0:
-                entities_text = chr(10).join([f"- {entity.name}: {entity.canonical_description}" for entity in world_entities])
+                entities_text_list = []
+                for entity in world_entities:
+                    # Format each entity with name, description and aliases if any
+                    entity_text = f"- {entity.name}: {entity.canonical_description}"
+                    
+                    # Add aliases if they exist
+                    if entity.aliases and len(entity.aliases) > 0:
+                        alias_text = ", ".join(entity.aliases)
+                        entity_text += f" (Also known as: {alias_text})"
+                    
+                    entities_text_list.append(entity_text)
+                
+                entities_text = chr(10).join(entities_text_list)
                 logger.info(f"Including {len(world_entities)} world entities in prompt")
             else:
                 entities_text = "None"
@@ -240,7 +252,7 @@ class ConversationService:
 
         # Log the final prompt length (not entire content for privacy/size reasons)
         logger.info(f"Character prompt for {character.name} generated with {len(character_prompt)} characters")
-        logger.info(f"Character prompt: {character_prompt}")  # Log only the first 100 characters for brevity
+        logger.info(f"Character prompt: {character_prompt}...")  # Log only the first 100 characters for brevity
         return character_prompt  
     
     async def save_message(self, db: Session, scene_id: Any, 

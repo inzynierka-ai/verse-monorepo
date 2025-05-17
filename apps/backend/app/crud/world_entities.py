@@ -108,37 +108,37 @@ def get_related_entities_by_name(db: Session, entity_name: str, story_id: int,
 def get_entities_by_name(db: Session, query: str, story_id: int, search_descriptions: bool = False):
     """
     Get entities that match the given name query string, including aliases and optionally descriptions.
-    
-    Args:
-        db: Database session
-        query: Name string to search for
-        story_id: ID of the story to get entities for
-        search_descriptions: Whether to also search in entity descriptions
-        
-    Returns:
-        List of entities that match the query
     """
     # Define log_source outside the try block so it's always available
     log_source = "name, aliases, and descriptions" if search_descriptions else "name and aliases"
     
     try:
-        from sqlalchemy import or_
+        from sqlalchemy import or_, func, text
         
-        # Build query conditions
-        conditions = [
-            WorldEntityModel.story_id == story_id,
-            or_(
-                WorldEntityModel.name.ilike(f"%{query}%"),
-                WorldEntityModel.aliases.any(lambda alias: alias.ilike(f"%{query}%"))
-            )
-        ]
+        # For PostgreSQL, we need to use a different approach to search in arrays
+        # The LIKE ANY operator doesn't exist directly, so we'll use a combination of approaches
+        
+        # Build base query with story_id filter
+        base_query = db.query(WorldEntityModel).filter(WorldEntityModel.story_id == story_id)
+        
+        # Add name condition
+        name_condition = WorldEntityModel.name.ilike(f"%{query}%")
+        
+        # For array searching in PostgreSQL, we can use the array_to_string function
+        # This converts the array to a string with a delimiter, which we can then search with LIKE
+        # Note: For improved performance in production, you might want to consider using a GIN index
+        alias_condition = text(f"array_to_string(aliases, ',') ILIKE '%{query}%'")
+        
+        # Combine name and alias conditions
+        base_query = base_query.filter(or_(name_condition, alias_condition))
         
         # Add description search if requested
         if search_descriptions:
-            conditions.append(WorldEntityModel.canonical_description.ilike(f"%{query}%"))
+            desc_condition = WorldEntityModel.canonical_description.ilike(f"%{query}%")
+            base_query = base_query.filter(or_(name_condition, alias_condition, desc_condition))
         
         # Execute the query
-        entities = db.query(WorldEntityModel).filter(*conditions).all()
+        entities = base_query.all()
             
         logging.info(f"Search for '{query}' in {log_source} found {len(entities)} entities")
         return entities
