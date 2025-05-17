@@ -67,7 +67,7 @@ def create_message(db: Session, message: message_schema.MessageCreate):
     db.refresh(db_message)
     return db_message
 
-def get_messages_by_scene_and_character(db: Session, scene_uuid: str, character_uuid: str):
+def get_messages_by_scene_and_character(db: Session, scene_uuid: str, character_uuid: str) -> List[Message]:
     """Get messages by scene and character"""
     scene = get_scene_by_uuid(db, scene_uuid)
     character = get_character_by_uuid(db, character_uuid)

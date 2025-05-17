@@ -10,7 +10,7 @@ class Story(Base):
     user_id = Column(Integer, ForeignKey("users.id"))
     title = Column(String, nullable=False)
     description = Column(Text, nullable=False)
-    brief_description = Column(Text, nullable=True)  # New column
+    brief_description = Column(Text, nullable=True)
     rules = Column(Text, nullable=False)
     uuid = Column(String, nullable=False, unique=True)
     

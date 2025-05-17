@@ -26,7 +26,7 @@ class StoryInput(BaseModel):
 
 class StoryDetails(BaseModel):
     title: str
-    briefDescription: str
+    brief_description: str
     rules: List[str]
 
 
@@ -56,14 +56,14 @@ class StoryOutput(BaseModel):
 class CharacterFromLLM(BaseModel):
     """Character in the generated story"""
     name: str = Field(..., description="Character name")
-    briefDescription: str = Field(..., description="Short 3-4 sentence description for UI display")
-    personalityTraits: Optional[List[str]] = Field(
+    brief_description: str = Field(..., description="Short 3-4 sentence description for UI display")
+    personality_traits: Optional[str] = Field(
         None, description="Character's personality traits")
     backstory: str = Field(...,
                            description="Character's backstory")
     goals: List[str] = Field(...,
                              description="Character's goals")
-    relationshipLevel: Optional[int] = Field(None,
+    relationship_level: Optional[int] = Field(None,
                                   description="Relationship level with the player character")
 
 class Character(CharacterFromLLM):

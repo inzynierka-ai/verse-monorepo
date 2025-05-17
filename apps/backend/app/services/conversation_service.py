@@ -1,3 +1,4 @@
+import logging
 import json
 from typing import List, AsyncGenerator, Dict, Any, Literal
 from fastapi import WebSocket
@@ -5,7 +6,10 @@ from sqlalchemy.orm import Session
 from app.services.llm import LLMService, ModelName
 from app.models.character import Character
 from app.models.scene import Scene
+from app.services.world_entity_service import WorldEntityService
+from app.services.memory_manager import MemoryManager
 from datetime import datetime
+from app.utils.embedding import simplify_text_for_embedding, get_embedding
 import uuid
 import logging
 
@@ -43,7 +47,7 @@ class ConversationService:
         violated_categories = await self.moderation_service.process_moderation(latest_message)
         if violated_categories:
             logger.warning(f"Violated categories: {violated_categories}")
-        system_prompt = self._build_character_prompt(character, scene)
+        system_prompt = await self._build_character_prompt(db, character, scene)
         
         # Convert messages to the format expected by the LLM service
         formatted_messages = [
@@ -106,14 +110,77 @@ class ConversationService:
                 )
                 
             return single_value_generator()
+        
     
-    def _build_character_prompt(self, character: Character, scene: Scene) -> str:
+    
+    async def _build_character_prompt(self, db:Session, character: Character, scene: Scene) -> str:
         """Build a system prompt for the character"""
         # Get location information
+        story = scene.story
+
+        player_character = next((char for char in scene.characters if char.role == "player"), None)
+        player_name = player_character.name if player_character else "unknown player"
+
+        simplified_last_message = await simplify_text_for_embedding(scene.messages[-1].content)
+        logging.info(f"Simplified last message: {simplified_last_message}")
+        last_message = scene.messages[-1].content
+        last_message_embedding = get_embedding(simplified_last_message)
+
+        # Get character memories
+        memory_manager = MemoryManager(db_session=db)
+        memories = await memory_manager.find_similar_memories(character_id=character.id, query=last_message, top_n=5)
+
         location_info = f"You are currently at {scene.location.name}. {scene.location.description}" if scene.location else ""
+        # Get relevant world entities
+        world_entity_service = WorldEntityService(db_session=db, story_id=scene.story_id)
+        world_entities = await world_entity_service.get_relevant_world_entities(scene, simplified_last_message, last_message_embedding)
+
+
+        character_prompt = f"""
+        You are not a language model. You are a fully realized character in a fictional story titled "{story.title}".
+
+        Your name is {character.name}. Here is your character description:
+        {character.description}
+
+        Your backstory:
+        {character.backstory}
+
+        Your personality traits:
+        {character.personality_traits}  
+
+        Your goals in the story:
+        {character.goals}
+
+        Your speaking style:
+        {character.speaking_style}
+
+        You are in the following situation:
+        {scene.description}
+
+        You are currently speaking with the player character named {player_name}. Speak and act according to your personality, goals, and knowledge. Do **not** narrate or explain your behavior unless it is in-character to do so.
+
+        Memories of past interactions (which you remember as real experiences):
+        {chr(10).join([f"- {memory.memory_text}" for memory in memories])}
         
+        Your current location:
+        {location_info}
+
+        Relevant world entities and lore:
+        {chr(10).join([f"- {entity.name}: {entity.canonical_description}" for entity in world_entities])}
+
+        Strict Rules:
+        - Stay completely in character. Never refer to being an AI, LLM, or model.
+        - Use language, tone, and knowledge consistent with your role in the story world.
+        - Do not break the fourth wall.
+        - Do not provide options, summaries, or meta-commentary unless it's something your character would naturally do.
+        - Respond as if this world is real to you. Stay grounded in the current situation and your personality.
+        - Do not make your part too long. Keep it really concise to maintain a quick back-and-forth with the player.
+        - Avoid finishing senteces with questions.
+        """
+
         # Combine character prompt with location information
-        return f"{character.description}\n\n{location_info}\n\nRemember to stay in character at all times."
+        logging.info(f"Character prompt for {character.name}: {character_prompt}")
+        return character_prompt
     
     async def save_message(self, db: Session, scene_id: Any, 
                          character_id: Any, content: str, role: Literal["user", "assistant", "system"]) -> Dict[str, Any]:

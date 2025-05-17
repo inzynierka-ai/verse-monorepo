@@ -15,6 +15,7 @@ class StoryBase(BaseModel):
 class StoryCreate(BaseModel):
     title: str
     description: Optional[str] = None
+    brief_description: Optional[str] = None
     rules: Optional[str] = None
 
 
