@@ -1,7 +1,11 @@
+from sqlalchemy import select
 from sqlalchemy.orm import Session
-from typing import List, Dict
+from typing import List, Dict, Optional
+from datetime import datetime
 from app.models.world_entity import WorldEntity as WorldEntityModel
-from app.schemas.world_entity import WorldEntity
+from app.schemas.world_entity import WorldEntity, WorldEntityFromLLM
+from app.utils.embedding import get_embedding
+import logging
 
 def get_entity_names_by_story_id(db: Session, story_id: int) -> List[str]:
     entities = db.query(WorldEntityModel).filter(WorldEntityModel.story_id == story_id).all()
@@ -31,8 +35,8 @@ def get_entities_by_story_id(db: Session, story_id: int) -> List[WorldEntity]:
         WorldEntity(
             id=e.id,
             name=e.name,
-            story_id=e.story_id,  # Add this!
-            canonical_description=e.canonical_description,  # Use correct field name
+            story_id=e.story_id,
+            canonical_description=e.canonical_description,
             embedding=e.embedding.tolist() if e.embedding is not None else None,
             aliases=e.aliases or [],
             discovered_in_scene=e.discovered_in_scene,
@@ -41,27 +45,141 @@ def get_entities_by_story_id(db: Session, story_id: int) -> List[WorldEntity]:
         for e in entities
     ]
 
-def get_related_entities(db: Session, name: str, story_id: int, top_k: int = 5) -> List[Dict]:
+def get_related_entities(db: Session, query_embedding: List[float], story_id: int, 
+                        top_n: int = 5, similarity_threshold: float = 0.3):
     """
-    Return top-k semantically similar entities by embedding similarity.
+    Get related world entities based on embedding similarity.
     """
-    from sqlalchemy.sql import text
+    try:
+        # For Postgres with pgvector, we can calculate cosine similarity directly
+        # 1 - (a <=> b) gives us cosine similarity where higher values = more similar
+        stmt = (
+            select(WorldEntityModel, (1 - WorldEntityModel.embedding.cosine_distance(query_embedding)).label("similarity"))
+            .where(WorldEntityModel.story_id == story_id)
+            .where(WorldEntityModel.embedding.is_not(None))
+            # Filter by similarity threshold
+            .where((1 - WorldEntityModel.embedding.cosine_distance(query_embedding)) >= similarity_threshold)
+            # Order by similarity (highest first)
+            .order_by((1 - WorldEntityModel.embedding.cosine_distance(query_embedding)).desc())
+            .limit(top_n)
+        )
+        
+        results = db.execute(stmt).all()
+        
+        # Log the results for debugging
+        entities_with_scores = []
+        for entity, similarity in results:
+            logging.info(f"Found related entity: {entity.name} with similarity score: {similarity:.4f}")
+            entities_with_scores.append((entity, similarity))
+        
+        # Return just the entity objects
+        return [entity for entity, similarity in entities_with_scores]
+    except Exception as e:
+        logging.error(f"Error in get_related_entities: {str(e)}")
+        import traceback
+        logging.error(traceback.format_exc())
+        return []
+
+# Add a version that finds entities by name too
+def get_entities_by_name(db: Session, query: str, story_id: int, search_descriptions: bool = False):
+    """
+    Get entities that match the given name query string, including aliases and optionally descriptions.
     
-    # Get semantically similar entities from the same story
-    query = text("""
-        SELECT name, canonical_description
-        FROM world_entities
-        WHERE 
-            story_id = :story_id
-            AND name != :name
-        ORDER BY embedding <-> (SELECT embedding FROM world_entities WHERE name = :name AND story_id = :story_id LIMIT 1)
-        LIMIT :limit
-    """)
+    Args:
+        db: Database session
+        query: Name string to search for
+        story_id: ID of the story to get entities for
+        search_descriptions: Whether to also search in entity descriptions
+        
+    Returns:
+        List of entities that match the query
+    """
+    try:
+        from sqlalchemy import or_
+        
+        # Build query conditions
+        conditions = [
+            WorldEntityModel.story_id == story_id,
+            or_(
+                WorldEntityModel.name.ilike(f"%{query}%"),
+                WorldEntityModel.aliases.any(lambda alias: alias.ilike(f"%{query}%"))
+            )
+        ]
+        
+        # Add description search if requested
+        if search_descriptions:
+            conditions.append(WorldEntityModel.canonical_description.ilike(f"%{query}%"))
+        
+        # Execute the query
+        entities = db.query(WorldEntityModel).filter(*conditions).all()
+            
+        log_source = "name, aliases, and descriptions" if search_descriptions else "name and aliases"
+        logging.info(f"Search for '{query}' in {log_source} found {len(entities)} entities")
+        return entities
+        
+    except Exception as e:
+        logging.error(f"Error searching entities by {log_source}: {str(e)}")
+        import traceback
+        logging.error(traceback.format_exc())
+        return []
+
+
+def save_entity(db: Session, entity_data: WorldEntityFromLLM, story_id: int, 
+               scene_uuid: Optional[str] = None) -> Optional[int]:
+    """
+    Save a new world entity to the database.
     
-    result = db.execute(query, {
-        "name": name, 
-        "story_id": story_id,
-        "limit": top_k
-    }).fetchall()
-    
-    return [{"name": r[0], "description": r[1]} for r in result]
+    Args:
+        db: Database session
+        entity_data: WorldEntityFromLLM object containing entity information
+        story_id: ID of the story this entity belongs to
+        scene_uuid: UUID of the scene where entity was discovered (optional)
+        
+    Returns:
+        ID of the saved entity if successful, None otherwise
+    """
+    try:
+        if not entity_data or not entity_data.name or not entity_data.description:
+            logging.warning("Cannot save entity with missing required fields")
+            return None
+
+        # Generate embedding for the entity description
+        embedding = get_embedding(entity_data.description)
+        
+        # Explicitly set the created_at timestamp to ensure it's not NULL
+        current_time = datetime.utcnow()
+        
+        # Process aliases
+        aliases = []
+        if hasattr(entity_data, 'aliases') and entity_data.aliases:
+            aliases = entity_data.aliases
+            logging.info(f"Entity '{entity_data.name}' has {len(aliases)} aliases: {aliases}")
+        else:
+            logging.info(f"Entity '{entity_data.name}' has no aliases")
+        
+        # Create new entity instance
+        db_entity = WorldEntityModel(
+            name=entity_data.name,
+            canonical_description=entity_data.description,
+            embedding=embedding,
+            discovered_in_scene=scene_uuid,
+            story_id=story_id,
+            created_at=current_time,
+            aliases=aliases
+        )
+
+        # Save to database
+        db.add(db_entity)
+        db.commit()
+        db.refresh(db_entity)
+        
+        logging.info(f"Saved new world entity: {entity_data.name} (ID: {db_entity.id}) at {current_time}")
+        return db_entity.id
+        
+    except Exception as e:
+        logging.error(f"Failed to save world entity: {str(e)}")
+        import traceback
+        logging.error(traceback.format_exc())
+        if db and db.is_active:
+            db.rollback()
+        return None

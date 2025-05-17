@@ -1,19 +1,15 @@
 import logging
 from typing import Optional, List, Dict, Any
-from datetime import datetime
 from sqlalchemy.orm import Session
 from app.services.llm import LLMService, ModelName
-from app.utils.embedding import get_embedding
 from app.utils.json_service import JSONService
-from app.models.world_entity import WorldEntity as WorldEntityModel
-from app.models.message import Message
 from app.models.scene import Scene
-from app.models.story import Story
-from app.crud.messages import get_messages_by_scene, get_messages_after_timestamp
+from app.models.world_entity import WorldEntity as WorldEntityModel
+from app.schemas.world_entity import WorldEntityFromLLM, WorldEntity
+from app.crud.messages import get_messages_after_timestamp
 from app.crud.stories import get_story_by_id
 from app.crud.scenes import get_scene_by_uuid
-from app.crud.world_entities import get_entity_names_by_story_id, get_related_entities
-from app.schemas.world_entity import WorldEntityFromLLM, WorldEntity
+from app.crud.world_entities import get_entity_names_by_story_id, get_related_entities, save_entity, get_entities_by_name
 
 class WorldEntityService:
     def __init__(self, llm_service: Optional[LLMService] = None, db_session: Optional[Session] = None, story_id: Optional[int] = None):
@@ -69,68 +65,163 @@ class WorldEntityService:
             logging.error(f"Error extracting entity names: {str(e)}")
             return []  # Return empty list on error rather than crashing
     
-    async def get_relevant_world_entities(self, scene: Scene, simplified_last_message: str, last_message_embedding: List[float]) -> List[WorldEntity]:
+    async def get_relevant_world_entities(self, scene: Scene, last_message: str, last_message_embedding: List[float]) -> List[WorldEntity]:
         """
         Get relevant world entities based on the last message and scene context.
         
-        Args:
-            scene: The current scene
-            simplified_last_message: A simplified version of the last message
-            last_message_embedding: Vector embedding of the last message
-            
-        Returns:
-            List of relevant WorldEntity objects
+        This function performs three types of searches:
+        1. Direct name matching: finds entities whose names or aliases match the extracted entity names
+        2. Description matching: finds entities whose descriptions contain the extracted entity names
+        3. Semantic similarity: finds entities whose embeddings are similar to the message embedding
         """
         if not self.db_session or not self.story:
             logging.warning("No DB session or story context available for entity retrieval")
             return []
             
         entities = []
+        logging.info(f"Getting relevant world entities for story ID: {self.story.id}")
         
-        # Step 1: Use the existing extract_entity_names function to extract entities from the message
-        entity_names = await self.extract_entity_names(simplified_last_message)
+        # Step 1: Extract entity names from the message
+        try:
+            entity_names = await self.extract_entity_names(last_message)
+            logging.info(f"Extracted entity names from message: {entity_names}")
+        except Exception as e:
+            logging.error(f"Error extracting entity names: {str(e)}")
+            entity_names = []
         
+        # Step 2a: Get entities by direct name match (name and aliases)
+        name_match_count = 0
         if entity_names:
-            # Query database for entities matching these names
             for name in entity_names:
-                name_query = (
-                    self.db_session.query(WorldEntityModel)
-                    .filter(WorldEntityModel.story_id == self.story.id)
-                    .filter(WorldEntityModel.name.ilike(f"%{name}%"))
-                )
-                
-                name_entities = name_query.all()
-                for entity in name_entities:
-                    # Convert DB model to schema and add to results if not already there
-                    entity_schema = WorldEntity.from_orm(entity)
-                    if entity_schema not in entities:
-                        entities.append(entity_schema)
+                try:
+                    logging.info(f"Searching for entity by name/alias match: {name}")
+                    name_entities = get_entities_by_name(
+                        db=self.db_session,
+                        query=name,
+                        story_id=self.story.id,
+                        search_descriptions=False  # Only search in names and aliases here
+                    )
+                    logging.info(f"Found {len(name_entities)} entities with name/alias matching '{name}'")
+                    
+                    for entity in name_entities:
+                        try:
+                            # Convert DB model to schema and add to results if not already there
+                            entity_schema = WorldEntity.model_validate(entity.__dict__)
+                            if entity_schema not in entities:
+                                entities.append(entity_schema)
+                                name_match_count += 1
+                                logging.info(f"Added entity by name/alias match: {entity.name}")
+                        except Exception as e:
+                            logging.error(f"Error converting entity to schema: {str(e)}")
+                            import traceback
+                            logging.error(traceback.format_exc())
+                except Exception as e:
+                    logging.error(f"Error processing entity name '{name}': {str(e)}")
         
-        # Step 2: Find semantically similar entities using vector search
+        logging.info(f"Found {name_match_count} entities by name/alias matching")
+        
+        # Step 2b: Get entities by description match - NEW FUNCTIONALITY
+        desc_match_count = 0
+        if entity_names:
+            for name in entity_names:
+                try:
+                    logging.info(f"Searching for entity by description match: {name}")
+                    desc_entities = get_entities_by_name(
+                        db=self.db_session,
+                        query=name,
+                        story_id=self.story.id,
+                        search_descriptions=True  # Search in descriptions
+                    )
+                    
+                    # Filter to only include entities where the match is in the description
+                    # (since this query might return entities that matched by name/alias as well)
+                    description_matched_entities = []
+                    for entity in desc_entities:
+                        # Skip entities with name/alias matches (already processed)
+                        if entity.name.lower().find(name.lower()) >= 0:
+                            continue
+                            
+                        # Check if any alias contains the name
+                        alias_match = False
+                        if entity.aliases:
+                            for alias in entity.aliases:
+                                if alias.lower().find(name.lower()) >= 0:
+                                    alias_match = True
+                                    break
+                        
+                        if alias_match:
+                            continue
+                            
+                        # If we get here, the entity matched by description
+                        if entity.canonical_description.lower().find(name.lower()) >= 0:
+                            description_matched_entities.append(entity)
+                    
+                    logging.info(f"Found {len(description_matched_entities)} entities with description containing '{name}'")
+                    
+                    for entity in description_matched_entities:
+                        try:
+                            # Convert DB model to schema and add to results if not already there
+                            entity_schema = WorldEntity.model_validate(entity.__dict__)
+                            if entity_schema not in entities:
+                                entities.append(entity_schema)
+                                desc_match_count += 1
+                                logging.info(f"Added entity by description match: {entity.name} (description contains '{name}')")
+                        except Exception as e:
+                            logging.error(f"Error converting description-matched entity to schema: {str(e)}")
+                            import traceback
+                            logging.error(traceback.format_exc())
+                except Exception as e:
+                    logging.error(f"Error processing description search for '{name}': {str(e)}")
+        
+        logging.info(f"Found {desc_match_count} additional entities by description matching")
+        
+        # Step 3: Find semantically similar entities using the CRUD function (vector search)
+        vector_match_count = 0
         if last_message_embedding:
-            embedding_vector = str(last_message_embedding)
-            from sqlalchemy import text
-            
-            max_results = 5
-            
-            # Vector similarity search using pgvector's built-in <=> operator
-            # This is the cosine distance operator (smaller value = more similar)
-            vector_query = (
-                self.db_session.query(WorldEntityModel)
-                .filter(WorldEntityModel.story_id == self.story.id)
-                .filter(WorldEntityModel.embedding.is_not(None))
-                .order_by(
-                    text("embedding <=> :embedding")
+            try:
+                logging.info(f"Searching for semantically similar entities with threshold 0.3")
+                vector_entities = get_related_entities(
+                    db=self.db_session,
+                    query_embedding=last_message_embedding,
+                    story_id=self.story.id,
+                    top_n=5,
+                    similarity_threshold=0.3
                 )
-                .params(embedding=embedding_vector)
-                .limit(max_results)
-            )
-            
-            vector_entities = vector_query.all()
-            for entity in vector_entities:
-                entity_schema = WorldEntity.from_orm(entity)
-                if entity_schema not in entities:
-                    entities.append(entity_schema)
+                logging.info(f"Found {len(vector_entities)} semantically similar entities")
+                
+                for entity in vector_entities:
+                    try:
+                        # Convert DB model to schema safely
+                        entity_dict = {c.name: getattr(entity, c.name) 
+                                    for c in entity.__table__.columns}
+                        
+                        # Handle embedding conversion if needed
+                        if 'embedding' in entity_dict and entity_dict['embedding'] is not None:
+                            if hasattr(entity_dict['embedding'], 'tolist'):
+                                entity_dict['embedding'] = entity_dict['embedding'].tolist()
+                        
+                        entity_schema = WorldEntity(**entity_dict)
+                        
+                        if entity_schema not in entities:
+                            entities.append(entity_schema)
+                            vector_match_count += 1
+                            logging.info(f"Added entity by vector similarity: {entity.name}")
+                    except Exception as e:
+                        logging.error(f"Error converting vector entity to schema: {str(e)}")
+                        import traceback
+                        logging.error(traceback.format_exc())
+            except Exception as e:
+                logging.error(f"Error retrieving vector entities: {str(e)}")
+                import traceback
+                logging.error(traceback.format_exc())
+        else:
+            logging.warning("No embedding provided for vector search")
+        
+        # Final summary logging
+        logging.info(f"Found {name_match_count} entities by name matching")
+        logging.info(f"Found {desc_match_count} entities by description matching")
+        logging.info(f"Found {vector_match_count} entities by vector similarity")
+        logging.info(f"Returning total of {len(entities)} relevant world entities")
         
         return entities
 
@@ -144,12 +235,13 @@ class WorldEntityService:
     async def describe_entity(self, entity_name: str, scene_text: str, related_entities: List[Dict]) -> Optional[Dict[str, Any]]:
         """
         Generate a canonical description for a single world entity using scene and world context.
+        Includes generation of 0-5 aliases for the entity.
         """
         if not self.story:
             logging.warning("No story context available for entity description")
             return None
 
-        related_str = "\n".join([f"{e['name']}: {e['description']}" for e in related_entities])
+        related_str = "\n".om([f"{e['name']}: {e['description']}" for e in related_entities])
 
         system_prompt = f"""
         > You are building a glossary entry for the term "{entity_name}" in a fictional game world.
@@ -178,11 +270,18 @@ class WorldEntityService:
         - You are co-authoring the world with the user, so feel free to add your own creative flair.
         - Keep the style of the description consistent with the world and its lore.
         - Make the format encyclopedic, as if it were a Wikipedia entry - but brief and to the point.
-
+        > Task 2:
+        - Generate a list of 0-10 aliases for the term "{entity_name}".
+        - These should be alternate names or terms that refer to the same entity.
+        - Only include aliases that would naturally be used in the world
+        - These could be shortened forms, slang terms, or formal/informal variations
+        - Don't force aliases if none are appropriate
+        
         > Output format:
         {{
             "name": "{entity_name}",
-            "description": "Your generated description here."
+            "description": "Your generated description here.",
+            "aliases": ["alias1", "alias2", "..."]
         }}
         """
 
@@ -190,15 +289,30 @@ class WorldEntityService:
             self.llm_service.create_message("system", system_prompt)
         ]
 
-        response = await self.llm_service.generate_completion(
-            messages=messages,
-            model=ModelName.GEMINI_2_FLASH_LITE,
-            temperature=0.4,
-            stream=False
-        )
+        try:
+            response = await self.llm_service.generate_completion(
+                messages=messages,
+                model=ModelName.GEMINI_2_FLASH_LITE,
+                temperature=0.4,
+                stream=False
+            )
 
-        content = await self.llm_service.extract_content(response)
-        return JSONService.parse_and_validate_json_response(content, WorldEntityFromLLM)
+            content = await self.llm_service.extract_content(response)
+            logging.info(f"Entity description generated for '{entity_name}': {content[:100]}...")
+            
+            # Parse the response
+            entity_data = JSONService.parse_and_validate_json_response(content, WorldEntityFromLLM)
+            
+            if entity_data and not hasattr(entity_data, 'aliases'):
+                # Handle the case where LLM didn't include aliases in the response
+                entity_data.aliases = []
+            
+            return entity_data
+        except Exception as e:
+            logging.error(f"Error generating entity description: {str(e)}")
+            import traceback
+            logging.error(traceback.format_exc())
+            return None
 
     def save_entity_to_db(self, entity: WorldEntityFromLLM, scene: Optional[Scene] = None) -> Optional[int]:
         """
@@ -207,7 +321,7 @@ class WorldEntityService:
         Args:
             entity: Dictionary with 'name' and 'description' keys
             scene: Scene object the entity was discovered in (optional)
-            
+                
         Returns:
             Entity ID if saved successfully, None otherwise
         """
@@ -220,34 +334,21 @@ class WorldEntityService:
             if not story_id:
                 logging.error("No story ID available, cannot save entity.")
                 return None
-                
-            embedding = get_embedding(entity.description)
-            
+                    
             # Convert scene.id to scene.uuid for discovered_in_scene field
             scene_uuid = scene.uuid if scene else None
 
-            # Explicitly set the created_at timestamp to ensure it's not NULL
-            current_time = datetime.utcnow()
-
-            db_entity = WorldEntityModel(
-                name=entity.name,
-                canonical_description=entity.description,
-                embedding=embedding,
-                discovered_in_scene=scene_uuid,
+            # Use the CRUD function to save the entity
+            return save_entity(
+                db=self.db_session,
+                entity_data=entity,
                 story_id=story_id,
-                created_at=current_time,
+                scene_uuid=scene_uuid
             )
 
-            self.db_session.add(db_entity)
-            self.db_session.commit()
-            logging.info(f"Saved new world entity: {entity.name} at {current_time}")
-            return db_entity.id
-
         except Exception as e:
-            logging.error(f"Failed to save world entity: {str(e)}")
-            if self.db_session and self.db_session.is_active:
-                self.db_session.rollback()
-            raise
+            logging.error(f"Failed to save world entity in service: {str(e)}")
+            return None
     
     async def process_new_scene_entities(self, scene_uuid: str) -> List[int]:
         """

@@ -20,13 +20,13 @@ def get_embedding(text: str, model: str = "text-embedding-3-small") -> list[floa
     return response.data[0].embedding
 
 
-async def simplify_text_for_embedding(text: str, llm_service: Optional[LLMService] = None) -> str:
+async def optimize_text_for_embedding(text: str, llm_service: Optional[LLMService] = None) -> str:
     """
     Use LLM to extract key words/phrases that best represent the core meaning of text.
     This optimizes text for embedding by focusing on the most semantically relevant content.
     
     Args:
-        text: The original text to simplify
+        text: The original text to optimize
         llm_service: LLMService instance (if None, a new one will be created)
         
     Returns:
@@ -43,8 +43,7 @@ async def simplify_text_for_embedding(text: str, llm_service: Optional[LLMServic
     
     # Create the system prompt
     system_prompt = """
-    Extract the key terms, entities, and concepts from the provided text.
-    Focus on nouns, proper names, uncommon adjectives, and domain-specific terminology.
+    Optimize the following text for semantic embedding to maximize retrieval accuracy and meaning preservation in a vector database.
     Format your response as a comma-separated list of terms.
     Do NOT include explanations or descriptions - only output the key terms themselves.
     Aim to preserve the core semantic meaning that would be most relevant for vector search.

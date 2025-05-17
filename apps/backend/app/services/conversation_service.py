@@ -9,7 +9,7 @@ from app.models.scene import Scene
 from app.services.world_entity_service import WorldEntityService
 from app.services.memory_manager import MemoryManager
 from datetime import datetime
-from app.utils.embedding import simplify_text_for_embedding, get_embedding
+from app.utils.embedding import optimize_text_for_embedding, get_embedding
 import uuid
 import logging
 
@@ -117,24 +117,78 @@ class ConversationService:
         """Build a system prompt for the character"""
         # Get location information
         story = scene.story
+        logger.info(f"Building character prompt for {character.name} in scene {scene.uuid}")
 
         player_character = next((char for char in scene.characters if char.role == "player"), None)
         player_name = player_character.name if player_character else "unknown player"
+        logger.info(f"Player character identified as: {player_name}")
 
-        simplified_last_message = await simplify_text_for_embedding(scene.messages[-1].content)
-        logging.info(f"Simplified last message: {simplified_last_message}")
+        simplified_last_message = await optimize_text_for_embedding(scene.messages[-1].content)
+        logger.info(f"Simplified last message: {simplified_last_message[:100]}...")
         last_message = scene.messages[-1].content
         last_message_embedding = get_embedding(simplified_last_message)
+        logger.info(f"Generated embedding of length: {len(last_message_embedding) if last_message_embedding else 'None'}")
 
         # Get character memories
+        logger.info(f"Retrieving memories for character ID: {character.id}")
         memory_manager = MemoryManager(db_session=db)
-        memories = await memory_manager.find_similar_memories(character_id=character.id, query=last_message, top_n=5)
+        memories = await memory_manager.find_similar_memories(
+            character_id=character.id, 
+            query=last_message, 
+            top_n=5,
+            similarity_threshold=0.3
+        )
+        logger.info(f"Retrieved {len(memories)} relevant memories for character {character.name}")
 
-        location_info = f"You are currently at {scene.location.name}. {scene.location.description}" if scene.location else ""
-        # Get relevant world entities
+        # Get relevant world entities with detailed logging
+        logger.info(f"Retrieving world entities for story ID: {scene.story_id}")
         world_entity_service = WorldEntityService(db_session=db, story_id=scene.story_id)
-        world_entities = await world_entity_service.get_relevant_world_entities(scene, simplified_last_message, last_message_embedding)
+        
+        try:
+            logger.info(f"Calling get_relevant_world_entities with message length {len(simplified_last_message)} and embedding length {len(last_message_embedding) if last_message_embedding else 'None'}")
+            world_entities = await world_entity_service.get_relevant_world_entities(
+                scene, 
+                simplified_last_message, 
+                last_message_embedding
+            )
+            
+            # Log details about the retrieved entities
+            logger.info(f"Retrieved {len(world_entities) if world_entities else 0} world entities")
+            for i, entity in enumerate(world_entities if world_entities else []):
+                logger.info(f"Entity {i+1}: {entity.name} - {entity.canonical_description[:50]}...")
+        except Exception as e:
+            logger.error(f"Error retrieving world entities: {str(e)}")
+            import traceback
+            logger.error(traceback.format_exc())
+            world_entities = []
 
+        # Log location info
+        location_info = f"You are currently at {scene.location.name}. {scene.location.description}" if scene.location else ""
+        logger.info(f"Location info: {location_info[:100]}..." if location_info else "No location info")
+
+        # Prepare world entities section with error handling
+        try:
+            if world_entities and len(world_entities) > 0:
+                entities_text = chr(10).join([f"- {entity.name}: {entity.canonical_description}" for entity in world_entities])
+                logger.info(f"Including {len(world_entities)} world entities in prompt")
+            else:
+                entities_text = "None"
+                logger.info("No world entities to include in prompt")
+        except Exception as e:
+            logger.error(f"Error formatting world entities: {str(e)}")
+            entities_text = "None"
+
+        # Prepare memories section with error handling
+        try:
+            if memories and len(memories) > 0:
+                memories_text = chr(10).join([f"- {memory.memory_text}" for memory in memories])
+                logger.info(f"Including {len(memories)} memories in prompt")
+            else:
+                memories_text = "None"
+                logger.info("No memories to include in prompt")
+        except Exception as e:
+            logger.error(f"Error formatting memories: {str(e)}")
+            memories_text = "None"
 
         character_prompt = f"""
         You are not a language model. You are a fully realized character in a fictional story titled "{story.title}".
@@ -160,13 +214,13 @@ class ConversationService:
         You are currently speaking with the player character named {player_name}. Speak and act according to your personality, goals, and knowledge. Do **not** narrate or explain your behavior unless it is in-character to do so.
 
         Memories of past interactions (which you remember as real experiences):
-        {chr(10).join([f"- {memory.memory_text}" for memory in memories])}
+        {memories_text}
         
         Your current location:
         {location_info}
 
         Relevant world entities and lore:
-        {chr(10).join([f"- {entity.name}: {entity.canonical_description}" for entity in world_entities])}
+        {entities_text}
 
         Strict Rules:
         - Stay completely in character. Never refer to being an AI, LLM, or model.
@@ -178,9 +232,9 @@ class ConversationService:
         - Avoid finishing senteces with questions.
         """
 
-        # Combine character prompt with location information
-        logging.info(f"Character prompt for {character.name}: {character_prompt}")
-        return character_prompt
+        # Log the final prompt length (not entire content for privacy/size reasons)
+        logger.info(f"Character prompt for {character.name} generated with {len(character_prompt)} characters")
+        return character_prompt  
     
     async def save_message(self, db: Session, scene_id: Any, 
                          character_id: Any, content: str, role: Literal["user", "assistant", "system"]) -> Dict[str, Any]:
