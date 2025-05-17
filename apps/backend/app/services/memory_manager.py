@@ -169,8 +169,11 @@ class MemoryManager:
             return None
 
     
-    async def find_similar_memories(self, character_id: int, query: str, top_n: int = 3) -> List[CharacterMemoryModel]:
-        """Get similar memories for a character"""
+    async def find_similar_memories(self, character_id: int, query: str, top_n: int = 3, 
+                                similarity_threshold: float = 0.2) -> List[CharacterMemoryModel]:
+        """
+        Get similar memories for a character that meet minimum similarity threshold.
+        """
         try:
             logging.info(f"Finding similar memories for character {character_id}, query: '{query[:50]}...'")
             
@@ -189,30 +192,31 @@ class MemoryManager:
             
             logging.info(f"Generated embedding of length {len(query_embedding)}")
             
-            memories = get_similar_memories(self.db_session, character_id, query_embedding, top_n)
+            # Get memories that already meet the threshold from the database
+            memories = get_similar_memories(
+                self.db_session, 
+                character_id, 
+                query_embedding, 
+                top_n,
+                similarity_threshold
+            )
+            
             if not memories:
-                logging.info(f"No similar memories found for character {character_id}")
+                logging.info(f"No similar memories found for character {character_id} above threshold {similarity_threshold}")
                 return []
             
-            logging.info(f"Found {len(memories)} similar memories")
+            logging.info(f"Found {len(memories)} similar memories with similarity >= {similarity_threshold}")
             
-            # Convert query embedding to numpy array for similarity calculation
+            # For debugging/logging purposes, calculate and log similarity for each memory
             query_embedding_np = np.array(query_embedding).reshape(1, -1)
-            
-            # Calculate and log similarity for each memory
             for memory in memories:
                 if hasattr(memory, 'embedding'):
-                    # Convert memory embedding to numpy array
                     memory_embedding_np = np.array(memory.embedding).reshape(1, -1)
-                    
-                    # Calculate cosine similarity
                     similarity = cosine_similarity(query_embedding_np, memory_embedding_np)[0][0]
-                    
                     logging.info(f"Memory ID: {memory.uuid}, Similarity: {similarity:.4f}, Text: '{memory.memory_text[:50]}...'")
-                else:
-                    logging.warning(f"Memory {memory.uuid} has no embedding")
-
+            
             return memories
+            
         except Exception as e:
             logging.error(f"Error finding similar memories: {str(e)}")
             traceback.print_exc()

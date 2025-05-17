@@ -28,11 +28,34 @@ def get_memory(db: Session, memory_uuid: str):
         raise HTTPException(status_code=404, detail="Memory not found")
     return memory
 
-def get_similar_memories(db: Session, character_id: int, query_embedding: list[float], top_n: int = 3):
+def get_similar_memories(db: Session, character_id: int, query_embedding: list[float], 
+                        top_n: int = 3, similarity_threshold: float = 0.3):
+    """
+    Get similar memories for a character that exceed a minimum similarity threshold.
+    
+    Args:
+        db: Database session
+        character_id: ID of the character
+        query_embedding: Vector embedding of the query
+        top_n: Maximum number of memories to return
+        similarity_threshold: Minimum similarity score (0-1) for a memory to be included
+    
+    Returns:
+        List of memories that meet the threshold, ordered by similarity (highest first)
+    """
+    # For Postgres with pgvector, we can calculate cosine similarity directly
+    # 1 - (a <=> b) gives us cosine similarity where higher values = more similar
     stmt = (
-        select(CharacterMemory)
+        select(CharacterMemory, (1 - CharacterMemory.embedding.cosine_distance(query_embedding)).label("similarity"))
         .where(CharacterMemory.character_id == character_id)
-        .order_by(CharacterMemory.embedding.l2_distance(query_embedding))
+        # Filter by similarity threshold
+        .where((1 - CharacterMemory.embedding.cosine_distance(query_embedding)) >= similarity_threshold)
+        # Order by similarity (highest first)
+        .order_by((1 - CharacterMemory.embedding.cosine_distance(query_embedding)).desc())
         .limit(top_n)
     )
-    return db.execute(stmt).scalars().all()
+    
+    results = db.execute(stmt).all()
+    
+    # Return just the memory objects
+    return [memory for memory, similarity in results]

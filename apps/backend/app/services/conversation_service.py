@@ -128,7 +128,7 @@ class ConversationService:
 
         # Get character memories
         memory_manager = MemoryManager(db_session=db)
-        memories = await memory_manager.find_similar_memories(character_id=character.id, query=last_message)
+        memories = await memory_manager.find_similar_memories(character_id=character.id, query=last_message, top_n=5)
 
         location_info = f"You are currently at {scene.location.name}. {scene.location.description}" if scene.location else ""
         # Get relevant world entities
@@ -174,6 +174,8 @@ class ConversationService:
         - Do not break the fourth wall.
         - Do not provide options, summaries, or meta-commentary unless it's something your character would naturally do.
         - Respond as if this world is real to you. Stay grounded in the current situation and your personality.
+        - Do not make your part too long. Keep it really concise to maintain a quick back-and-forth with the player.
+        - Avoid finishing senteces with questions.
         """
 
         # Combine character prompt with location information
