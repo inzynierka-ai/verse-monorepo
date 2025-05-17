@@ -9,6 +9,7 @@ import { useConversation } from '@/common/hooks/useConversation';
 import { useMessages } from '@/common/hooks/useMessages';
 
 import styles from './ChatView.module.scss';
+import { useQueryClient } from '@tanstack/react-query';
 
 const Chat = () => {
   const { storyId, sceneId, characterId } = useParams({
@@ -19,6 +20,7 @@ const Chat = () => {
   const { data: scene, isLoading: isLoadingScene, error } = useLatestScene(storyId);
   const [message, setMessage] = useState('');
   const createWorldEntities = useCreateWorldEntities();
+  const queryClient = useQueryClient();
 
   // Setup scene and real-time messaging with WebSocket
   const { sendMessage, isConnected: wsConnected } = useConversation({
@@ -46,6 +48,7 @@ const Chat = () => {
       { sceneUuid: sceneId },
       {
         onSettled: () => {
+          queryClient.invalidateQueries({ queryKey: ['latest-scene', storyId] });
           navigate({
             to: '/play/$storyId/scenes/$sceneId',
             params: { storyId, sceneId },
@@ -136,6 +139,7 @@ const Chat = () => {
         <div className={styles.inputContainer}>
           <form onSubmit={handleSendMessage} className={styles.inputWrapper}>
             <Input
+              autoFocus
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               placeholder="What would you like to say..."

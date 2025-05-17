@@ -41,7 +41,7 @@ const GameView = () => {
 
   useEffect(() => {
     // Navigate when a scene is loaded and conditions are appropriate
-    if (currentScene) {
+    if (currentScene && !generationStarted && !needsGeneration) {
       if (storyId && currentScene.uuid) {
         navigate({
           to: '/play/$storyId/scenes/$sceneId',
@@ -52,7 +52,7 @@ const GameView = () => {
         console.error('Missing storyId or scene UUID for navigation', { storyId, sceneUuid: currentScene?.uuid });
       }
     }
-  }, [currentScene, storyId, navigate]);
+  }, [currentScene, storyId, navigate, generationStarted, needsGeneration]);
 
   if (isLoading) {
     return (
