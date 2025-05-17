@@ -240,6 +240,7 @@ class ConversationService:
 
         # Log the final prompt length (not entire content for privacy/size reasons)
         logger.info(f"Character prompt for {character.name} generated with {len(character_prompt)} characters")
+        logger.info(f"Character prompt: {character_prompt}")  # Log only the first 100 characters for brevity
         return character_prompt  
     
     async def save_message(self, db: Session, scene_id: Any, 
