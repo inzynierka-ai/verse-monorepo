@@ -79,6 +79,30 @@ def get_related_entities(db: Session, query_embedding: List[float], story_id: in
         import traceback
         logging.error(traceback.format_exc())
         return []
+    
+def get_related_entities_by_name(db: Session, entity_name: str, story_id: int, 
+                              top_n: int = 5, similarity_threshold: float = 0.3):
+    """
+    Get related world entities based on a name string.
+    Generates an embedding from the name and uses that for similarity search.
+    """
+    try:
+        # Generate embedding from the entity name
+        query_embedding = get_embedding(entity_name)
+        if not query_embedding:
+            logging.error(f"Failed to generate embedding for entity name: {entity_name}")
+            return []
+            
+        logging.info(f"Generated embedding for '{entity_name}' with length {len(query_embedding)}")
+        
+        # Use the existing function with the generated embedding
+        return get_related_entities(db, query_embedding, story_id, top_n, similarity_threshold)
+        
+    except Exception as e:
+        logging.error(f"Error in get_related_entities_by_name: {str(e)}")
+        import traceback
+        logging.error(traceback.format_exc())
+        return []
 
 # Add a version that finds entities by name too
 def get_entities_by_name(db: Session, query: str, story_id: int, search_descriptions: bool = False):

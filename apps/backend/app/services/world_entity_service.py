@@ -9,7 +9,7 @@ from app.schemas.world_entity import WorldEntityFromLLM, WorldEntity
 from app.crud.messages import get_messages_after_timestamp
 from app.crud.stories import get_story_by_id
 from app.crud.scenes import get_scene_by_uuid
-from app.crud.world_entities import get_entity_names_by_story_id, get_related_entities, save_entity, get_entities_by_name
+from app.crud.world_entities import get_entity_names_by_story_id, get_related_entities, save_entity, get_related_entities_by_name, get_entities_by_name
 
 class WorldEntityService:
     def __init__(self, llm_service: Optional[LLMService] = None, db_session: Optional[Session] = None, story_id: Optional[int] = None):
@@ -241,7 +241,7 @@ class WorldEntityService:
             logging.warning("No story context available for entity description")
             return None
 
-        related_str = "\n".om([f"{e['name']}: {e['description']}" for e in related_entities])
+        related_str = "\n".join([f"{e['name']}: {e['description']}" for e in related_entities])
 
         system_prompt = f"""
         > You are building a glossary entry for the term "{entity_name}" in a fictional game world.
@@ -418,12 +418,33 @@ class WorldEntityService:
 
         saved_ids = []
         for name in new_names:
-            related = get_related_entities(self.db_session, name, self.story.id)
-            description_data = await self.describe_entity(name, conversation_text, related)
+            try:
+                # Use the new function that takes a name string instead of embedding
+                related = get_related_entities_by_name(self.db_session, name, self.story.id)
+                logging.info(f"Found {len(related)} related entities for '{name}'")
+                
+                # Convert to the format expected by describe_entity
+                related_formatted = []
+                for entity in related:
+                    related_formatted.append({
+                        "name": entity.name,
+                        "description": entity.canonical_description
+                    })
+                
+                description_data = await self.describe_entity(name, conversation_text, related_formatted)
 
-            if description_data:
-                entity_id = self.save_entity_to_db(description_data, scene=scene)
-                if entity_id:
-                    saved_ids.append(entity_id)
-
+                if description_data:
+                    entity_id = self.save_entity_to_db(description_data, scene=scene)
+                    if entity_id:
+                        saved_ids.append(entity_id)
+                        logging.info(f"Successfully saved entity '{name}' with ID {entity_id}")
+                    else:
+                        logging.warning(f"Failed to save entity '{name}'")
+                else:
+                    logging.warning(f"No description data generated for entity '{name}'")
+            except Exception as e:
+                logging.error(f"Error processing entity '{name}': {str(e)}")
+                import traceback
+                logging.error(traceback.format_exc())
+                
         return saved_ids
