@@ -1,18 +1,29 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Optional
+from app.schemas.character import PlayerCharacterRead
+
 
 class StoryBase(BaseModel):
     user_id: int
     title: str
     description: str
+    brief_description: Optional[str] = None
     rules: Optional[str] = None
     uuid: str
 
-class StoryCreate(StoryBase):
-    pass
 
-class Story(StoryBase):
+class StoryCreate(BaseModel):
+    title: str
+    description: Optional[str] = None
+    brief_description: Optional[str] = None
+    rules: Optional[str] = None
+
+
+class StoryRead(StoryBase):
     id: int
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
+
+
+class StoryWithPlayerCharacterRead(StoryRead):
+    player_character: Optional[PlayerCharacterRead] = None

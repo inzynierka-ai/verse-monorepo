@@ -1,6 +1,6 @@
 ---
 description: check if creating a TS files or react components
-globs: *tsx, *ts
+globs: *.ts,*.tsx
 alwaysApply: false
 ---
 - import files using @ as an alias for src/ if at least 2 levels jump are needed

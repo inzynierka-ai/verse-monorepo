@@ -1,15 +1,12 @@
 export interface Character {
-  id: string;
-  name: string;
-  avatar: string;
-  relationshipLevel: number;
-  threadId: string;
-  description: string;
-}
-
-export interface Location {
-  id: string;
+  uuid: string;
   name: string;
   description: string;
-  background: string;
+  briefDescription: string;
+  image_dir: string;
+  role: 'player' | 'npc';
+  personalityTraits?: string[];
+  backstory: string;
+  goals: string[];
+  relationshipLevel?: number;
 }

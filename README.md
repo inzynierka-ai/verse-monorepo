@@ -1,6 +1,6 @@
-# Verse - Monorepo Project
+# Verse - Interactive Storytelling Platform
 
-This is a monorepo containing both the frontend and backend services for the Verse application.
+Verse is an AI-powered interactive storytelling platform that creates immersive narrative experiences with dynamic characters and branching storylines. The platform combines natural language processing with image generation to deliver personalized adventures that respond to player choices.
 
 ## Project Structure
 
@@ -91,4 +91,4 @@ docker-compose up -d
 ## Troubleshooting
 
 - If you encounter port conflicts, ensure ports 5173, 8000, and 5432 are not in use by other applications.
-- Check logs for specific errors: `docker-compose logs [service_name]` 
+- Check logs for specific errors: `docker-compose logs [service_name]`

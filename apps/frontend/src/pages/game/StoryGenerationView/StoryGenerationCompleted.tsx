@@ -1,0 +1,109 @@
+import { useNavigate } from '@tanstack/react-router';
+import styles from './StoryGenerationView.module.scss';
+import Button from '@/common/components/Button';
+
+import { Character } from '@/types/character.types';
+
+import { Story } from '@/types/story.types';
+
+interface StoryGenerationCompletedProps {
+  story?: Story;
+  character?: Character;
+  onReset: () => void;
+}
+
+const StoryGenerationCompleted = ({ story, character, onReset }: StoryGenerationCompletedProps) => {
+  const navigate = useNavigate();
+
+  const handleExploreStories = () => {
+    navigate({ to: '/stories' });
+  };
+
+  const handleBeginAdventure = async () => {
+    if (!story) return;
+    navigate({ to: `/play/${story.uuid}`, replace: true });
+  };
+
+  console.log('Story:', story);
+  console.log('Character:', character);
+
+  return (
+    <div className={styles.content}>
+      <h1 className={styles.title}>Your Story Awaits</h1>
+
+      {story && (
+        <div className={styles.section}>
+          <h2 className={styles.sectionTitle}>Story</h2>
+
+          {/* Display brief description first */}
+          <h3>Summary</h3>
+          <p className={styles.storyBriefDescription}>{story.brief_description}</p>
+
+          {story.rules.length > 0 && (
+            <>
+              <h3>Story Rules</h3>
+              <ul className={styles.storyRules}>
+                {story.rules.map((rule, index) => (
+                  <li key={index}>{rule}</li>
+                ))}
+              </ul>
+            </>
+          )}
+        </div>
+      )}
+
+      {character && (
+        <div className={styles.section}>
+          <h2 className={styles.sectionTitle}>{character.name}</h2>
+          <div className={styles.characterInfo}>
+            <div className={styles.characterImageContainer}>
+              <img src={character.image_dir} alt={`${character.name}`} className={styles.characterImage} />
+            </div>
+
+            {/* Krótki opis zamiast pełnego */}
+            <div>
+              <h3>Summary</h3>
+              <p className={styles.characterBriefDescription}>{character.briefDescription}</p>
+            </div>
+
+            <div>
+              <h3>Personality Traits</h3>
+              <div>
+                {character.personalityTraits?.map((trait, index) => (
+                  <span key={index} className={styles.trait}>
+                    {trait}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <h3>Backstory</h3>
+              <p>{character.backstory}</p>
+            </div>
+
+            {character.goals.length > 0 && (
+              <div>
+                <h3>Goals</h3>
+                <ul>
+                  {character.goals.map((goal, index) => (
+                    <li key={index}>{goal}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      <div className={styles.buttonContainer}>
+        <Button onClick={onReset} variant="secondary">
+          Create Another Story
+        </Button>
+        <Button onClick={handleBeginAdventure}>Begin adventure</Button>
+      </div>
+    </div>
+  );
+};
+
+export default StoryGenerationCompleted;

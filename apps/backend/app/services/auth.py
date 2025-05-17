@@ -13,7 +13,7 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 1440  # Changed from 30 to 1440 (24 hours)
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/token")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/token")
 
 def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
@@ -78,16 +78,8 @@ class ResourcePermission:
         current_user: User = Depends(get_current_user)
     ):
         # Get the appropriate model based on resource type
-        if self.resource_type == "chapter":
-            from app.models.chapter import Chapter
-            resource = db.query(Chapter).filter(Chapter.id == resource_id).first()
-            if not resource:
-                raise HTTPException(status_code=404, detail=f"Chapter not found")
-                
-            # Get the associated story to check ownership
-            story = resource.story
         
-        elif self.resource_type == "scene":
+        if self.resource_type == "scene":
             from app.models.scene import Scene
             
             # Query scene with all relationships loaded for SceneDetail

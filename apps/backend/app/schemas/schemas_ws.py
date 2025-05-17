@@ -1,62 +1,89 @@
 from typing import Literal, Dict, Any, Optional, Union
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+
+# Player Character model
+class PlayerCharacter(BaseModel):
+    name: str = Field(..., description="Name of the player character")
+    age: int = Field(..., description="Age of the player character")
+    appearance: str = Field(..., description="Physical appearance description")
+    background: str = Field(..., description="Background story or history")
+
+# Story Settings model
+class StoryInfo(BaseModel):
+    theme: str = Field(..., description="Primary theme of the story")
+    genre: str = Field(..., description="Genre of the setting (fantasy, sci-fi, etc.)")
+    year: int = Field(..., description="Year or time period")
+    setting: str = Field(..., description="General setting description")
+
+# Input model for story generation
+class StoryGenerationInput(BaseModel):
+    story: StoryInfo
+    playerCharacter: Optional[PlayerCharacter] = None
 
 # Client messages
-class WorldGenerationRequest(BaseModel):
-    type: Literal["generate_world"]
-    description: str
-    settings: Optional[Dict[str, Any]] = None
+class StoryGenerationRequest(BaseModel):
+    type: Literal["generate_story"]
+    story: StoryInfo
+    playerCharacter: Optional[PlayerCharacter] = None
 
-# Server messages
-class StepUpdate(BaseModel):
-    type: Literal["step_update"]
+# Base message class
+class WebSocketMessage(BaseModel):
+    type: str
+
+# Step update messages
+class StepUpdate(WebSocketMessage):
     step: str
     message: str
     progress: float  # 0-1
     data: Optional[Dict[str, Any]] = None
 
-class WorldTemplateComplete(BaseModel):
-    type: Literal["world_template_complete"] 
+# Completion messages
+class StoryTemplateComplete(WebSocketMessage):
     data: Dict[str, Any]
 
-class CharactersComplete(BaseModel):
-    type: Literal["characters_complete"]
+
+class CharactersComplete(WebSocketMessage):
     data: Dict[str, Any]
 
-class LocationsComplete(BaseModel):
-    type: Literal["locations_complete"] 
+class LocationsComplete(WebSocketMessage):
     data: Dict[str, Any]
 
-class ConflictComplete(BaseModel):
-    type: Literal["conflict_complete"]
+class ConflictComplete(WebSocketMessage):
     data: Dict[str, Any]
 
-class WorldComplete(BaseModel):
-    type: Literal["world_complete"]
+class PossibleEndingsComplete(WebSocketMessage):
     data: Dict[str, Any]
 
-class NarrationUpdate(BaseModel):
-    type: Literal["narration_update"]
+class StoryComplete(WebSocketMessage):
+    data: Dict[str, Any]
+
+# Image prompt update
+class ImagePromptUpdate(WebSocketMessage):
+    entity_type: Literal["character", "location"]
+    entity_id: str
+    prompt: str
+
+# Narration updates
+class NarrationUpdate(WebSocketMessage):
     step: str
     content: str
 
-class NarrationComplete(BaseModel):
-    type: Literal["narration_complete"]
+class NarrationComplete(WebSocketMessage):
     data: Dict[str, Any]
 
-class ErrorMessage(BaseModel):
-    type: Literal["error"]
+# Error messages
+class ErrorMessage(WebSocketMessage):
     message: str
     details: Optional[str] = None
 
 # Union type for all possible server messages
 ServerMessage = Union[
     StepUpdate, 
-    WorldTemplateComplete,
+    StoryTemplateComplete,
     CharactersComplete,
     LocationsComplete,
     ConflictComplete,
-    WorldComplete,
+    StoryComplete,
     NarrationUpdate,
     NarrationComplete,
     ErrorMessage

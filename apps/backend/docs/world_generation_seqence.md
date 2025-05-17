@@ -1,23 +1,23 @@
 sequenceDiagram
     participant Client
     participant API as WebSocket API
-    participant Coordinator as WorldGenerationCoordinator
-    participant Wizard as WorldWizard
+    participant Coordinator as StoryGenerationCoordinator
+    participant Wizard as StoryWizard
     participant CharGen as Character Generator
     participant LocGen as Location Generator
     participant ConflictGen as Conflict Generator
-    participant WorldGen as World Generator
+    participant StoryGen as Story Generator
     participant Narrator as Narrator
     
     Client->>API: Connect to WebSocket
-    Client->>API: Send WorldGenerationRequest
+    Client->>API: Send StoryGenerationRequest
     API->>Coordinator: Forward request
     
-    %% Step 1: World Wizard
-    Coordinator->>API: Send step_update (world_template)
-    Coordinator->>Wizard: create_world_template()
-    Wizard-->>Coordinator: Return WorldTemplate
-    Coordinator->>API: Send world_template_complete
+    %% Step 1: Story Wizard
+    Coordinator->>API: Send step_update (story_template)
+    Coordinator->>Wizard: create_story_template()
+    Wizard-->>Coordinator: Return StoryTemplate
+    Coordinator->>API: Send story_template_complete
     
     %% Step 2: Characters and Locations (parallel)
     Coordinator->>API: Send step_update (characters_and_locations)
@@ -38,11 +38,11 @@ sequenceDiagram
     ConflictGen-->>Coordinator: Return DetailedConflict
     Coordinator->>API: Send conflict_complete
     
-    %% Step 4: World Integration
-    Coordinator->>API: Send step_update (world_integration)
-    Coordinator->>WorldGen: integrate_world_components()
-    WorldGen-->>Coordinator: Return FinalGameWorld
-    Coordinator->>API: Send world_complete
+    %% Step 4: Story Integration
+    Coordinator->>API: Send step_update (story_integration)
+    Coordinator->>StoryGen: integrate_story_components()
+    StoryGen-->>Coordinator: Return FinalGameStory
+    Coordinator->>API: Send story_complete
     
     %% Step 5: Narration
     Coordinator->>API: Send step_update (narration)

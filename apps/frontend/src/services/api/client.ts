@@ -11,7 +11,7 @@ const createHeaders = (): Record<string, string> => {
     'Content-Type': 'application/json',
   };
 
-  const token = localStorage.getItem('auth-token');
+  const token = localStorage.getItem('authToken');
   if (token) {
     headers.Authorization = `Bearer ${token}`;
   }
@@ -21,7 +21,7 @@ const createHeaders = (): Record<string, string> => {
 
 export const apiClient = {
   async request<T>(endpoint: string, options: RequestOptions): Promise<T> {
-    const url = `${API_URL}${endpoint}`;
+    const url = `${API_URL}/api${endpoint}`;
 
     const fetchOptions: RequestInit = {
       method: options.method,
@@ -37,9 +37,8 @@ export const apiClient = {
 
       // Handle unauthorized errors
       if (response.status === 401) {
-        localStorage.removeItem('auth-token');
-        // Optional: redirect to login page
-        // window.location.href = '/login';
+        localStorage.removeItem('authToken');
+        window.location.href = '/login';
       }
 
       if (!response.ok) {

@@ -1,0 +1,256 @@
+[
+  {
+    "text": "player: It's a nice day today, isn't it?\nThomas: Absolutely beautiful! I love spring weather.\nplayer: Me too, the flowers are starting to bloom.",
+    "character_id": 1,
+    "scene_id": 1
+  },
+  {
+    "text": "Thomas: Absolutely beautiful! I love spring weather.\nplayer: Me too, the flowers are starting to bloom.\nThomas: The garden behind my shop is full of tulips right now.",
+    "character_id": 1,
+    "scene_id": 1
+  },
+  {
+    "text": "player: Me too, the flowers are starting to bloom.\nThomas: The garden behind my shop is full of tulips right now.\nplayer: Do you garden a lot?",
+    "character_id": 1,
+    "scene_id": 1
+  },
+  {
+    "text": "Thomas: The garden behind my shop is full of tulips right now.\nplayer: Do you garden a lot?\nThomas: When I can find the time. It's quite relaxing.",
+    "character_id": 1,
+    "scene_id": 1
+  },
+  {
+    "text": "player: Do you garden a lot?\nThomas: When I can find the time. It's quite relaxing.\nplayer: What's your favorite season for gardening?",
+    "character_id": 1,
+    "scene_id": 1
+  },
+  {
+    "text": "Thomas: When I can find the time. It's quite relaxing.\nplayer: What's your favorite season for gardening?\nThomas: Spring for planting, but autumn has such lovely colors.",
+    "character_id": 1,
+    "scene_id": 1
+  },
+  {
+    "text": "player: What's your favorite season for gardening?\nThomas: Spring for planting, but autumn has such lovely colors.\nplayer: Do you get much snow here in winter?",
+    "character_id": 1,
+    "scene_id": 1
+  },
+  {
+    "text": "Thomas: Spring for planting, but autumn has such lovely colors.\nplayer: Do you get much snow here in winter?\nThomas: Just enough to be charming without being troublesome.",
+    "character_id": 1,
+    "scene_id": 1
+  },
+  {
+    "text": "player: Do you get much snow here in winter?\nThomas: Just enough to be charming without being troublesome.\nplayer: That sounds perfect! I hate shoveling snow.",
+    "character_id": 1,
+    "scene_id": 1
+  },
+  {
+    "text": "Thomas: Just enough to be charming without being troublesome.\nplayer: That sounds perfect! I hate shoveling snow.\nThomas: Me too! Though the town looks magical after a light snowfall.",
+    "character_id": 1,
+    "scene_id": 1
+  },
+
+  {
+    "text": "player: What kind of books do you sell in your store?\nThomas: A bit of everything, but I specialize in classics and local authors.\nplayer: Any recommendations for a good read?",
+    "character_id": 1,
+    "scene_id": 1
+  },
+  {
+    "text": "Thomas: A bit of everything, but I specialize in classics and local authors.\nplayer: Any recommendations for a good read?\nThomas: Have you read 'The Hidden Valley' by Elizabeth Moore? She's a local.",
+    "character_id": 1,
+    "scene_id": 1
+  },
+  {
+    "text": "player: Any recommendations for a good read?\nThomas: Have you read 'The Hidden Valley' by Elizabeth Moore? She's a local.\nplayer: I haven't! What's it about?",
+    "character_id": 1,
+    "scene_id": 1
+  },
+  {
+    "text": "Thomas: Have you read 'The Hidden Valley' by Elizabeth Moore? She's a local.\nplayer: I haven't! What's it about?\nThomas: It's a mystery set in a town much like ours, with historical elements.",
+    "character_id": 1,
+    "scene_id": 1
+  },
+  {
+    "text": "player: I haven't! What's it about?\nThomas: It's a mystery set in a town much like ours, with historical elements.\nplayer: That sounds interesting. Do you read a lot yourself?",
+    "character_id": 1,
+    "scene_id": 1
+  },
+  {
+    "text": "Thomas: It's a mystery set in a town much like ours, with historical elements.\nplayer: That sounds interesting. Do you read a lot yourself?\nThomas: Every night before bed! I'm currently reading through Dickens again.",
+    "character_id": 1,
+    "scene_id": 1
+  },
+  {
+    "text": "player: That sounds interesting. Do you read a lot yourself?\nThomas: Every night before bed! I'm currently reading through Dickens again.\nplayer: Classics fan, huh? I prefer fantasy myself.",
+    "character_id": 1,
+    "scene_id": 1
+  },
+  {
+    "text": "Thomas: Every night before bed! I'm currently reading through Dickens again.\nplayer: Classics fan, huh? I prefer fantasy myself.\nThomas: We have a wonderful fantasy section too! Tolkien is my favorite.",
+    "character_id": 1,
+    "scene_id": 1
+  },
+  {
+    "text": "player: Classics fan, huh? I prefer fantasy myself.\nThomas: We have a wonderful fantasy section too! Tolkien is my favorite.\nplayer: Mine too! I've read Lord of the Rings at least five times.",
+    "character_id": 1,
+    "scene_id": 1
+  },
+  {
+    "text": "Thomas: We have a wonderful fantasy section too! Tolkien is my favorite.\nplayer: Mine too! I've read Lord of the Rings at least five times.\nThomas: A person of excellent taste! We should discuss it over tea sometime.",
+    "character_id": 1,
+    "scene_id": 1
+  },
+
+  {
+    "text": "player: How long have you lived in this town?\nThomas: Born and raised here! My family has been here for generations.\nplayer: That's amazing. It seems like a lovely place.",
+    "character_id": 1,
+    "scene_id": 1
+  },
+  {
+    "text": "Thomas: Born and raised here! My family has been here for generations.\nplayer: That's amazing. It seems like a lovely place.\nThomas: It is! The town was founded in 1832 by settlers looking for gold.",
+    "character_id": 1,
+    "scene_id": 1
+  },
+  {
+    "text": "player: That's amazing. It seems like a lovely place.\nThomas: It is! The town was founded in 1832 by settlers looking for gold.\nplayer: Did they find any?",
+    "character_id": 1,
+    "scene_id": 1
+  },
+  {
+    "text": "Thomas: It is! The town was founded in 1832 by settlers looking for gold.\nplayer: Did they find any?\nThomas: Not much gold, but they discovered the perfect place to build a community.",
+    "character_id": 1,
+    "scene_id": 1
+  },
+  {
+    "text": "player: Did they find any?\nThomas: Not much gold, but they discovered the perfect place to build a community.\nplayer: Are there any historical landmarks I should visit?",
+    "character_id": 1,
+    "scene_id": 1
+  },
+  {
+    "text": "Thomas: Not much gold, but they discovered the perfect place to build a community.\nplayer: Are there any historical landmarks I should visit?\nThomas: The old clock tower is from 1850! And the bridge by the river is original.",
+    "character_id": 1,
+    "scene_id": 1
+  },
+  {
+    "text": "player: Are there any historical landmarks I should visit?\nThomas: The old clock tower is from 1850! And the bridge by the river is original.\nplayer: Has the town changed much over the years?",
+    "character_id": 1,
+    "scene_id": 1
+  },
+  {
+    "text": "Thomas: The old clock tower is from 1850! And the bridge by the river is original.\nplayer: Has the town changed much over the years?\nThomas: The essentials remain the same, though we've grown a bit.",
+    "character_id": 1,
+    "scene_id": 1
+  },
+  {
+    "text": "player: Has the town changed much over the years?\nThomas: The essentials remain the same, though we've grown a bit.\nplayer: I like places that preserve their history.",
+    "character_id": 1,
+    "scene_id": 1
+  },
+  {
+    "text": "Thomas: The essentials remain the same, though we've grown a bit.\nplayer: I like places that preserve their history.\nThomas: That's why I opened my bookstore in an 1890s building. History matters!",
+    "character_id": 1,
+    "scene_id": 1
+  },
+
+  {
+    "text": "player: Are there any good places to eat around here?\nThomas: Martha's Diner has the best pie you'll ever taste!\nplayer: I love pie! What flavor would you recommend?",
+    "character_id": 1,
+    "scene_id": 1
+  },
+  {
+    "text": "Thomas: Martha's Diner has the best pie you'll ever taste!\nplayer: I love pie! What flavor would you recommend?\nThomas: Her blackberry pie is legendary. Made with local berries.",
+    "character_id": 1,
+    "scene_id": 1
+  },
+  {
+    "text": "player: I love pie! What flavor would you recommend?\nThomas: Her blackberry pie is legendary. Made with local berries.\nplayer: That sounds delicious. Any other local specialties?",
+    "character_id": 1,
+    "scene_id": 1
+  },
+  {
+    "text": "Thomas: Her blackberry pie is legendary. Made with local berries.\nplayer: That sounds delicious. Any other local specialties?\nThomas: The trout from our river is spectacular. Try it at River's Edge.",
+    "character_id": 1,
+    "scene_id": 1
+  },
+  {
+    "text": "player: That sounds delicious. Any other local specialties?\nThomas: The trout from our river is spectacular. Try it at River's Edge.\nplayer: Do you cook much yourself?",
+    "character_id": 1,
+    "scene_id": 1
+  },
+  {
+    "text": "Thomas: The trout from our river is spectacular. Try it at River's Edge.\nplayer: Do you cook much yourself?\nThomas: I try to! My grandmother's recipes are treasures I've kept.",
+    "character_id": 1,
+    "scene_id": 1
+  },
+  {
+    "text": "player: Do you cook much yourself?\nThomas: I try to! My grandmother's recipes are treasures I've kept.\nplayer: What's your signature dish?",
+    "character_id": 1,
+    "scene_id": 1
+  },
+  {
+    "text": "Thomas: I try to! My grandmother's recipes are treasures I've kept.\nplayer: What's your signature dish?\nThomas: A hearty beef stew with herbs from my garden. Perfect for winter.",
+    "character_id": 1,
+    "scene_id": 1
+  },
+  {
+    "text": "player: What's your signature dish?\nThomas: A hearty beef stew with herbs from my garden. Perfect for winter.\nplayer: That sounds amazing. I'd love to try it sometime.",
+    "character_id": 1,
+    "scene_id": 1
+  },
+  {
+    "text": "Thomas: A hearty beef stew with herbs from my garden. Perfect for winter.\nplayer: That sounds amazing. I'd love to try it sometime.\nThomas: I'll have to invite you over when the weather turns cold!",
+    "character_id": 1,
+    "scene_id": 1
+  },
+
+  {
+    "text": "player: What do you do for fun around here?\nThomas: Besides reading? I enjoy hiking in the nearby hills.\nplayer: That sounds nice. Are there good trails?",
+    "character_id": 1,
+    "scene_id": 1
+  },
+  {
+    "text": "Thomas: Besides reading? I enjoy hiking in the nearby hills.\nplayer: That sounds nice. Are there good trails?\nThomas: Wonderful ones! Eagle's Point has the most spectacular view.",
+    "character_id": 1,
+    "scene_id": 1
+  },
+  {
+    "text": "player: That sounds nice. Are there good trails?\nThomas: Wonderful ones! Eagle's Point has the most spectacular view.\nplayer: Is it a difficult hike? I'm not very experienced.",
+    "character_id": 1,
+    "scene_id": 1
+  },
+  {
+    "text": "Thomas: Wonderful ones! Eagle's Point has the most spectacular view.\nplayer: Is it a difficult hike? I'm not very experienced.\nThomas: There are paths for all levels. I can recommend an easier one.",
+    "character_id": 1,
+    "scene_id": 1
+  },
+  {
+    "text": "player: Is it a difficult hike? I'm not very experienced.\nThomas: There are paths for all levels. I can recommend an easier one.\nplayer: Thanks! Do you have any other hobbies?",
+    "character_id": 1,
+    "scene_id": 1
+  },
+  {
+    "text": "Thomas: There are paths for all levels. I can recommend an easier one.\nplayer: Thanks! Do you have any other hobbies?\nThomas: I play chess at the park on Sundays. And I'm learning woodworking.",
+    "character_id": 1,
+    "scene_id": 1
+  },
+  {
+    "text": "player: Thanks! Do you have any other hobbies?\nThomas: I play chess at the park on Sundays. And I'm learning woodworking.\nplayer: Woodworking? Have you made anything interesting?",
+    "character_id": 1,
+    "scene_id": 1
+  },
+  {
+    "text": "Thomas: I play chess at the park on Sundays. And I'm learning woodworking.\nplayer: Woodworking? Have you made anything interesting?\nThomas: Just some simple bookshelves so far. I dream of making furniture someday.",
+    "character_id": 1,
+    "scene_id": 1
+  },
+  {
+    "text": "player: Woodworking? Have you made anything interesting?\nThomas: Just some simple bookshelves so far. I dream of making furniture someday.\nplayer: That's a wonderful skill to develop!",
+    "character_id": 1,
+    "scene_id": 1
+  },
+  {
+    "text": "Thomas: Just some simple bookshelves so far. I dream of making furniture someday.\nplayer: That's a wonderful skill to develop!\nThomas: Thank you! It connects me to the past. Craftsmanship means something.",
+    "character_id": 1,
+    "scene_id": 1
+  }
+]

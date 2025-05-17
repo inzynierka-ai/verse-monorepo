@@ -1,0 +1,39 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Frontend Development Guidelines
+
+## React Conventions
+- Use functional components with hooks
+- Use TypeScript for all components and functions
+- Group related components in directories
+- Extract reusable logic into custom hooks
+- Keep components small and focused on a single responsibility
+
+## State Management
+- Use React Context for global state
+- Use local state for component-specific state
+- Prefer controlled components over uncontrolled ones
+
+## Styling
+- Use SCSS modules for styling
+- Keep styling files close to their components
+- Use variables for colors, fonts, and spacing
+
+## Testing
+- Write unit tests for components and utilities
+- Use React Testing Library for component testing
+- Test user interactions and state changes
+
+## TypeScript
+- Define types for all props and state
+- Use interfaces for objects with methods
+- Use type aliases for simple types
+- Avoid using `any` type
+
+## API Integration
+- Use services for API calls
+- Handle loading states and errors
+- Use proper error handling and retry mechanisms

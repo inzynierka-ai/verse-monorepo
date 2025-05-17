@@ -6,7 +6,6 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 
 // Import global styles
 import '@/common/styles/global.scss';
-import Container from './common/components/Container/Container';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -21,10 +20,8 @@ const queryClient = new QueryClient({
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
-      <Container>
-        <RouterProvider router={router} />
-        <ReactQueryDevtools initialIsOpen={false} />
-      </Container>
+      <RouterProvider router={router} />
+      <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
   </React.StrictMode>,
 );

@@ -1,0 +1,58 @@
+{
+  "location": {
+    "name": "Overgrown Central Library",
+    "description": "In the heart of what was once a bustling metropolis of Chicago, now reduced to crumbling remnants of its former glory, lies the Overgrown Central Library\u2014a monolithic structure swallowed by nature\u2019s fierce reclamation. The imposing granite facade serves as a fortress against the encroaching threat of the sentient fungus. The air thickens with a damp, earthy fragrance, mingling with the sweet, sickly odor of decay. The heavy wooden doors creak ominously, revealing an interior cloaked in shadows. Inside, towering shelves sag under the weight of moss and mycelium, with bioluminescent fungi pulsing softly, illuminating the dust motes in the stagnant air. The grand reading room, with its partially collapsed domed ceiling, holds remnants of long-abandoned study areas, while delicate flowers bloom amidst the debris. A large, ancient oak tree has taken root in the center, symbolizing resilience and becoming a gathering place for the few remaining survivors, who share stories of their past amid the dangers lurking outside. The library stands as a poignant relic of humanity's struggle against the sentient fungus, embodying nostalgia and urgency.",
+    "rules": [
+      "Survivors gather for safety and storytelling.",
+      "Respect the fragile ecosystem within the library.",
+      "Avoid disturbing the bioluminescent fungi and other natural elements."
+    ],
+    "imageUrl": "http://localhost:8000/media/comfyui/88894db6_location_88894db6_583453519_00001_.png",
+    "uuid": "c6058701-d26e-4994-90d3-0e3f4a0786de"
+  },
+  "characters": [
+    {
+      "name": "Sam",
+      "description": "Sam is a 17-year-old survivor in a world ravaged by a relentless, sentient fungus that has decimated the population. He has a lean physique, honed by years of scavenging and evading the grasp of the fungal threat. His skin is weathered from exposure to the elements, with a pallor that speaks of both hardship and resilience. Sam\u2019s hair is tousled and unkempt, a matted mop of brown that falls into his piercing green eyes, which are always scanning his surroundings for danger. He wears ragged clothes\u2014an oversized, tattered hoodie layered over a faded T-shirt and a pair of frayed cargo pants\u2014each article a remnant of a life before the outbreak. His makeshift backpack, patched together from various scavenged materials, is filled with essential supplies: a few canned goods, a rusty knife, and a well-worn map of the post-apocalyptic landscape. Despite his wariness, there\u2019s a flicker of determination in Sam\u2019s demeanor; he embodies a cautious optimism that refuses to be extinguished. He has learned to navigate the ruins of civilization, using his resourcefulness to scavenge for food and find safe havens. While he is often distrustful of strangers\u2014having seen the worst of humanity in desperate times\u2014he possesses a quick wit that allows him to adapt to situations, often using humor as a defense mechanism against fear.",
+      "personalityTraits": [
+        "cautious",
+        "resourceful",
+        "distrustful",
+        "witty",
+        "determined"
+      ],
+      "backstory": "Sam's life was irrevocably altered when the fungal outbreak claimed his family. He was only 14 when he watched helplessly as the infection spread, claiming his parents in a matter of days. Left to fend for himself, Sam learned the hard way that survival meant relying on his wits and instincts. He roamed the desolate streets of his hometown, witnessing the collapse of society and the emergence of danger in every corner. The loss of his family instilled in him a fierce independence but also an emotional scar that makes trusting others a monumental challenge. Over the years, Sam has become a part of the wandering survivor community, but he remains an outsider, often preferring solitude to the risk of friendship.",
+      "goals": [
+        "find a safe haven",
+        "seek revenge",
+        "form connections"
+      ],
+      "relationships": [],
+      "imageUrl": "http://localhost:8000/media/comfyui/87da5acd_character_87da5acd_1580377378_00001_.png",
+      "role": "npc",
+      "uuid": "4956e9dd-8b34-4c08-8581-7817d2cb6d7f"
+    },
+    {
+      "name": "Dr. Mara Voss",
+      "description": "Dr. Mara Voss is a striking figure in the remnants of a world ravaged by a sentient fungus. Standing tall at 6 feet, her gaunt frame is a testament to the harsh realities of survival. Her hair, a cascade of silver with streaks of black, is pulled tightly into a severe bun, lending her an air of authority that is both commanding and intimidating. Mara's sharp blue eyes, often scanning her surroundings with a mix of wariness and determination, reflect her extensive training as an epidemiologist. Years spent in the field have honed her hands into deft instruments\u2014steady and capable, whether she\u2019s stitching up wounds or mixing makeshift remedies from whatever scarce resources she can scavenge. Her attire consists of a patched lab coat layered over scavenged clothing, a blend of practicality and remnants of her past life. The coat carries the weight of memories and purpose, while her battered leather satchel, slung across her shoulder, is filled with medical supplies cobbled together from the debris of civilization. Each item within, from sterile bandages to unconventional treatments, is a lifeline not just for herself but for those she encounters in this treacherous landscape.",
+      "personalityTraits": [
+        "Blunt Honesty",
+        "Compassionate Resilience",
+        "Obsessive Determination",
+        "Cynical Realism"
+      ],
+      "backstory": "Once a highly respected epidemiologist working on infectious diseases, Dr. Mara Voss was at the forefront of her field when the fungal outbreak began. As the world descended into chaos, she witnessed the collapse of society, the loss of life, and the rise of a sentient fungus that seemed to orchestrate the end of humanity. Mara's skills allowed her to survive, but they couldn\u2019t prevent the outbreak from devastating her community. Haunted by the faces of those she couldn't save, she roams the remnants of the United States, trying to piece together the origins and weaknesses of the fungus. Her journey is not just one of survival but of redemption, seeking to make amends for her perceived failures. Along the way, she has encountered various survivors, forming uneasy alliances while remaining ever cautious of the dangers they pose.",
+      "goals": [
+        "Develop a Cure",
+        "Gather a Coalition",
+        "Unravel the Fungus's Origins"
+      ],
+      "relationships": [],
+      "imageUrl": "http://localhost:8000/media/comfyui/231c44a0_character_231c44a0_81791019_00001_.png",
+      "role": "npc",
+      "uuid": "88c64685-c774-4070-b7d8-eb535abb7b17"
+    }
+  ],
+  "description": "With the sun filtering weakly through the shattered dome above, Joel finds himself in the heart of the Overgrown Central Library. The grand reading room is both sanctuary and tomb: bookshelves heavy with moss, bioluminescent fungi casting an eerie glow, and a massive oak tree stretching skyward through broken marble. Sam leans against a pillar, his green eyes darting to every shadow, clutching his battered backpack close. Dr. Mara Voss stands nearby, consulting a battered notebook, her silver-streaked hair pulled tightly back, her voice steady but urgent.\n\nA tense debate has broken out. Dr. Voss insists they comb the archives for research notes that could hold clues to fighting the fungus\u2014\"This place could have answers, if we don't waste the chance!\" she urges. Sam, voice low and anxious, argues for moving on\u2014\"Every minute we stay, we risk drawing attention. The infected... or worse.\"\n\nAs the argument intensifies, a distant crash echoes through the stacks, followed by the faint, unmistakable chitter of fungal growth spreading. The group falls silent, the weight of decision and danger pressing in, each one looking to Joel for the next move.",
+  "steps_taken": 3
+}

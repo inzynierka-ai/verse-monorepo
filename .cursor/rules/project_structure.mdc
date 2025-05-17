@@ -1,0 +1,33 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Project Structure
+
+Verse is a full-stack application with a FastAPI backend and React frontend.
+
+## Directory Structure
+
+- `/apps/backend`: Python FastAPI backend
+  - `/app`: Main backend application code
+    - `/core`: Core configuration
+    - `/crud`: Database CRUD operations
+    - `/db`: Database models and connection
+    - `/models`: Data models
+    - `/routers`: API endpoints
+    - `/schemas`: Pydantic schemas
+    - `/services`: Business logic and external services
+    - `/utils`: Utility functions
+  - `/tests`: Backend tests
+  - `/alembic`: Database migrations
+
+- `/apps/frontend`: React TypeScript frontend
+  - `/src`: Frontend source code
+    - `/pages`: Page components
+    - `/components`: Reusable UI components
+    - `/services`: API clients and services
+    - `/utils`: Utility functions
+    - `/types`: TypeScript type definitions
+
+Always maintain this structure when adding new files to the project.

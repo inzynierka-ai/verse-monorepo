@@ -1,0 +1,22 @@
+---
+description: when the task is finished and want to commit changes to git
+globs: 
+alwaysApply: false
+---
+
+# Git Usage Rules
+
+## Commit Practices
+- Commit every logical change you make
+- Keep commits atomic and focused on one thing
+- Use `gc` alias instead of regular git commit
+- Use meaningful commit messages that explain "why" not just "what"
+- don't use any prefixes refactor: fix: etc
+
+## `gc` Alias
+```bash
+# gc alias stands for: git commit -m $1
+# It automatically formats conventional commit messages
+gc "your message here"
+```
+

@@ -1,22 +1,20 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, TIMESTAMP
-from sqlalchemy.sql import func
+from sqlalchemy import Column, Integer, String, Text, ForeignKey
 from sqlalchemy.orm import relationship
-from sqlalchemy.ext.declarative import declarative_base
+
 from app.db.session import Base
 
 class Story(Base):
-    __tablename__ = 'stories'
+    __tablename__ = "stories"
     
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
-    title = Column(String)
-    description = Column(String)
-    rules = Column(String)
-    uuid = Column(String, nullable=False)
-    # date_created = Column(TIMESTAMP(timezone=True), server_default=func.now())
-    # date_last_played = Column(TIMESTAMP(timezone=True), nullable=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    title = Column(String, nullable=False)
+    description = Column(Text, nullable=False)
+    brief_description = Column(Text, nullable=True)
+    rules = Column(Text, nullable=False)
+    uuid = Column(String, nullable=False, unique=True)
     
     user = relationship("User", back_populates="stories")
-    chapters = relationship("Chapter", back_populates="story")
     locations = relationship("Location", back_populates="story")
     characters = relationship("Character", back_populates="story")
+    scenes = relationship("Scene", back_populates="story")

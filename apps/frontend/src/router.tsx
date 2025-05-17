@@ -12,6 +12,9 @@ import LoginView from './pages/auth/LoginView';
 import RegisterView from './pages/auth/RegisterView';
 import ForgotPasswordView from './pages/auth/ForgotPasswordView';
 import HomePage from './pages/homepage/HomePage';
+import StoryGenerationView from './pages/game/StoryGenerationView';
+import SceneView from './pages/game/SceneView/SceneView';
+import ChatView from './pages/game/ChatView/ChatView';
 
 // Define a root route with layout
 const rootRoute = createRootRoute({
@@ -37,11 +40,30 @@ const storiesRoute = createRoute({
   component: StoriesView,
 });
 
+// Create story route
+const createStoryRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/create-story',
+  component: StoryGenerationView,
+});
+
 // Game route - simplified to a single URL
 export const gameRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/play/$storyId',
   component: GameView,
+});
+
+export const sceneRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/play/$storyId/scenes/$sceneId',
+  component: SceneView,
+});
+
+export const chatRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/play/$storyId/scenes/$sceneId/characters/$characterId',
+  component: ChatView,
 });
 
 // Login route
@@ -69,7 +91,10 @@ const forgotPasswordRoute = createRoute({
 const routeTree = rootRoute.addChildren([
   introductionRoute,
   gameRoute,
+  sceneRoute,
+  chatRoute,
   storiesRoute,
+  createStoryRoute,
   loginRoute,
   registerRoute,
   forgotPasswordRoute,

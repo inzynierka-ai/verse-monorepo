@@ -1,0 +1,44 @@
+{
+  "location": {
+    "name": "Mars Station",
+    "description": "A space station in the orbit of Mars.",
+    "rules": [],
+    "imageUrl": "",
+    "uuid": "b759a434-9dd0-4fc5-a574-a755bc941453"
+  },
+  "characters": [
+    {
+      "name": "Jane Doe",
+      "description": "A middle-aged woman with a kind face and a strong sense of responsibility.",
+      "personalityTraits": [],
+      "backstory": "Grew up on Earth but left after a personal tragedy. Seeking a fresh start on the Mars station.",
+      "goals": [],
+      "relationships": [],
+      "imageUrl": "",
+      "role": "npc",
+      "uuid": "b05ac4a6-25fd-455a-88f7-0d2c3b6fe124"
+    },
+    {
+      "name": "Governor Lucius Trent",
+      "description": "Governor Lucius Trent stands tall at six feet, his sharp features framed by salt-and-pepper hair that adds to his commanding presence. His piercing blue eyes, often described as both captivating and intimidating, seem to hold the weight of his experience, reflecting the politics of Mars Station\u2014both the glory and the grime. Clad in a formal uniform adorned with the Martian insignia, he exudes an air of authority and discipline. His attire is meticulously maintained, signaling both his respect for tradition and his desire to project an image of control. Trent\u2019s demeanor is equally striking; he moves with a purposeful grace, and his voice carries a resonant timbre that can shift from soothing to thunderous in an instant. Those who have served under him often describe him as a master of persuasion, capable of drawing allies closer while keeping adversaries at arm's length. Yet, beneath this polished exterior lies a mind that is constantly calculating, weighing every political move with the precision of a chess master.",
+      "personalityTraits": [
+        "Cunning Strategist",
+        "Charismatic Leader",
+        "Coldly Pragmatic",
+        "Inflexible Traditionalist"
+      ],
+      "backstory": "Born into a prominent family in the early days of Martian colonization, Lucius Trent was raised amidst the political intrigues of a fledgling society. His father was a respected senator, instilling in him a sense of ambition and duty from a young age. As a child, Lucius would often accompany his father to political gatherings, absorbing the nuances of power dynamics like a sponge. After a brief stint in the military, where he honed his leadership skills and developed a keen tactical mind, he returned to politics, determined to carve out his own legacy. Over the years, Lucius ascended through the ranks, first as a councilman and eventually as governor of Mars Station. His tenure has been marked by a series of calculated alliances and ruthless eliminations of threats, both within the council and among rival factions. He is now seen as a key player in the ongoing struggle for control of the Martian government, often walking the fine line between respect and fear.",
+      "goals": [
+        "Consolidate Power",
+        "Secure Martian Autonomy",
+        "Preserve Traditional Martian Values"
+      ],
+      "relationships": [],
+      "imageUrl": "http://localhost:8000/media/comfyui/07d003e7_character_07d003e7_1333407201_00001_.png",
+      "role": "npc",
+      "uuid": "b18816c3-93e8-4fe1-828f-3c8c7e38f5a8"
+    }
+  ],
+  "description": "The red glow of Mars filters through the panoramic windows of the Mars Station\u2019s central council chamber. The hum of machinery and the distant chatter of busy officials serve as a constant reminder of the fragile balance that keeps humanity alive in orbit. John Doe stands at the head of a long, polished table, joined by Jane Doe\u2014her calm presence both reassuring and quietly formidable. Governor Lucius Trent enters with purpose, his uniform and demeanor cutting through the room\u2019s tension like a blade. \n\nTrent\u2019s piercing gaze sweeps over John and Jane, pausing just long enough to remind them who holds the reins of power on Mars Station. A digital agenda flickers to life on the table: recent riots in the agricultural domes, whispers of sabotage, and the ever-present question of who will control the next election. \n\nAs the council meeting begins, alliances are tested. Trent\u2019s voice, resonant and commanding, lays out his vision for order and strength, while Jane advocates for transparency and unity among the station\u2019s factions. All the while, John feels the weight of responsibility\u2014and the first stirrings of a game that may reshape the future of Mars Station.",
+  "steps_taken": 3
+}
