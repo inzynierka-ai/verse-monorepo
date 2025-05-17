@@ -139,6 +139,7 @@ class RelationshipAnalysisService:
             
         return "\n".join(formatted_messages)
         
+    @observe(name="generate_relationship_analysis")
     async def _generate_relationship_analysis(
         self, 
         character: Character, 

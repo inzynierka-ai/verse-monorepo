@@ -6,10 +6,12 @@ import Button from '@/common/components/Button/Button';
 import { Character } from '@/types/character.types';
 import { useState } from 'react';
 import styles from './SceneView.module.scss';
+import { useQueryClient } from '@tanstack/react-query';
 
 const SceneView = () => {
   const { storyId, sceneId } = sceneRoute.useParams();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
 
   const { data: scene, isLoading, error } = useLatestScene(storyId);
@@ -33,6 +35,7 @@ const SceneView = () => {
         onSuccess: () => {
           // Navigate to the GameView after successfully completing the scene
           navigate({ to: '/play/$storyId', params: { storyId }, replace: true });
+          queryClient.invalidateQueries({ queryKey: ['latest-scene', storyId] });
         },
         onError: (error) => {
           console.error('Failed to complete scene:', error);

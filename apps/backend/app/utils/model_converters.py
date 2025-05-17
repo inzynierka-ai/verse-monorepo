@@ -88,8 +88,8 @@ class ModelConverter:
         }
         
         # Set default personality traits if missing
-        if not getattr(character_orm, "personalityTraits", None):
-            defaults["personalityTraits"] = []
+        if not getattr(character_orm, "personality_traits", None):
+            defaults["personality_traits"] = None
             
         # Set default goals if missing
         if not getattr(character_orm, "goals", None):
@@ -175,7 +175,6 @@ class ModelConverter:
 
 def convert_character(
     character_orm: CharacterOrmModel,
-    default_image_url: str = "/placeholder.png"
 ) -> CharacterSchema:
     """
     Shorthand function to convert a Character ORM model to a Character Pydantic model.
@@ -193,8 +192,7 @@ def convert_character(
 
 
 def convert_characters(
-    character_orms: List[CharacterOrmModel],
-    default_image_url: str = "/placeholder.png"
+    character_orms: List[CharacterOrmModel]
 ) -> List[CharacterSchema]:
     """
     Convert a list of Character ORM models to Character Pydantic models.
@@ -210,10 +208,7 @@ def convert_characters(
     
     for character_orm in character_orms:
         try:
-            character_schema = convert_character(
-                character_orm,
-                default_image_url=default_image_url
-            )
+            character_schema = convert_character(character_orm)
             result.append(character_schema)
         except Exception as e:
             logger.error(f"Failed to convert character {getattr(character_orm, 'name', 'unknown')}: {e}")

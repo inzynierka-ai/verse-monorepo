@@ -238,7 +238,7 @@ class SceneGenerationHandler:
     async def _send_character_added(self, character: CharacterGenerationSchema):
         """Sends a CHARACTER_ADDED message."""
         payload = character.model_dump()
-        logger.info(f"Sending CHARACTER_ADDED update for story {self.story_uuid}: {payload}")
+        logger.info(f"Sending CHARACTER_ADDED update for story {self.story_uuid}")
         await self._send_update("CHARACTER_ADDED", payload)
         
     async def _send_action_changed(self, action_type: str, action_message: Optional[str]):

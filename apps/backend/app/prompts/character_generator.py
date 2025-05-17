@@ -56,22 +56,24 @@ Generate a character draft based on this description.
 """
 
 # Second step: Convert narrative to JSON structure
-def CREATE_CHARACTER_JSON_SYSTEM_PROMPT(is_player: bool):
-    personality_traits_field = '"personalityTraits": ["string", "string"],  // Array of personality trait names as strings' if is_player else ""
-    relationship_level_field = '"relationshipLevel": 0,  // Numeric level of relationship intensity (0-100) 0-20 - stranger or enemy, 20-40 - acquaintance, 40-60 - friend, 60-80 - close friend, 80-100 - family' if is_player else ""
+def CREATE_CHARACTER_JSON_SYSTEM_PROMPT(is_npc: bool):
+    personality_traits_field = '"personality_traits": "string",  // personality traits separated by commas' if is_npc else ""
+    relationship_level_field = '"relationship_level": 0,  // Numeric level of relationship intensity (0-100) 0-20 - stranger or enemy, 20-40 - acquaintance, 40-60 - friend, 60-80 - close friend, 80-100 - family' if is_npc  else ""
+    speaking_style_field = '"speaking_style": "string",  // Character\'s speaking style, e.g., formal, informal, etc.' if is_npc else ""
     
     return f"""
 Create a structured JSON representation of character based on the detailed narrative descriptions.
 Return only valid JSON and nothing else.
 
-IMPORTANT: All JSON keys MUST use camelCase formatting (e.g., personalityTraits, connectedLocations), not snake_case.
+IMPORTANT: All JSON keys MUST use snake_case formatting (e.g., personality_traits, connected_locations).
 
 The JSON should be an single character object, following this structure:
 ```json
 {{
   "name": "string",  // Preserve the original name
-  "briefDescription": "string",  // 3-4 sentence summary for display
+  "brief_description": "string",  // 3-4 sentence summary for display
   {personality_traits_field}
+  {speaking_style_field}
   "backstory": "string",  // Character's origin story and history
   "goals": ["string"],  // List of character's goals
   {relationship_level_field}
@@ -94,7 +96,7 @@ Please convert the following detailed character descriptions into a structured J
 
 {character_descriptions}
 
-Remember to use camelCase for all JSON keys (personalityTraits, connectedLocations, etc.).
+Remember to use snake_case for all JSON keys (personality_traits, connected_locations, etc.).
 """
 
 # Image prompt generation

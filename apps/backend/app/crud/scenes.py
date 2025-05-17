@@ -142,14 +142,14 @@ def update_scene_status(db: Session, scene_id: int, status: str) -> Scene:
     return scene
 
 
-def add_characters_to_scene(db: Session, scene_id: int, character_uuids: List[str]):
+def add_characters_to_scene(db: Session, scene_id: int, characters_data: List[Dict[str, Any]]):
     """
-    Associate characters with a scene using UUIDs instead of database IDs
+    Associate characters with a scene and update their immediate_goals.
     
     Args:
         db: Database session
         scene_id: ID of the scene to add characters to
-        character_uuids: List of character UUIDs to associate with the scene
+        characters_data: List of dictionaries, each with character 'uuid' and 'immediate_goals'
         
     Returns:
         The updated scene with character associations
@@ -159,13 +159,26 @@ def add_characters_to_scene(db: Session, scene_id: int, character_uuids: List[st
     if not db_scene:
         raise ValueError(f"Scene with ID {scene_id} not found")
     
-    # Get characters by UUID using the characters_crud module
-    for character_uuid in character_uuids:
+    # Get characters by UUID using the characters_crud module and update immediate_goals
+    for char_data in characters_data:
+        character_uuid = char_data.get('uuid')
+        immediate_goals = char_data.get('immediate_goals')
+        
+        if not character_uuid:
+            logging.warning("Character data missing UUID, skipping.")
+            continue
+            
         character = characters_crud.get_character_by_uuid(db, character_uuid)
         if character:
+            # Update immediate_goals if provided
+            if immediate_goals is not None:
+                character.immediate_goals = immediate_goals
+            
             # Add to the relationship collection if not already present
             if character not in db_scene.characters:
                 db_scene.characters.append(character)
+        else:
+            logging.warning(f"Character with UUID {character_uuid} not found, cannot associate with scene or update goals.")
     
     # Commit changes
     db.commit()
@@ -177,20 +190,20 @@ def create_complete_scene(
     story_id: int, 
     location_id: int, 
     description: str,
-    character_uuids: Optional[List[str]] = None
+    characters_data: Optional[List[Dict[str, Any]]] = None
 ) -> Scene:
     """
-    Create a complete scene with all required data using character UUIDs instead of IDs
+    Create a new complete scene with characters and a location.
     
     Args:
         db: Database session
         story_id: ID of the story to associate with
         location_id: ID of the location to associate with
         description: Scene description
-        character_uuids: Optional list of character UUIDs to associate
+        characters_data: Optional list of dictionaries, each with character 'uuid' and 'immediate_goals'
         
     Returns:
-        The created scene database model
+        The created scene model
     """
     scene_uuid = str(uuid.uuid4())
     db_scene = Scene(
@@ -202,23 +215,18 @@ def create_complete_scene(
     )
     
     db.add(db_scene)
-    db.flush()
-    
-    # Store ID before we might lose it in refresh
-    scene_id = db_scene.id
-
-    logging.info("character_uuids: " + str(character_uuids))
-    
-    # Add characters if provided
-    if character_uuids:
-        # Get fresh copy of scene first
-        db_scene = db.query(Scene).filter(Scene.id == scene_id).first()
-        if db_scene:
-            db_scene = add_characters_to_scene(db, scene_id, character_uuids)
-    
-    db.commit()
+    db.commit()  # Commit to get db_scene.id
     db.refresh(db_scene)
+
+    logging.info(f"Created scene with ID {db_scene.id}")
     
+    # Associate characters with the scene if provided
+    if characters_data:
+        # The add_characters_to_scene function will handle the association
+        # and update immediate_goals for each character.
+        add_characters_to_scene(db, db_scene.id, characters_data) # Pass the full characters_data
+    
+    db.refresh(db_scene) # Refresh again after characters are added
     return db_scene
 
 def update_scene_summary(db: Session, scene_id: int, summary: str) -> Scene:

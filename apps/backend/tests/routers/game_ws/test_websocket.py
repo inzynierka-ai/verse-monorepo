@@ -11,7 +11,6 @@ from fastapi.websockets import WebSocket
 
 from app.main import app
 from app.schemas.story_generation import Story, Character
-from app.routers.game_ws.router import GameMessageHandler
 
 
 @pytest.fixture
@@ -48,7 +47,11 @@ def sample_story() -> Story:
     return Story(
         description="A medieval kingdom with castles and villages",
         title="The Kingdom of Astoria",
-        rules=["Magic is rare", "Politics are dangerous"]
+        rules=["Magic is rare", "Politics are dangerous"],
+        brief_description="A medieval kingdom with castles and villages",   
+        id=1,
+        user_id=1,
+        uuid="12345678-1234-5678-1234-567812345678"
     )
 
 
@@ -58,10 +61,11 @@ def sample_character() -> Character:
     return Character(
         name="Test Character",
         description="A knight who lost his honor",
-        personalityTraits=["Honorable", "Brave"],
+        personality_traits="Honorable, Brave",
+        brief_description="A knight who lost his honor",
+        relationship_level=0,
         backstory="Was framed for treason and exiled",
         goals=["Clear my name", "Return to the kingdom"],
-        relationships=[],
         image_dir="https://localhost:8000/media/comfyui/test.png",
         role="player",
         uuid="12345678-1234-5678-1234-567812345678"

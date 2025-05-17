@@ -48,8 +48,7 @@ async def list_stories(current_user: User = Depends(get_current_user), db: Sessi
                 player_character=player_character_data
             )
         )
-    
-    logging.info(f"Stories with player character info: {stories_with_player_char_response}")
+
     return stories_with_player_char_response
 
 @router.get("/{story_id}", response_model=StoryRead)

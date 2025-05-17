@@ -5,6 +5,7 @@ import os
 from app.services.llm import LLMService
 from app.services.llm import ModelName
 from typing import Optional
+from langfuse.decorators import observe  # type: ignore
 
 # Set your API key (or load from environment)
 openai.api_key = os.getenv("OPENAI_API_KEY")
@@ -20,6 +21,7 @@ def get_embedding(text: str, model: str = "text-embedding-3-small") -> list[floa
     return response.data[0].embedding
 
 
+@observe("optimize_text_for_embedding")
 async def optimize_text_for_embedding(text: str, llm_service: Optional[LLMService] = None) -> str:
     """
     Use LLM to extract key words/phrases that best represent the core meaning of text.

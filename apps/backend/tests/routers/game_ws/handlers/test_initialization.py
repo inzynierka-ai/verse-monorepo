@@ -2,10 +2,9 @@
 Tests for the GameInitializationHandler
 """
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 from fastapi import WebSocket
-from pydantic import ValidationError
-from typing import Dict, Any, List, cast
+from typing import Dict, Any
 
 from app.routers.game_ws.handlers.initialization import GameInitializationHandler
 from app.schemas.story_generation import Story, Character
@@ -28,7 +27,12 @@ def sample_story() -> Story:
     """Create a sample story for testing"""
     return Story(
         description="A post-apocalyptic story devastated by climate change",
-        rules=["Resources are scarce", "Technology is rare"]
+        rules="Resources are scarce, Technology is rare",
+        brief_description="A post-apocalyptic story devastated by climate change",
+        uuid="12345678-1234-5678-1234-567812345678",
+        id=1,
+        user_id=1,
+        title="The Last of Us"
     )
 
 
@@ -38,10 +42,11 @@ def sample_character() -> Character:
     return Character(
         name="Test Character",
         description="A survivor in the wasteland",
-        personalityTraits=["Brave", "Resourceful"],
+        personality_traits="Brave, Resourceful",
+        brief_description="A brave survivor in the wasteland",
+        relationship_level=0,
         backstory="Grew up in an underground bunker",
         goals=["Find water", "Establish a safe settlement"],
-        relationships=[],
         image_dir="https://localhost:8000/media/comfyui/test.png",
         role="player",
         uuid="12345678-1234-5678-1234-567812345678"

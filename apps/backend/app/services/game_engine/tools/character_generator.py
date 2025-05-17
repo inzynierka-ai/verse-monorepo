@@ -34,6 +34,7 @@ class CharacterGenerator:
         self.llm_service = llm_service or LLMService()
         self.db_session = db_session
 
+    @observe(name="create_character_draft_from_description")
     async def create_character_draft_from_description(
         self,
         description: str,
@@ -166,24 +167,19 @@ class CharacterGenerator:
             The saved database model
         """
         try:
-            # Safely get character attributes
-            personality_traits = ""
-            if hasattr(character, 'personalityTraits') and character.personalityTraits is not None:
-                personality_traits = ", ".join(character.personalityTraits)
-                            
             # Create a database model from the character schema
             db_character = CharacterModel(
                 name=character.name,
                 role=character.role,
                 description=character.description,
-                brief_description=character.briefDescription,  # Add the brief description
-                personality_traits=personality_traits,
+                brief_description=character.brief_description,  # Add the brief description
+                personality_traits=character.personality_traits,
                 backstory=character.backstory,
                 goals=", ".join(character.goals) if hasattr(character, 'goals') and character.goals else "",
-                speaking_style="", # Not in schema, add if needed
+                speaking_style=character.speaking_style,
                 image_dir=character.image_dir,
                 image_prompt=image_prompt,
-                relationship_level=character.relationshipLevel,
+                relationship_level=character.relationship_level,
                 story_id=story_id,
                 uuid=character.uuid  # Use the UUID from character object
             )
@@ -322,7 +318,7 @@ class CharacterGenerator:
         )
 
         messages = [
-            self.llm_service.create_message("system", CREATE_CHARACTER_JSON_SYSTEM_PROMPT(is_player=is_player)),
+            self.llm_service.create_message("system", CREATE_CHARACTER_JSON_SYSTEM_PROMPT(is_npc=not is_player)),
             self.llm_service.create_message("user", user_prompt)
         ]
 

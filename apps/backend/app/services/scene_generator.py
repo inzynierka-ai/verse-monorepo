@@ -103,16 +103,17 @@ class SceneGeneratorAgent:
                             "name": {"type": "string"},
                             "age": {"type": "integer"},
                             "appearance": {"type": "string"},
-                            "background": {"type": "string"}
+                            "background": {"type": "string"},
                         },
                         "required": ["name", "age", "appearance", "background"]
                     },
+                    "immediate_goals": {"type": "string", "description": "The character\'s immediate goals for the current situation or scene. It should be concise and instruct the character how to act in the scene."},
                     "existing_character_id": {
                         "type": "string",
                         "description": "UUID of existing character to use (optional)"
                     }
                 },
-                "required": []
+                "required": ["immediate_goals"]
             }
         })
         
@@ -256,11 +257,20 @@ class SceneGeneratorAgent:
         3. Explore and interact with the world from their perspective
         4. Advance their personal storyline or goals
         </player_perspective>
+
+        <heros_journey_framework>
+        The Hero's Journey is a model for the player's transformative adventure, typically in three main stages:
+        1.  **Departure**: The hero leaves their ordinary world. Key elements: Call to Adventure, Refusal, Supernatural Aid, Crossing First Threshold, Belly of the Whale (symbolic death/rebirth). Focus on moving from known to unknown.
+        2.  **Initiation**: The hero undergoes trials and gains new understanding/abilities. Key elements: Road of Trials, Meeting allies/mentors, facing temptations, Atonement, Apotheosis (transformation), The Ultimate Boon. Focus on character development through challenges.
+        3.  **Return**: The hero brings their boon/knowledge back. Key elements: Refusal to Return, Magic Flight, Rescue, Crossing Return Threshold, Master of Two Worlds, Freedom to Live. Focus on reintegration and sharing wisdom.
+        Your goal is to generate scenes that align with these stages, progressing the player's journey and transformation.
+        </heros_journey_framework>
         
         <planning>
         Plan before each action. Think about what elements would create an interesting scene. Consider:
         1. How this scene connects to previous scenes from the player's perspective
         2. What character interactions would be compelling for the player
+        3. How this scene fits into the player's overall Hero's Journey. Based on previous_scenes and story context, infer the current approximate phase (Departure, Initiation, Return) and align the scene accordingly. If the story is new, focus on 'Departure'. If well-developed, lean 'Initiation'. If nearing resolution of a major arc, consider 'Return'.
         </planning>
         """
         
@@ -330,6 +340,12 @@ class SceneGeneratorAgent:
                         self.state.finalize_scene_error = None
                         try:
                             self.state.scene_description = call["arguments"]["description"]
+                            if not self.state.selected_location:
+                                logging.warning("No location selected, skipping scene finalization")
+                                raise ValueError("No location selected, Generate location first and try again")
+                            if len(self.state.selected_characters) == 0:
+                                logging.warning("No characters selected, skipping scene finalization")
+                                raise ValueError("No characters selected, Generate characters first and try again")
                             scene_complete = True
                             logging.info(f"Agent step {step_count}: Scene finalized")
                             break
@@ -445,6 +461,7 @@ class SceneGeneratorAgent:
             for character in self.state.characters_pool:
                 if str(character.uuid) == existing_char_uuid:
                     found_character = character
+                    found_character.immediate_goals = args["immediate_goals"]
                     break
 
             if not found_character:
@@ -541,6 +558,7 @@ class SceneGeneratorAgent:
                     story=self.story,
                     is_player=False
                 )
+                new_character.immediate_goals = args["immediate_goals"]
 
                 # Add to selected characters
                 current_characters = list(self.state.selected_characters)
@@ -595,6 +613,7 @@ class SceneGeneratorAgent:
                 <character>
                     <uuid>{character.uuid}</uuid>
                     <name>{character.name}</name>
+                    <immediate_goals>{character.immediate_goals}</immediate_goals>
                 </character>
                 """
                 characters.append(char_str)
@@ -628,7 +647,7 @@ class SceneGeneratorAgent:
         # Format the previous scenes if available
         previous_scenes_str = "None"
 
-        if self.state.previous_scenes:
+        if self.state.previous_scenes is not None:
             scenes: List[str] = []
             for scene in self.state.previous_scenes:
                 characters_xml = ""
@@ -733,25 +752,29 @@ class SceneGeneratorAgent:
             if location_id is None:
                 raise ValueError("Cannot create scene without location_id")
                 
-            # Collect character UUIDs instead of IDs
-            character_uuids: List[str] = [self.state.player.uuid]
+            # Collect character data (UUIDs and immediate_goals)
+            characters_data_for_db: List[Dict[str, Any]] = []
+            # Add player character
+            characters_data_for_db.append({"uuid": self.state.player.uuid, "immediate_goals": None})
+            
             for character in scene_result.characters:
                 character_uuid = getattr(character, 'uuid', None)
+                immediate_goals = getattr(character, 'immediate_goals', None)
                 if character_uuid is not None:
-                    character_uuids.append(str(character_uuid))
+                    characters_data_for_db.append({"uuid": str(character_uuid), "immediate_goals": immediate_goals})
                 else:
-                    logging.warning(f"Character {getattr(character, 'name', 'unknown')} has no UUID")
+                    logging.warning(f"Character {getattr(character, 'name', 'unknown')} has no UUID, cannot save immediate goals")
             
-            if not character_uuids:
-                logging.warning("No character UUIDs found to associate with the scene")
+            if not characters_data_for_db:
+                logging.warning("No character data found to associate with the scene")
             
-            # Create a complete scene in one operation using UUIDs
+            # Create a complete scene in one operation using character data
             db_scene = scenes_crud.create_complete_scene(
                 self.db_session,
                 story_id,
                 location_id,
                 scene_result.description,
-                character_uuids if character_uuids else None
+                characters_data_for_db if characters_data_for_db else None
             )
             
             # Log completion

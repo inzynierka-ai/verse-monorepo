@@ -11,7 +11,7 @@ from app.services.memory_manager import MemoryManager
 from datetime import datetime
 from app.utils.embedding import optimize_text_for_embedding, get_embedding
 import uuid
-import logging
+from langfuse.decorators import observe  # type: ignore
 
 from app.services.moderations import ModerationsService
 
@@ -33,6 +33,7 @@ class ConversationService:
         """Verify that the scene ID in the message matches the current scene ID"""
         return message_scene_id == current_scene_id
     
+    @observe(name="process_message")
     async def process_message(self, db: Session, messages: List[Dict[str, Any]], 
                              character: Character, scene: Scene) -> AsyncGenerator[str, None]:
         """Process a message and generate a response"""
@@ -132,6 +133,7 @@ class ConversationService:
         # Get character memories
         logger.info(f"Retrieving memories for character ID: {character.id}")
         memory_manager = MemoryManager(db_session=db)
+
         memories = await memory_manager.find_similar_memories(
             character_id=character.id, 
             query=last_message, 
@@ -161,6 +163,7 @@ class ConversationService:
             import traceback
             logger.error(traceback.format_exc())
             world_entities = []
+
 
         # Log location info
         location_info = f"You are currently at {scene.location.name}. {scene.location.description}" if scene.location else ""
@@ -208,10 +211,13 @@ class ConversationService:
         Your speaking style:
         {character.speaking_style}
 
+        Your immediate goals for the current situation (These are very important and you should focus on achieving them now):
+        {character.immediate_goals}
+
         You are in the following situation:
         {scene.description}
 
-        You are currently speaking with the player character named {player_name}. Speak and act according to your personality, goals, and knowledge. Do **not** narrate or explain your behavior unless it is in-character to do so.
+        You are currently speaking with the player character named {player_name}. Speak and act according to your personality, goals, and knowledge. Do **not** narrate or explain your behavior unless it's something your character would naturally do.
 
         Memories of past interactions (which you remember as real experiences):
         {memories_text}
