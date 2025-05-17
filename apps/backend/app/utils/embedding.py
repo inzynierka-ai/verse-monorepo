@@ -21,7 +21,7 @@ def get_embedding(text: str, model: str = "text-embedding-3-small") -> list[floa
     return response.data[0].embedding
 
 
-@observe("optimize_text_for_embedding")
+@observe(name="optimize_text_for_embedding")
 async def optimize_text_for_embedding(text: str, llm_service: Optional[LLMService] = None) -> str:
     """
     Use LLM to extract key words/phrases that best represent the core meaning of text.

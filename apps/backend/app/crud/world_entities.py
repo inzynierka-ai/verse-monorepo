@@ -118,6 +118,9 @@ def get_entities_by_name(db: Session, query: str, story_id: int, search_descript
     Returns:
         List of entities that match the query
     """
+    # Define log_source outside the try block so it's always available
+    log_source = "name, aliases, and descriptions" if search_descriptions else "name and aliases"
+    
     try:
         from sqlalchemy import or_
         
@@ -137,7 +140,6 @@ def get_entities_by_name(db: Session, query: str, story_id: int, search_descript
         # Execute the query
         entities = db.query(WorldEntityModel).filter(*conditions).all()
             
-        log_source = "name, aliases, and descriptions" if search_descriptions else "name and aliases"
         logging.info(f"Search for '{query}' in {log_source} found {len(entities)} entities")
         return entities
         
