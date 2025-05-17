@@ -176,7 +176,7 @@ class CharacterGenerator:
                 personality_traits=character.personality_traits,
                 backstory=character.backstory,
                 goals=", ".join(character.goals) if hasattr(character, 'goals') and character.goals else "",
-                speaking_style="", # Not in schema, add if needed
+                speaking_style=character.speaking_style,
                 image_dir=character.image_dir,
                 image_prompt=image_prompt,
                 relationship_level=character.relationship_level,

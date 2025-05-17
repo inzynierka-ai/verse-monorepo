@@ -60,21 +60,9 @@ const StoryGenerationCompleted = ({ story, character, onReset }: StoryGeneration
               <img src={character.image_dir} alt={`${character.name}`} className={styles.characterImage} />
             </div>
 
-            {/* Krótki opis zamiast pełnego */}
             <div>
               <h3>Summary</h3>
               <p className={styles.characterBriefDescription}>{character.brief_description}</p>
-            </div>
-
-            <div>
-              <h3>Personality Traits</h3>
-              <div>
-                {character.personality_traits?.map((trait, index) => (
-                  <span key={index} className={styles.trait}>
-                    {trait}
-                  </span>
-                ))}
-              </div>
             </div>
 
             <div>
