@@ -330,6 +330,12 @@ class SceneGeneratorAgent:
                         self.state.finalize_scene_error = None
                         try:
                             self.state.scene_description = call["arguments"]["description"]
+                            if not self.state.selected_location:
+                                logging.warning("No location selected, skipping scene finalization")
+                                raise ValueError("No location selected, Generate location first and try again")
+                            if len(self.state.selected_characters) == 0:
+                                logging.warning("No characters selected, skipping scene finalization")
+                                raise ValueError("No characters selected, Generate characters first and try again")
                             scene_complete = True
                             logging.info(f"Agent step {step_count}: Scene finalized")
                             break
