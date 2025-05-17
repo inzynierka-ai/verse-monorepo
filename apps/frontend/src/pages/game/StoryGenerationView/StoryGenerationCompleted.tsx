@@ -63,13 +63,13 @@ const StoryGenerationCompleted = ({ story, character, onReset }: StoryGeneration
             {/* Krótki opis zamiast pełnego */}
             <div>
               <h3>Summary</h3>
-              <p className={styles.characterBriefDescription}>{character.briefDescription}</p>
+              <p className={styles.characterBriefDescription}>{character.brief_description}</p>
             </div>
 
             <div>
               <h3>Personality Traits</h3>
               <div>
-                {character.personalityTraits?.map((trait, index) => (
+                {character.personality_traits?.map((trait, index) => (
                   <span key={index} className={styles.trait}>
                     {trait}
                   </span>

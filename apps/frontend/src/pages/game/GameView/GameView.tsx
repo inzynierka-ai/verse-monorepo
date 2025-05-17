@@ -39,6 +39,21 @@ const GameView = () => {
     }
   }, [needsGeneration, generationStarted, startGeneration]);
 
+  useEffect(() => {
+    // Navigate when a scene is loaded and conditions are appropriate
+    if (currentScene) {
+      if (storyId && currentScene.uuid) {
+        navigate({
+          to: '/play/$storyId/scenes/$sceneId',
+          params: { storyId, sceneId: currentScene.uuid },
+          replace: true,
+        });
+      } else {
+        console.error('Missing storyId or scene UUID for navigation', { storyId, sceneUuid: currentScene?.uuid });
+      }
+    }
+  }, [currentScene, storyId, navigate]);
+
   if (isLoading) {
     return (
       <div className={styles.loading}>
@@ -62,18 +77,22 @@ const GameView = () => {
     return <SceneGenerationView storyId={storyId} onSceneComplete={handleSceneComplete} />;
   }
 
-  if (!currentScene) {
+  if (currentScene) {
     return (
-      <div className={styles.error}>
-        <h2>Error</h2>
-        <p>Scene data is missing.</p>
-        <Button onClick={() => navigate({ to: '/' })}>Return to Home</Button>
+      <div className={styles.loading}>
+        <div className={styles.loadingSpinner}></div>
+        <p>Redirecting to scene...</p>
       </div>
     );
   }
 
-  navigate({ to: '/play/$storyId/scenes/$sceneId', params: { storyId, sceneId: currentScene.uuid }, replace: true });
-  return null;
+  return (
+    <div className={styles.error}>
+      <h2>No Scene Available</h2>
+      <p>Could not find an active scene for your adventure. Please try returning home.</p>
+      <Button onClick={() => navigate({ to: '/' })}>Return to Home</Button>
+    </div>
+  );
 };
 
 export default GameView;

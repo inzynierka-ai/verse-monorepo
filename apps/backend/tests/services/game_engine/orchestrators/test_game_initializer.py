@@ -65,7 +65,12 @@ def sample_story() -> Story:
     """Create a sample story for testing."""
     return Story(
         description="A story devastated by climate change...",
-        rules=["Resources are scarce", "Technology is fragmented"]
+        rules=["Resources are scarce", "Technology is fragmented"],
+        brief_description="A post-apocalyptic story devastated by climate change",
+        uuid="12345678-1234-5678-1234-567812345678",
+        id=1,
+        user_id=1,
+        title="The Last of Us"
     )
 
 
@@ -75,10 +80,11 @@ def sample_character() -> Character:
     return Character(
         name="Alex",
         description="A resourceful survivor with engineering skills",
-        personalityTraits=["Resourceful", "Cautious", "Determined"],
+        personality_traits="Resourceful, Cautious, Determined",
+        brief_description="A resourceful survivor with engineering skills",
         backstory="Once a promising engineer, now searching for purpose",
         goals=["Find clean water source", "Build a safe community"],
-        relationships=[],
+        relationship_level=0,
         image_dir="https://localhost:8000/media/comfyui/test.png",
         role="player",
         uuid="12345678-1234-5678-1234-567812345678"

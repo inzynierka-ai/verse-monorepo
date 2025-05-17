@@ -43,7 +43,7 @@ Based on the provided free-form Story Description and the original parameters, y
 
 The JSON object must contain the following keys:
 - "title": A catchy and engaging title for the story (maximum 50 characters).
-- "briefDescription": A 3-4 sentence summary of the story's core essence and starting point.
+- "brief_description": A 3-4 sentence summary of the story's core essence and starting point.
 - "rules": A list of 3-5 fundamental rules, principles, or unique aspects that govern how this world functions. These rules should be 1-2 sentences each and can subtly hint at potential challenges or opportunities for character development.
 
 Ensure the generated details are consistent with the Story Description and the initial parameters.

@@ -1,6 +1,6 @@
 import { sceneRoute } from '@/router';
 import { useNavigate } from '@tanstack/react-router';
-import { useLatestScene } from '@/services/api/hooks/useLatestScene';
+import { useScene } from '@/services/api/hooks/useScene';
 import { useCompleteScene } from '@/services/api/hooks/useCompleteScene';
 import Button from '@/common/components/Button/Button';
 import { Character } from '@/types/character.types';
@@ -12,7 +12,7 @@ const SceneView = () => {
   const navigate = useNavigate();
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
 
-  const { data: scene, isLoading, error } = useLatestScene(storyId);
+  const { data: scene, isLoading, error } = useScene(storyId, sceneId);
   const { mutate: completeScene, isPending: isCompleting } = useCompleteScene();
 
   const handleCharacterClick = (character: Character) => {

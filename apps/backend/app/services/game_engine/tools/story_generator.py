@@ -62,7 +62,7 @@ class StoryGenerator:
             user_id=user_id,
             title=story_details.title,
             description=description,
-            brief_description=story_details.briefDescription,
+            brief_description=story_details.brief_description,
             rules=story_details.rules,
             uuid=story_uuid,
         )
@@ -111,6 +111,7 @@ class StoryGenerator:
                 self.db_session.rollback()
             raise ValueError("Failed to save story to database")
 
+    @observe(name="generate_story_description")
     async def _generate_story_description(self, story_gen_input: StoryGenerationInput) -> str:
         """
         Generate a detailed description of the story using story and character inputs.
@@ -147,6 +148,7 @@ class StoryGenerator:
         
         return await self.llm_service.extract_content(response)
     
+    @observe(name="generate_story_details")
     async def _generate_story_details(self, description: str, story_gen_input: StoryGenerationInput) -> StoryDetails:
         """
         Generate title, brief description, and rules for the story based on its description

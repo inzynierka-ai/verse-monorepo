@@ -14,6 +14,7 @@ from app.crud.stories import get_story_by_id
 from app.crud.scenes import get_scene_by_uuid
 from app.crud.world_entities import get_entity_names_by_story_id, get_related_entities
 from app.schemas.world_entity import WorldEntityFromLLM, WorldEntity
+from langfuse.decorators import observe  # type: ignore
 
 class WorldEntityService:
     def __init__(self, llm_service: Optional[LLMService] = None, db_session: Optional[Session] = None, story_id: Optional[int] = None):
@@ -21,6 +22,7 @@ class WorldEntityService:
         self.db_session = db_session
         self.story = get_story_by_id(db_session, story_id) if db_session and story_id else None
 
+    @observe(name="extract_entity_names")
     async def extract_entity_names(self, conversation_text: str) -> List[str]:
         """
         Extract potential world entity names (terms or concepts) from the scene.
@@ -141,6 +143,7 @@ class WorldEntityService:
         known = get_entity_names_by_story_id(self.db_session, self.story.id)
         return [name for name in entity_names if name.lower() not in {k.lower() for k in known}]
 
+    @observe(name="describe_entity")
     async def describe_entity(self, entity_name: str, scene_text: str, related_entities: List[Dict]) -> Optional[Dict[str, Any]]:
         """
         Generate a canonical description for a single world entity using scene and world context.

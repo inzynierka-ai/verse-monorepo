@@ -12,6 +12,7 @@ from datetime import datetime
 from app.utils.embedding import simplify_text_for_embedding, get_embedding
 import uuid
 import logging
+from langfuse.decorators import observe  # type: ignore
 
 from app.services.moderations import ModerationsService
 
@@ -33,6 +34,7 @@ class ConversationService:
         """Verify that the scene ID in the message matches the current scene ID"""
         return message_scene_id == current_scene_id
     
+    @observe(name="process_message")
     async def process_message(self, db: Session, messages: List[Dict[str, Any]], 
                              character: Character, scene: Scene) -> AsyncGenerator[str, None]:
         """Process a message and generate a response"""

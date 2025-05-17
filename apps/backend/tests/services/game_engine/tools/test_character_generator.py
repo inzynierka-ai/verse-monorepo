@@ -67,11 +67,11 @@ async def test_generate_character(
     # Define a character with valid relationships
     character_from_llm = CharacterFromLLM(
         name="Test Character",
-        description="Tall with brown hair and a distinguished look",
-        personalityTraits=["Brave", "Intelligent"],
+        brief_description="A brave survivor in the wasteland",
+        personality_traits="Brave, Intelligent",
         backstory="A mysterious background with many secrets",
         goals=["Find the truth", "Protect their family"],
-        relationshipLevel=5
+        relationship_level=5
     )
     
     image_prompt = "A detailed image of Test Character standing tall with brown hair."

@@ -2,11 +2,11 @@ export interface Character {
   uuid: string;
   name: string;
   description: string;
-  briefDescription: string;
+  brief_description: string;
   image_dir: string;
   role: 'player' | 'npc';
-  personalityTraits?: string[];
+  personality_traits?: string[];
   backstory: string;
   goals: string[];
-  relationshipLevel?: number;
+  relationship_level?: number;
 }
