@@ -57,6 +57,7 @@ class CharacterFromLLM(BaseModel):
     """Character in the generated story"""
     name: str = Field(..., description="Character name")
     brief_description: str = Field(..., description="Short 3-4 sentence description for UI display")
+    speaking_style: str = Field(..., description="Character's speaking style, e.g., formal, informal, etc.")
     personality_traits: Optional[str] = Field(
         None, description="Character's personality traits")
     backstory: str = Field(...,

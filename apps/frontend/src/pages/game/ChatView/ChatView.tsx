@@ -109,7 +109,7 @@ const Chat = () => {
               </div>
               <div className={styles.characterInfo}>
                 <h2>{selectedCharacter.name}</h2>
-                <p>{selectedCharacter.description}</p>
+                <p>{selectedCharacter.brief_description}</p>
               </div>
             </>
           )}

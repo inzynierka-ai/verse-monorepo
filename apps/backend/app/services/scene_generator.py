@@ -257,11 +257,20 @@ class SceneGeneratorAgent:
         3. Explore and interact with the world from their perspective
         4. Advance their personal storyline or goals
         </player_perspective>
+
+        <heros_journey_framework>
+        The Hero's Journey is a model for the player's transformative adventure, typically in three main stages:
+        1.  **Departure**: The hero leaves their ordinary world. Key elements: Call to Adventure, Refusal, Supernatural Aid, Crossing First Threshold, Belly of the Whale (symbolic death/rebirth). Focus on moving from known to unknown.
+        2.  **Initiation**: The hero undergoes trials and gains new understanding/abilities. Key elements: Road of Trials, Meeting allies/mentors, facing temptations, Atonement, Apotheosis (transformation), The Ultimate Boon. Focus on character development through challenges.
+        3.  **Return**: The hero brings their boon/knowledge back. Key elements: Refusal to Return, Magic Flight, Rescue, Crossing Return Threshold, Master of Two Worlds, Freedom to Live. Focus on reintegration and sharing wisdom.
+        Your goal is to generate scenes that align with these stages, progressing the player's journey and transformation.
+        </heros_journey_framework>
         
         <planning>
         Plan before each action. Think about what elements would create an interesting scene. Consider:
         1. How this scene connects to previous scenes from the player's perspective
         2. What character interactions would be compelling for the player
+        3. How this scene fits into the player's overall Hero's Journey. Based on previous_scenes and story context, infer the current approximate phase (Departure, Initiation, Return) and align the scene accordingly. If the story is new, focus on 'Departure'. If well-developed, lean 'Initiation'. If nearing resolution of a major arc, consider 'Return'.
         </planning>
         """
         
@@ -638,7 +647,7 @@ class SceneGeneratorAgent:
         # Format the previous scenes if available
         previous_scenes_str = "None"
 
-        if self.state.previous_scenes:
+        if self.state.previous_scenes is not None:
             scenes: List[str] = []
             for scene in self.state.previous_scenes:
                 characters_xml = ""
