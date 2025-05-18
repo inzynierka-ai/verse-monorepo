@@ -260,7 +260,9 @@ class WorldEntityService:
             if name_lower in known_aliases:
                 logging.info(f"Filtering out '{name}' - matches existing entity alias")
                 continue
-                          
+            # Add the name to filtered_names if it doesn't match any known entity
+            filtered_names.append(name)
+                        
         logging.info(f"Original entity names: {len(entity_names)}, Filtered entity names: {len(filtered_names)}")
         return filtered_names
 
