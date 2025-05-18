@@ -21,6 +21,7 @@ class WorldEntity(WorldEntityBase):
 class WorldEntityFromLLM(BaseModel):
     name: str
     description: str
+    aliases: List[str] = []
 
 class WorldEntityCreate(BaseModel):
     story_id: int
