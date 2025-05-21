@@ -1,12 +1,12 @@
 import json
 import logging
 import uuid
-from typing import Optional
+from typing import Optional, List
 from sqlalchemy.orm import Session
-
 from langfuse.decorators import observe, langfuse_context # type: ignore
 
 from app.services.llm import LLMService, ModelName
+from app.services.world_entity_service import WorldEntityService
 from app.schemas.story_generation import (
     Story,
     StoryDetails,
@@ -73,6 +73,9 @@ class StoryGenerator:
             if db_story:
                 # Update with database ID
                 story_data.id = db_story.id # type: ignore
+
+                # Extract and save world entities
+                await self.extract_story_entities(story_data)
         
         # Always return a Story object with all required fields
         return story_data
@@ -147,6 +150,45 @@ class StoryGenerator:
         )
         
         return await self.llm_service.extract_content(response)
+    
+    @observe(name="extract_story_entities")
+    async def extract_story_entities(self, story: Story) -> List[int]:
+        """
+        Extract world entities from a generated story description.
+        
+        Args:
+            story: The generated Story object
+            
+        Returns:
+            List of IDs of saved entities
+        """
+        if not self.db_session or not story.id:
+            logging.warning("Cannot extract entities: missing DB session or story ID")
+            return []
+        
+        try:
+            # Create an instance of WorldEntityService
+            world_entity_service = WorldEntityService(
+                llm_service=self.llm_service,
+                db_session=self.db_session,
+                story_id=story.id
+            )
+            
+            # Process the story description for entities
+            entity_ids = await world_entity_service.process_text_for_entities(
+                text=story.description,
+                story_id=story.id,
+                source_uuid=story.uuid  # Use story UUID as source
+            )
+            
+            logging.info(f"Extracted {len(entity_ids)} world entities from story {story.title}")
+            return entity_ids
+        
+        except Exception as e:
+            logging.error(f"Failed to extract world entities from story: {str(e)}")
+            import traceback
+            logging.error(traceback.format_exc())
+            return []
     
     @observe(name="generate_story_details")
     async def _generate_story_details(self, description: str, story_gen_input: StoryGenerationInput) -> StoryDetails:

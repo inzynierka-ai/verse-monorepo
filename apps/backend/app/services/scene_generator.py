@@ -223,7 +223,49 @@ class SceneGeneratorAgent:
             # No need to mark placeholder as failed since we don't create one
             await self._update_action("scene_status", "Scene generation failed")
             raise
+
+    @observe(name="extract_scene_entities")
+    async def _extract_scene_entities(self, scene_result: SceneGenerationResult, scene_model: SceneModel) -> List[int]:
+        """
+        Extract world entities from a generated scene.
         
+        Args:
+            scene_result: The scene generation result with description
+            scene_model: The saved database model with UUID
+            
+        Returns:
+            List of IDs of saved entities
+        """
+        if not self.db_session or not self.story.id:
+            logging.warning("Cannot extract entities: missing DB session or story ID")
+            return []
+        
+        try:
+            # Create world entity service
+            from app.services.world_entity_service import WorldEntityService
+            
+            world_entity_service = WorldEntityService(
+                llm_service=self.llm,
+                db_session=self.db_session,
+                story_id=self.story.id
+            )
+            
+            # Process the scene description for entities
+            entity_ids = await world_entity_service.process_text_for_entities(
+                text=scene_result.description,
+                story_id=self.story.id,
+                source_uuid=str(scene_model.uuid)  # Convert UUID to string
+            )
+            
+            logging.info(f"Extracted {len(entity_ids)} world entities from scene {scene_model.id}")
+            return entity_ids
+            
+        except Exception as e:
+            logging.error(f"Failed to extract world entities from scene: {str(e)}")
+            import traceback
+            logging.error(traceback.format_exc())
+            return []    
+
     @observe(name="agent_loop")
     async def _run_agent_loop(self) -> SceneGenerationResult:
         """Run the agent loop until the scene is complete"""
@@ -779,6 +821,9 @@ class SceneGeneratorAgent:
             
             # Log completion
             logging.info(f"Scene saved to database with ID {db_scene.id} with status 'active'")
+
+            # Extract and save world entities
+            await self._extract_scene_entities(scene_result, db_scene)
             
             # Update action status
             await self._update_action("scene_status", "Scene generation completed successfully")

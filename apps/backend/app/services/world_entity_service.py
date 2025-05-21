@@ -483,3 +483,81 @@ class WorldEntityService:
                 logging.error(traceback.format_exc())
                 
         return saved_ids
+    
+    @observe(name="process_text_for_entities")
+    async def process_text_for_entities(self, text: str, story_id: int, source_uuid: Optional[str] = None) -> List[int]:
+        """
+        Process any text to extract and save world entities.
+        
+        Args:
+            text: The text to analyze for entities
+            story_id: ID of the story these entities belong to
+            source_uuid: UUID of the source (scene or story) where entities were found
+                
+        Returns:
+            List of IDs of saved entities
+        """
+        if not self.db_session:
+            logging.error("No DB session available, cannot process entities.")
+            return []
+        
+        # Set story context if needed
+        if not self.story:
+            self.story = get_story_by_id(self.db_session, story_id)
+            if not self.story:
+                logging.error(f"Story with ID {story_id} not found.")
+                return []
+        
+        # Extract entity names from text
+        detected_names = await self.extract_entity_names(text)
+        
+        # Filter out already known entities
+        new_names = self.filter_known_entities(detected_names)
+        
+        if not new_names:
+            logging.info(f"No new entities found in the provided text.")
+            return []
+        
+        logging.info(f"Detected new entities: {new_names}")
+        
+        # Process each new entity
+        saved_ids = []
+        for name in new_names:
+            try:
+                # Find related entities for context
+                related = get_related_entities_by_name(self.db_session, name, self.story.id)
+                logging.info(f"Found {len(related)} related entities for '{name}'")
+                
+                # Format related entities for the describe_entity method
+                related_formatted = []
+                for entity in related:
+                    related_formatted.append({
+                        "name": entity.name,
+                        "description": entity.canonical_description
+                    })
+                
+                # Generate description and aliases
+                description_data = await self.describe_entity(name, text, related_formatted)
+                
+                # Save the entity if description was generated successfully
+                if description_data:
+                    entity_id = save_entity(
+                        db=self.db_session,
+                        entity_data=description_data,
+                        story_id=self.story.id,
+                        scene_uuid=source_uuid
+                    )
+                    
+                    if entity_id:
+                        saved_ids.append(entity_id)
+                        logging.info(f"Successfully saved entity '{name}' with ID {entity_id}")
+                    else:
+                        logging.warning(f"Failed to save entity '{name}'")
+                else:
+                    logging.warning(f"No description data generated for entity '{name}'")
+            except Exception as e:
+                logging.error(f"Error processing entity '{name}': {str(e)}")
+                import traceback
+                logging.error(traceback.format_exc())
+        
+        return saved_ids
