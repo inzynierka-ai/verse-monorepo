@@ -31,7 +31,7 @@ class ModelName(Enum):
     DEEPSEEK_V3 = ('deepseek/deepseek-chat', ModelProvider.OPENROUTER)
     GEMINI_2_PRO = ('google/gemini-2.0-pro-exp-02-05:free', ModelProvider.OPENROUTER)
     GEMINI_25_PRO = ('google/gemini-2.5-pro-exp-03-25:free', ModelProvider.OPENROUTER)
-    GEMINI_2_FLASH_LITE = ('google/gemini-2.0-flash-lite-001', ModelProvider.OPENROUTER)
+    GEMINI_25_FLASH_LITE = ('google/gemini-2.5-flash-preview-05-20', ModelProvider.OPENROUTER)
     
     def __init__(self, model_id: str, provider: ModelProvider):
         self.model_id = model_id

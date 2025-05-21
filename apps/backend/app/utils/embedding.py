@@ -62,7 +62,7 @@ async def optimize_text_for_embedding(text: str, llm_service: Optional[LLMServic
     
     response = await llm_service.generate_completion(
         messages=messages,
-        model=ModelName.GEMINI_2_FLASH_LITE,  # Using a fast, efficient model
+        model=ModelName.GEMINI_25_FLASH_LITE,  # Using a fast, efficient model
         temperature=0.1,  # Low temperature for more deterministic output
         stream=False
     )

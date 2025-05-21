@@ -6,7 +6,7 @@ from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
 from app.schemas.story_generation import StoryGenerationInput, Story, Character
-from app.services.game_engine.orchestrators.game_initializer import GameInitializer
+from app.services.game_engine.orchestrators.game_initializer import GameInitializer, SimpleGameInput
 from app.routers.game_ws.base import BaseMessageHandler
 
 # Set up logging
@@ -43,14 +43,26 @@ class GameInitializationHandler(BaseMessageHandler):
     async def _handle_initialize_game(self, message: Dict[str, Any], websocket: WebSocket):
         """
         Handle game initialization request
-        1. Validate the StoryGenerationInput
+        1. Validate the input (either SimpleGameInput or StoryGenerationInput)
         2. Generate story and send it to client
         3. Generate character and send it to client
         """
         try:
             # Validate input
             payload = message.get("payload", {})
-            input_data = StoryGenerationInput(**payload)
+            
+            # Determine if this is simple mode or advanced mode
+            is_simple_mode = payload.get("isSimpleMode", False)
+            
+            if is_simple_mode:
+                # Simple mode: validate using SimpleGameInput
+                input_data = SimpleGameInput(
+                    story_description=payload.get("story_description"),
+                    character_description=payload.get("character_description")
+                )
+            else:
+                # Advanced mode: validate using StoryGenerationInput
+                input_data = StoryGenerationInput(**payload)
             
             # Get user ID if authenticated
             user_id = None
@@ -101,14 +113,10 @@ class GameInitializationHandler(BaseMessageHandler):
             
             print("Initializing game", input_data)
             
-            # Find or create a story for this game session
-            
-                    # Continue even if story creation fails
-            
-            # Start game initialization with callbacks and story_id
+            # Start game initialization with callbacks
             await self.game_initializer.initialize_game(
                 input_data,
-                user_id=user_id,
+                user_id=user_id, # type: ignore
                 on_story_generated=on_story_generated,
                 on_character_generated=on_character_generated,
             )

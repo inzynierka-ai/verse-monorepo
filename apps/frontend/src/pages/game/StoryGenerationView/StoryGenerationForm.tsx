@@ -2,14 +2,14 @@ import { FormEvent, useState } from 'react';
 import styles from './StoryGenerationView.module.scss';
 import Button from '@/common/components/Button';
 import Input from '@/common/components/Input';
-import { StoryGenerationRequest } from '@/services/api/hooks';
+import { AdvancedStoryGenerationRequest } from '@/services/api/hooks/useStoryGeneration';
 
 interface StoryGenerationFormProps {
-  onSubmit: (data: StoryGenerationRequest) => void;
+  onSubmit: (data: AdvancedStoryGenerationRequest) => void;
 }
 
 const StoryGenerationForm = ({ onSubmit }: StoryGenerationFormProps) => {
-  const [formData, setFormData] = useState<StoryGenerationRequest>({
+  const [formData, setFormData] = useState<AdvancedStoryGenerationRequest>({
     story: {
       theme: '',
       genre: '',
@@ -131,7 +131,7 @@ const StoryGenerationForm = ({ onSubmit }: StoryGenerationFormProps) => {
       <form className={styles.form} onSubmit={handleSubmit}>
         {/* Story Settings Section */}
         <div className={styles.section}>
-          <h2 className={styles.sectionTitle}>Story Settings</h2>
+          <h2 className={styles.sectionTitle}>Story World</h2>
 
           <div className={styles.formRow}>
             <Input
