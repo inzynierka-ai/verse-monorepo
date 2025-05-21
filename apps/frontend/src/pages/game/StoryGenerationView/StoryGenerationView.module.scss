@@ -201,6 +201,17 @@
   margin-top: 2rem;
 }
 
+.goalsList {
+  list-style-position: inside;
+  padding: 0;
+}
+
+.goalItem {
+  margin-bottom: 1rem;
+  border-radius: 4px;
+  background-color: rgba($dark-bg, 0.3);
+}
+
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }

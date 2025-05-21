@@ -14,9 +14,11 @@ const CharacterGoalsStep = ({ character, onNext }: CharacterGoalsStepProps) => {
 
       {character.goals.length > 0 ? (
         <div>
-          <ul>
+          <ul className={styles.goalsList}>
             {character.goals.map((goal, index) => (
-              <li key={index}>{goal}</li>
+              <li key={index} className={styles.goalItem}>
+                {goal}
+              </li>
             ))}
           </ul>
         </div>

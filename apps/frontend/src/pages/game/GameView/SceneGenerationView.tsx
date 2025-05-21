@@ -85,7 +85,7 @@ const SceneGenerationView = ({ storyId, onSceneComplete }: SceneGenerationViewPr
                 )}
                 <div className={styles.locationInfo}>
                   <h4>{state.lastLocation.name}</h4>
-                  <p>{state.lastLocation.description}</p>
+                  <p>{state.lastLocation.brief_description}</p>
                 </div>
               </Card>
             </div>

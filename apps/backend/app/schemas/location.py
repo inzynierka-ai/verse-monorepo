@@ -8,6 +8,7 @@ class LocationBase(BaseModel):
     image_prompt: Optional[str] = None
     rules: Optional[str] = None
     colors: Optional[str] = None
+    brief_description: Optional[str] = None
     image_dir: Optional[str] = None
     uuid: str
 

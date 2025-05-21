@@ -61,7 +61,7 @@ For the location, create a JSON object with the following structure:
 ```json
 {
   "name": "Location Name", // Extract or create an appropriate name
-  "description": "Detailed description", // Comprehensive physical description
+  "brief_description": "Brief description of the most important features of the location (3-4 sentences)", 
   "rules": [] // Any specific rules that apply to this location
 }
 ```

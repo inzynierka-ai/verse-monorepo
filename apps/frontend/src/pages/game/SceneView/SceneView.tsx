@@ -3,25 +3,53 @@ import { useNavigate } from '@tanstack/react-router';
 import { useLatestScene } from '@/services/api/hooks/useLatestScene';
 import { useCompleteScene } from '@/services/api/hooks/useCompleteScene';
 import Button from '@/common/components/Button/Button';
+import Card from '@/common/components/Card/Card';
 import { Character } from '@/types/character.types';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import styles from './SceneView.module.scss';
 import { useQueryClient } from '@tanstack/react-query';
+
+const VIEWED_SCENES_KEY = 'verse_viewed_scenes';
 
 const SceneView = () => {
   const { storyId, sceneId } = sceneRoute.useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [descriptionExpanded, setDescriptionExpanded] = useState(false);
+  const [showIntroduction, setShowIntroduction] = useState(true);
 
   const { data: scene, isLoading, error } = useLatestScene(storyId);
   const { mutate: completeScene, isPending: isCompleting } = useCompleteScene();
+
+  // Check if scene has been viewed before
+  useEffect(() => {
+    if (scene) {
+      const viewedScenes = JSON.parse(localStorage.getItem(VIEWED_SCENES_KEY) || '[]');
+      const hasBeenViewed = viewedScenes.includes(scene.uuid);
+      setShowIntroduction(!hasBeenViewed);
+    }
+  }, [scene]);
 
   const handleCharacterClick = (character: Character) => {
     navigate({
       to: '/play/$storyId/scenes/$sceneId/characters/$characterId',
       params: { storyId, sceneId, characterId: character.uuid },
     });
+  };
+
+  const handleContinueFromIntro = () => {
+    if (scene) {
+      // Save this scene as viewed in localStorage
+      const viewedScenes = JSON.parse(localStorage.getItem(VIEWED_SCENES_KEY) || '[]');
+      if (!viewedScenes.includes(scene.uuid)) {
+        viewedScenes.push(scene.uuid);
+        localStorage.setItem(VIEWED_SCENES_KEY, JSON.stringify(viewedScenes));
+      }
+      setShowIntroduction(false);
+    }
+  };
+
+  const handleShowIntroduction = () => {
+    setShowIntroduction(true);
   };
 
   const handleBackToStories = () => {
@@ -33,7 +61,6 @@ const SceneView = () => {
       { storyId, sceneId },
       {
         onSuccess: () => {
-          // Navigate to the GameView after successfully completing the scene
           navigate({ to: '/play/$storyId', params: { storyId }, replace: true });
           queryClient.invalidateQueries({ queryKey: ['latest-scene', storyId] });
         },
@@ -44,9 +71,6 @@ const SceneView = () => {
     );
   };
 
-  const toggleDescription = () => {
-    setDescriptionExpanded(!descriptionExpanded);
-  };
 
   if (isLoading) {
     return (
@@ -64,54 +88,80 @@ const SceneView = () => {
 
   const npcCharacters = scene.characters.filter((character) => character.role === 'npc');
 
+  // Introduction Overlay
+  if (showIntroduction) {
+    return (
+      <div className={styles.introductionOverlay}>
+        <Card className={styles.introductionContent}>
+          <h1 className={styles.introductionHeader}>Welcome to {scene.location.name}</h1>
+
+          <div className={styles.introductionScroll}>
+            <div className={styles.introductionDescription}>
+              <div className={styles.introductionImage}>
+                <img src={scene.location.image_dir} alt={scene.location.name} />
+              </div>
+              <p className={styles.introductionDescriptionText}>{scene.description}</p>
+            </div>
+          </div>
+
+          <div className={styles.introductionButtonContainer}>
+            <Button onClick={handleContinueFromIntro} fullWidth>
+              Continue to Scene
+            </Button>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className={styles.sceneView}>
-      <div className={styles.sceneHeader}>
-        <h1>{scene.location.name}</h1>
-        <Button onClick={handleBackToStories} variant="secondary">
-          Back to Stories
-        </Button>
+      {/* Location Banner */}
+      <div className={styles.locationBanner}>
+        <img src={scene.location.image_dir} alt={scene.location.name} />
+        <div className={styles.locationBannerOverlay}>
+          <h1>{scene.location.name}</h1>
+          <div className={styles.bannerActions}>
+            <Button onClick={handleBackToStories} variant="text" className={styles.iconButton}>
+              ←
+            </Button>
+            <Button onClick={handleShowIntroduction} variant="text" className={styles.iconButton}>
+              i
+            </Button>
+          </div>
+        </div>
       </div>
 
       <div className={styles.sceneContent}>
-        {/* Left Column - Scene Context */}
-        <div className={styles.sceneContextColumn}>
-          <div className={`${styles.sceneDescription} ${!descriptionExpanded ? styles.descriptionCollapsed : ''}`}>
-            <p>{scene.description}</p>
-            <button className={styles.toggleDescription} onClick={toggleDescription}>
-              {descriptionExpanded ? 'Show Less' : 'Read More'}
-            </button>
-          </div>
-
+        {/* Left Column - Location Info */}
+        <div className={styles.locationSidebar}>
           <div className={styles.locationInfo}>
             <div className={styles.locationSectionHeader}>
               <h2>Location</h2>
             </div>
-            <div className={styles.locationCard}>
-              <div className={styles.locationImage}>
-                <img src={scene.location.image_dir} alt={scene.location.name} />
-              </div>
-
+            <Card className={styles.locationCard}>
               <div className={styles.locationDetails}>
-                <h3>{scene.location.name}</h3>
-                <p>{scene.location.description}</p>
+                <p>{scene.location.brief_description}</p>
               </div>
-            </div>
+            </Card>
           </div>
         </div>
 
-        {/* Right Column - Characters */}
-        <div className={styles.charactersColumn}>
+        {/* Main Content - Characters */}
+        <div className={styles.mainContent}>
           <div className={styles.charactersSection}>
             <div className={styles.charactersSectionHeader}>
               <div className={styles.charactersTitle}>
                 <h2>Characters</h2>
                 <span className={styles.characterCount}>{npcCharacters.length}</span>
               </div>
+              <p className={styles.charactersInstructions}>
+                Click on a character to start a conversation and progress through the scene
+              </p>
             </div>
             <div className={styles.charactersGrid}>
               {npcCharacters.map((character) => (
-                <div
+                <Card
                   key={character.uuid}
                   className={styles.characterCard}
                   onClick={() => handleCharacterClick(character)}
@@ -121,8 +171,9 @@ const SceneView = () => {
                   </div>
                   <div className={styles.characterInfo}>
                     <h3>{character.name}</h3>
+                    <Button className={styles.talkButton}>Talk to Character</Button>
                   </div>
-                </div>
+                </Card>
               ))}
             </div>
             {scene.messages.length > 0 && (
