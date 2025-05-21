@@ -7,21 +7,28 @@ import { Story } from '@/types/story.types';
 export interface StorySettings {
   theme: string;
   genre: string;
-  year: number;
+  year: string;
   setting: string;
 }
 
 export interface PlayerCharacter {
   name: string;
-  age: number;
+  age: string;
   appearance: string;
   background: string;
 }
 
-export interface StoryGenerationRequest {
+export interface SimpleGameInput {
+  story_description: string;
+  character_description: string;
+}
+
+export interface AdvancedStoryGenerationRequest {
   story: StorySettings;
   playerCharacter: PlayerCharacter;
 }
+
+export type StoryGenerationRequest = AdvancedStoryGenerationRequest | SimpleGameInput;
 
 export interface StoryGenerationMessage {
   type: 'STATUS_UPDATE' | 'STORY_CREATED' | 'CHARACTER_CREATED' | 'INITIALIZATION_COMPLETE' | 'ERROR';
@@ -43,7 +50,9 @@ interface UseStoryGenerationProps {
 
 interface UseStoryGenerationReturn {
   state: StoryGenerationState;
-  generateStory: (data: StoryGenerationRequest) => boolean;
+  generateStory: (data: StoryGenerationRequest, isSimpleMode?: boolean) => boolean;
+  generateSimpleStory: (storyDescription: string, characterDescription: string) => boolean;
+  generateAdvancedStory: (data: AdvancedStoryGenerationRequest) => boolean;
   reset: () => void;
   isConnected: boolean;
   reconnect: () => void;
@@ -137,7 +146,7 @@ export const useStoryGeneration = ({ onConnectionChange }: UseStoryGenerationPro
 
   // Generate story handler
   const generateStory = useCallback(
-    (data: StoryGenerationRequest): boolean => {
+    (data: StoryGenerationRequest, isSimpleMode: boolean = false): boolean => {
       if (!socket) {
         reconnect();
         return false;
@@ -150,10 +159,33 @@ export const useStoryGeneration = ({ onConnectionChange }: UseStoryGenerationPro
 
       return sendWebSocketMessage(socket, {
         type: 'INITIALIZE_GAME',
-        payload: data,
+        payload: {
+          ...data,
+          isSimpleMode,
+        },
       });
     },
     [socket, reconnect, updateState],
+  );
+
+  // Generate story in simple mode
+  const generateSimpleStory = useCallback(
+    (storyDescription: string, characterDescription: string): boolean => {
+      const simpleInput: SimpleGameInput = {
+        story_description: storyDescription,
+        character_description: characterDescription,
+      };
+      return generateStory(simpleInput, true);
+    },
+    [generateStory],
+  );
+
+  // Generate story in advanced mode
+  const generateAdvancedStory = useCallback(
+    (data: AdvancedStoryGenerationRequest): boolean => {
+      return generateStory(data, false);
+    },
+    [generateStory],
   );
 
   // Reset state handler
@@ -170,6 +202,8 @@ export const useStoryGeneration = ({ onConnectionChange }: UseStoryGenerationPro
   return {
     state: internalState,
     generateStory,
+    generateSimpleStory,
+    generateAdvancedStory,
     reset,
     isConnected,
     reconnect,

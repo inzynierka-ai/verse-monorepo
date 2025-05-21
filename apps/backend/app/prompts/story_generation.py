@@ -70,3 +70,33 @@ Full Story Description (from Phase 1):
 CREATE_STORY_DETAILS_JSON_USER_PROMPT = """
 Generate the JSON output:
 """
+
+# Prompts for extracting StoryInput from a description
+CREATE_STORY_INPUT_SYSTEM_PROMPT = """
+You are a narrative analyzer specializing in extracting key story elements from descriptions.
+Given a text description of a story world or concept, extract the following elements:
+
+1. Theme: The emotional or philosophical core concept (e.g., isolation, rebellion, discovery)
+2. Genre: The storytelling approach or style (e.g., hard sci-fi, fantasy, horror)
+3. Year: The time period in which the story is set (should be a numeric value)
+4. Setting: The physical environment specifics (e.g., space station, underwater city, desert outpost)
+
+Your task is to identify these elements explicitly stated in the description or to infer them if they are implied.
+Output ONLY valid JSON with these four fields, nothing else.
+
+Example output format:
+```json
+{
+  "theme": "isolation",
+  "genre": "hard sci-fi",
+  "year": 2150,
+  "setting": "abandoned space station"
+}
+```
+"""
+
+CREATE_STORY_INPUT_USER_PROMPT = """
+Story Description: {description}
+
+Extract the story elements (theme, genre, year, setting) from this description.
+"""

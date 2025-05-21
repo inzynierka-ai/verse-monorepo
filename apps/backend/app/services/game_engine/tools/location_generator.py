@@ -52,7 +52,7 @@ class LocationGenerator:
         location_from_llm = await self._create_location_json(location_description, location_uuid)
 
         # 4. Generate image prompt for the location
-        image_prompt = await self._generate_image_prompt(location_from_llm, story.description, location_uuid)
+        image_prompt = await self._generate_image_prompt(location_description, location_from_llm.name, story.description, location_uuid)
 
         # 5. Generate image for the location
         image_url = await self._generate_image(image_prompt)
@@ -60,6 +60,7 @@ class LocationGenerator:
         # 6. Create the final location with image URL and UUID
         location = Location(
             **location_from_llm.model_dump(),
+            description=location_description,
             image_dir=image_url,
             uuid=location_uuid
         )
@@ -109,7 +110,8 @@ class LocationGenerator:
     @observe(name="generate_image_prompt")
     async def _generate_image_prompt(
         self,
-        location: LocationFromLLM,
+        location_description: str,
+        location_name: str,
         story_description: str,
         location_uuid: str
     ) -> str:
@@ -125,8 +127,8 @@ class LocationGenerator:
             A detailed image prompt for the location
         """
         user_prompt = LOCATION_IMAGE_PROMPT_USER_TEMPLATE.format(
-            location_name=location.name,
-            location_description=location.description,
+            location_name=location_name,
+            location_description=location_description,
             story_description=story_description
         )
 
@@ -236,6 +238,7 @@ class LocationGenerator:
             db_location = LocationModel(
                 name=location.name,
                 description=location.description,
+                brief_description=location.brief_description,
                 rules=", ".join(location.rules) if hasattr(location, 'rules') and location.rules else "",
                 image_dir=location.image_dir,
                 image_prompt=image_prompt,

@@ -1,4 +1,3 @@
-import json
 import logging
 import uuid
 from typing import Optional, List
@@ -10,7 +9,8 @@ from app.services.world_entity_service import WorldEntityService
 from app.schemas.story_generation import (
     Story,
     StoryDetails,
-    StoryGenerationInput
+    StoryGenerationInput,
+    StoryInput
 )
 from app.utils.json_service import JSONService
 from app.models.story import Story as StoryModel
@@ -18,7 +18,9 @@ from app.prompts.story_generation import (
     DESCRIBE_STORY_SYSTEM_PROMPT,
     DESCRIBE_STORY_USER_PROMPT,
     CREATE_STORY_DETAILS_JSON_SYSTEM_PROMPT,
-    CREATE_STORY_DETAILS_JSON_USER_PROMPT
+    CREATE_STORY_DETAILS_JSON_USER_PROMPT,
+    CREATE_STORY_INPUT_SYSTEM_PROMPT,
+    CREATE_STORY_INPUT_USER_PROMPT
 )
 from app.services.moderations import ModerationsService
 
@@ -222,7 +224,7 @@ class StoryGenerator:
         
         response = await self.llm_service.generate_completion(
             messages=messages,
-            model=ModelName.GEMINI_2_FLASH_LITE,
+            model=ModelName.GEMINI_25_FLASH_LITE,
             temperature=0.3,
             stream=False
         )
@@ -232,3 +234,41 @@ class StoryGenerator:
         # Parse and validate the response
         story_details = JSONService.parse_and_validate_json_response(content, StoryDetails)
         return story_details
+
+    @observe(name="create_story_input_from_description")
+    async def create_story_input_from_description(self, description: str) -> StoryInput:
+        """
+        Create a StoryInput object from a text description.
+        
+        Args:
+            description: A string description of a story world or concept
+            
+        Returns:
+            A StoryInput object with theme, genre, year, and setting extracted from the description
+        """
+        user_prompt = CREATE_STORY_INPUT_USER_PROMPT.format(
+            description=description
+        )
+        
+        messages = [
+            self.llm_service.create_message("system", CREATE_STORY_INPUT_SYSTEM_PROMPT),
+            self.llm_service.create_message("user", user_prompt)
+        ]
+        
+        response = await self.llm_service.generate_completion(
+            messages=messages,
+            model=ModelName.GEMINI_25_FLASH_LITE,
+            temperature=0.3,
+            stream=False
+        )
+        
+        response_text = await self.llm_service.extract_content(response)
+        
+        # Parse the JSON response into a StoryInput object
+        story_input = JSONService.parse_and_validate_json_response(
+            response_text, StoryInput)
+            
+        if not story_input:
+            raise ValueError("No story input data found in response")
+            
+        return story_input

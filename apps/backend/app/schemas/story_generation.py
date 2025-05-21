@@ -57,7 +57,8 @@ class CharacterFromLLM(BaseModel):
     """Character in the generated story"""
     name: str = Field(..., description="Character name")
     brief_description: str = Field(..., description="Short 3-4 sentence description for UI display")
-    speaking_style: Optional[str] = Field(None, description="Character's speaking style, e.g., formal, informal, etc.")
+    speaking_style: Optional[str] = Field(
+        None, description="Character's speaking style, e.g., formal, informal, etc.")
     personality_traits: Optional[str] = Field(
         None, description="Character's personality traits")
     backstory: str = Field(...,
@@ -86,10 +87,10 @@ class LocationFromLLM(BaseModel):
     """Location in the generated story"""
     name: str = Field(...,
                       description="Location name")
-    description: str = Field(...,
-                             description="Detailed description of the location")
     rules: List[str] = Field(...,
                              description="Rules specific to this location")
+    brief_description: str = Field(...,
+                                  description="Brief description of the location for UI display")
 
 
 class Location(LocationFromLLM):
@@ -100,6 +101,8 @@ class Location(LocationFromLLM):
                          description="URL of the generated image for this location")
     uuid: str = Field(
         ..., description="Unique identifier for the location")
+    description: str = Field(...,
+                             description="Detailed description of the location")
 
 
 # Narrator models

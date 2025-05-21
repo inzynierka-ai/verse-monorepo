@@ -52,7 +52,7 @@ class WorldEntityService:
         try:
             response = await self.llm_service.generate_completion(
                 messages=messages,
-                model=ModelName.GEMINI_2_FLASH_LITE,
+                model=ModelName.GEMINI_25_FLASH_LITE,
                 temperature=0.3,
                 stream=False
             )
@@ -327,7 +327,7 @@ class WorldEntityService:
         try:
             response = await self.llm_service.generate_completion(
                 messages=messages,
-                model=ModelName.GEMINI_2_FLASH_LITE,
+                model=ModelName.GEMINI_25_FLASH_LITE,
                 temperature=0.4,
                 stream=False
             )

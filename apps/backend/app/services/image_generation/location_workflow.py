@@ -32,9 +32,6 @@ class LocationWorkflowLoader(WorkflowLoader):
         for _, node in workflow.items():
             if node.get("class_type") == "KSampler":
                 node["inputs"]["seed"] = random_seed
-                node["inputs"]["steps"] = 15
-                node["inputs"]["cfg"] = self._get_random_cfg()
-                node["inputs"]["sampler_name"] = self._get_random_sampler()
         
         # Find the SaveImage node (if any) to add our generation ID
         for _, node in workflow.items():

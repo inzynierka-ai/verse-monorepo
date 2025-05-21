@@ -54,20 +54,6 @@ class WorkflowLoader(ABC):
         """Generate a random seed for the workflow"""
         return random.randint(1, 2147483647)
     
-    def _get_random_sampler(self) -> str:
-        """Get a random sampler for the workflow"""
-        samplers = ["euler", "euler_ancestral", "heun",
-                    "dpm_2", "dpm_2_ancestral", "lms", "ddim"]
-        return random.choice(samplers)
-    
-    def _get_random_steps(self) -> int:
-        """Get a random number of steps for the workflow"""
-        return random.randint(20, 40)
-    
-    def _get_random_cfg(self) -> float:
-        """Get a random CFG value for the workflow"""
-        return round(random.uniform(6.5, 8.5), 1)
-    
     def _find_output_node_id(self, workflow: Dict[str, Any]) -> Optional[str]:
         """Find the ID of the output node in the workflow"""
         for node_id, node in workflow.items():

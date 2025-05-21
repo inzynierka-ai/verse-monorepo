@@ -48,8 +48,8 @@ IMPORTANT: Return ONLY valid JSON in the following format and nothing else:
 """
 
 CREATE_CHARACTER_DRAFT_USER_PROMPT_TEMPLATE = """
-World Description: {world_description}
-World Rules: {world_rules}
+Story Description: {story_description}
+Story Rules: {story_rules}
 Character Description: {description}
 
 Generate a character draft based on this description.

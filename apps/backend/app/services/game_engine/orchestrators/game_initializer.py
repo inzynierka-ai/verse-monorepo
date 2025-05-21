@@ -1,6 +1,8 @@
-from typing import Optional, Callable, Awaitable
+from typing import Optional, Callable, Awaitable, Union
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
+
+from langfuse.decorators import observe # type: ignore
 
 from app.services.game_engine.tools.story_generator import StoryGenerator
 from app.services.game_engine.tools.character_generator import CharacterGenerator
@@ -18,6 +20,14 @@ class InitialGameState(BaseModel):
     """
     story: Story
     playerCharacter: Character
+
+
+class SimpleGameInput(BaseModel):
+    """
+    Simple input mode for game initialization, using only story and character descriptions.
+    """
+    story_description: str
+    character_description: str
 
 
 class GameInitializer:
@@ -38,7 +48,8 @@ class GameInitializer:
     during gameplay.
     
     Usage flow:
-    1. User provides StoryGenerationInput with basic story parameters and character draft
+    1. User provides either SimpleGameInput (story and character descriptions) or 
+       StoryGenerationInput (advanced mode with detailed parameters)
     2. GameInitializer coordinates generation of complete story and player character
     3. InitialGameState is returned and passed to Story Controller
     4. Story Controller uses this as the foundation for scene generation
@@ -56,19 +67,21 @@ class GameInitializer:
         self.character_generator = character_generator or CharacterGenerator(db_session=db_session)
         self.db_session = db_session
     
+    @observe(name="initialize_game")
     async def initialize_game(
         self, 
-        user_input: StoryGenerationInput,
+        user_input: Union[StoryGenerationInput, SimpleGameInput],
         user_id: int,
         on_story_generated: Optional[Callable[[Story], Awaitable[None]]] = None,
-        on_character_generated: Optional[Callable[[Character], Awaitable[None]]] = None,
-        story_id: Optional[int] = None
+        on_character_generated: Optional[Callable[[Character], Awaitable[None]]] = None
     ) -> InitialGameState:
         """
         Creates the initial game state from user input.
         
         Args:
-            user_input: User input containing story parameters and player character draft
+            user_input: Either SimpleGameInput (story and character descriptions) or 
+                        StoryGenerationInput (advanced mode with detailed parameters)
+            user_id: ID of the user creating the game
             on_story_generated: Optional callback called immediately after story generation
             on_character_generated: Optional callback called immediately after character generation
             story_id: Optional ID of the story to associate characters with
@@ -76,8 +89,31 @@ class GameInitializer:
         Returns:
             InitialGameState with generated story and player character
         """
-        # 1. Generate the story first
-        story = await self.story_generator.generate_story(user_id, user_input)
+        # Determine if we're using simple or advanced mode
+        if isinstance(user_input, SimpleGameInput):
+            # Simple mode: convert descriptions to StoryGenerationInput
+            story_input = await self.story_generator.create_story_input_from_description(
+                user_input.story_description
+            )
+            
+
+            
+            # Convert character description to player character draft
+            player_character_draft = await self.character_generator.create_character_draft_from_description(
+                user_input.character_description,
+            )
+            
+            # Create the full StoryGenerationInput
+            generation_input = StoryGenerationInput(
+                story=story_input,
+                playerCharacter=player_character_draft
+            )
+        else:
+            # Advanced mode: use the provided StoryGenerationInput directly
+            generation_input = user_input
+        
+        # 1. Generate the story
+        story = await self.story_generator.generate_story(user_id, generation_input)
         
         # Call the callback if provided
         if on_story_generated:
@@ -85,7 +121,7 @@ class GameInitializer:
         
         # 2. Generate the player character within the context of the story
         player_character = await self.character_generator.generate_character(
-            user_input.playerCharacter,
+            generation_input.playerCharacter,
             story,
             is_player=True
         )

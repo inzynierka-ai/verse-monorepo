@@ -2,26 +2,25 @@ import { FormEvent, useState } from 'react';
 import styles from './StoryGenerationView.module.scss';
 import Button from '@/common/components/Button';
 import Input from '@/common/components/Input';
-import { StoryGenerationRequest } from '@/services/api/hooks';
+import { AdvancedStoryGenerationRequest } from '@/services/api/hooks/useStoryGeneration';
 
 interface StoryGenerationFormProps {
-  onSubmit: (data: StoryGenerationRequest) => void;
+  onSubmit: (data: AdvancedStoryGenerationRequest) => void;
 }
 
 const StoryGenerationForm = ({ onSubmit }: StoryGenerationFormProps) => {
-  const [formData, setFormData] = useState<StoryGenerationRequest>({
+  const [formData, setFormData] = useState<AdvancedStoryGenerationRequest>({
     story: {
-      theme: 'Love',
-      genre: 'Fantasy',
-      year: 2023,
-      setting: 'Medieval village',
+      theme: '',
+      genre: '',
+      year: '',
+      setting: '',
     },
     playerCharacter: {
-      name: 'John Doe',
-      age: 25,
-      appearance: 'A tall, dark-haired man with a kind face',
-      background:
-        'John grew up in a small village where he learned to be a blacksmith. He was a skilled blacksmith and was able to make weapons and armor for the village. He was also a good friend to the villagers and was always willing to help them.',
+      name: '',
+      age: '',
+      appearance: '',
+      background: '',
     },
   });
 
@@ -55,6 +54,11 @@ const StoryGenerationForm = ({ onSubmit }: StoryGenerationFormProps) => {
       newErrors.setting = 'Setting is required';
       isValid = false;
     }
+    console.log(formData);
+    if (!formData.story.year) {
+      newErrors.year = 'Year is required';
+      isValid = false;
+    }
 
     // Validate character
     if (!formData.playerCharacter.name.trim()) {
@@ -69,6 +73,11 @@ const StoryGenerationForm = ({ onSubmit }: StoryGenerationFormProps) => {
 
     if (!formData.playerCharacter.background.trim()) {
       newErrors.background = 'Character background is required';
+      isValid = false;
+    }
+
+    if (!formData.playerCharacter.age) {
+      newErrors.age = 'Character age is required';
       isValid = false;
     }
 
@@ -122,7 +131,7 @@ const StoryGenerationForm = ({ onSubmit }: StoryGenerationFormProps) => {
       <form className={styles.form} onSubmit={handleSubmit}>
         {/* Story Settings Section */}
         <div className={styles.section}>
-          <h2 className={styles.sectionTitle}>Story Settings</h2>
+          <h2 className={styles.sectionTitle}>Story World</h2>
 
           <div className={styles.formRow}>
             <Input
@@ -194,6 +203,7 @@ const StoryGenerationForm = ({ onSubmit }: StoryGenerationFormProps) => {
             <Input
               label="Age"
               name="playerCharacter.age"
+              placeholder="Your character's age"
               type="number"
               value={formData.playerCharacter.age}
               onChange={handleChange}
