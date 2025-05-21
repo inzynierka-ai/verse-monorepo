@@ -3,7 +3,7 @@
 
 .characterShowcase {
   width: 100%;
-  margin: 0 auto;
+  margin: 2rem auto 0;
   position: relative;
   max-width: 800px; /* Increased to fit more characters */
 }
@@ -12,14 +12,15 @@
   display: flex;
   justify-content: center;
   position: relative;
-  height: 300px;
+  height: 240px;
   perspective: 1200px;
 }
 
 .characterCard {
   position: absolute;
-  width: 220px;
-  height: 300px;
+  width: 180px;
+  height: 200px;
+  padding-top: 1rem;
   border-radius: 10px;
   overflow: hidden;
   transition: all 0.7s ease;
@@ -27,7 +28,7 @@
   
   &.active {
     opacity: 1;
-    transform: translateX(0) scale(1);
+    transform: translateX(0) scale(1.25);
     filter: blur(0);
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), 
                 0 0 20px rgba($accent-color, 0.5);
@@ -35,29 +36,29 @@
   }
   
   &.next {
-    opacity: 0.8;
-    transform: translateX(180px) scale(0.85) translateZ(-50px);
+    opacity: 0.7;
+    transform: translateX(200px) scale(0.8) translateZ(-50px);
     filter: blur(1px) brightness(0.9);
     z-index: 4;
   }
   
   &.nextAfter {
-    opacity: 0.5;
-    transform: translateX(300px) scale(0.7) translateZ(-100px);
+    opacity: 0.4;
+    transform: translateX(350px) scale(0.65) translateZ(-100px);
     filter: blur(2px) brightness(0.8);
     z-index: 3;
   }
   
   &.previous {
-    opacity: 0.8;
-    transform: translateX(-180px) scale(0.85) translateZ(-50px);
+    opacity: 0.7;
+    transform: translateX(-200px) scale(0.8) translateZ(-50px);
     filter: blur(1px) brightness(0.9);
     z-index: 4;
   }
   
   &.previousBefore {
-    opacity: 0.5;
-    transform: translateX(-300px) scale(0.7) translateZ(-100px);
+    opacity: 0.4;
+    transform: translateX(-350px) scale(0.65) translateZ(-100px);
     filter: blur(2px) brightness(0.8);
     z-index: 3;
   }
@@ -74,6 +75,7 @@
   height: 100%;
   object-fit: contain;
   transition: transform 0.3s ease;
+  object-position: bottom;
   
   &:hover {
     transform: scale(1.05);
@@ -89,20 +91,24 @@
     width: 180px;
     height: 250px;
     
+    &.active {
+      transform: translateX(0) scale(1.2);
+    }
+    
     &.next {
-      transform: translateX(140px) scale(0.8);
+      transform: translateX(170px) scale(0.75);
     }
     
     &.nextAfter {
-      transform: translateX(240px) scale(0.7);
+      transform: translateX(280px) scale(0.6);
     }
     
     &.previous {
-      transform: translateX(-140px) scale(0.8);
+      transform: translateX(-170px) scale(0.75);
     }
     
     &.previousBefore {
-      transform: translateX(-240px) scale(0.7);
+      transform: translateX(-280px) scale(0.6);
     }
   }
 } 
