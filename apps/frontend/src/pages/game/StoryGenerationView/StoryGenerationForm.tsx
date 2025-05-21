@@ -11,17 +11,16 @@ interface StoryGenerationFormProps {
 const StoryGenerationForm = ({ onSubmit }: StoryGenerationFormProps) => {
   const [formData, setFormData] = useState<StoryGenerationRequest>({
     story: {
-      theme: 'Love',
-      genre: 'Fantasy',
-      year: 2023,
-      setting: 'Medieval village',
+      theme: '',
+      genre: '',
+      year: '',
+      setting: '',
     },
     playerCharacter: {
-      name: 'John Doe',
-      age: 25,
-      appearance: 'A tall, dark-haired man with a kind face',
-      background:
-        'John grew up in a small village where he learned to be a blacksmith. He was a skilled blacksmith and was able to make weapons and armor for the village. He was also a good friend to the villagers and was always willing to help them.',
+      name: '',
+      age: 0,
+      appearance: '',
+      background: '',
     },
   });
 
