@@ -7,13 +7,13 @@ import { Story } from '@/types/story.types';
 export interface StorySettings {
   theme: string;
   genre: string;
-  year: number;
+  year: string;
   setting: string;
 }
 
 export interface PlayerCharacter {
   name: string;
-  age: number;
+  age: string;
   appearance: string;
   background: string;
 }

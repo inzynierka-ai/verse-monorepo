@@ -1,10 +1,12 @@
 import { useNavigate } from '@tanstack/react-router';
+import { useState, useEffect } from 'react';
 import styles from './StoryGenerationView.module.scss';
 import Button from '@/common/components/Button';
 
 import { Character } from '@/types/character.types';
-
 import { Story } from '@/types/story.types';
+
+import { StoryDescriptionStep, CharacterImageStep, CharacterDetailsStep, CharacterGoalsStep } from './steps';
 
 interface StoryGenerationCompletedProps {
   story?: Story;
@@ -14,82 +16,69 @@ interface StoryGenerationCompletedProps {
 
 const StoryGenerationCompleted = ({ story, character, onReset }: StoryGenerationCompletedProps) => {
   const navigate = useNavigate();
-
-  const handleExploreStories = () => {
-    navigate({ to: '/stories' });
-  };
+  const [currentStep, setCurrentStep] = useState(0);
+  const [animating, setAnimating] = useState(false);
 
   const handleBeginAdventure = async () => {
     if (!story) return;
     navigate({ to: `/play/${story.uuid}`, replace: true });
   };
 
-  console.log('Story:', story);
-  console.log('Character:', character);
+  const nextStep = () => {
+    if (animating) return;
+
+    setAnimating(true);
+    setTimeout(() => {
+      setCurrentStep((prevStep) => prevStep + 1);
+      setAnimating(false);
+    }, 300);
+  };
+
+  // If story or character is missing, show an error message
+  if (!story || !character) {
+    return (
+      <div className={styles.content}>
+        <h1 className={styles.title}>Something went wrong</h1>
+        <p>We couldn't load your story or character information.</p>
+        <div className={styles.buttonContainer}>
+          <Button onClick={onReset} variant="secondary">
+            Try Again
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Render the appropriate step based on currentStep
+  const renderStep = () => {
+    switch (currentStep) {
+      case 0:
+        return <StoryDescriptionStep story={story} onNext={nextStep} />;
+      case 1:
+        return <CharacterImageStep character={character} onNext={nextStep} />;
+      case 2:
+        return <CharacterDetailsStep character={character} onNext={nextStep} />;
+      case 3:
+        return <CharacterGoalsStep character={character} onNext={handleBeginAdventure} />;
+      default:
+        return null;
+    }
+  };
 
   return (
     <div className={styles.content}>
-      <h1 className={styles.title}>Your Story Awaits</h1>
-
-      {story && (
-        <div className={styles.section}>
-          <h2 className={styles.sectionTitle}>Story</h2>
-
-          {/* Display brief description first */}
-          <h3>Summary</h3>
-          <p className={styles.storyBriefDescription}>{story.brief_description}</p>
-
-          {story.rules.length > 0 && (
-            <>
-              <h3>Story Rules</h3>
-              <ul className={styles.storyRules}>
-                {story.rules.map((rule, index) => (
-                  <li key={index}>{rule}</li>
-                ))}
-              </ul>
-            </>
-          )}
-        </div>
-      )}
-
-      {character && (
-        <div className={styles.section}>
-          <h2 className={styles.sectionTitle}>{character.name}</h2>
-          <div className={styles.characterInfo}>
-            <div className={styles.characterImageContainer}>
-              <img src={character.image_dir} alt={`${character.name}`} className={styles.characterImage} />
-            </div>
-
-            <div>
-              <h3>Summary</h3>
-              <p className={styles.characterBriefDescription}>{character.brief_description}</p>
-            </div>
-
-            <div>
-              <h3>Backstory</h3>
-              <p>{character.backstory}</p>
-            </div>
-
-            {character.goals.length > 0 && (
-              <div>
-                <h3>Goals</h3>
-                <ul>
-                  {character.goals.map((goal, index) => (
-                    <li key={index}>{goal}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      <div className={styles.buttonContainer}>
-        <Button onClick={onReset} variant="secondary">
-          Create Another Story
-        </Button>
-        <Button onClick={handleBeginAdventure}>Begin adventure</Button>
+      <div className={styles.stepContainer}>
+        <div className={`${styles.step} ${animating ? styles.stepExit : styles.stepEnter}`}>{renderStep()}</div>
       </div>
+
+      {/* Always show this button at the bottom */}
+      {currentStep === 3 && (
+        <div className={styles.buttonContainer}>
+          <Button onClick={onReset} variant="secondary">
+            Create Another Story
+          </Button>
+        </div>
+      )}
     </div>
   );
 };

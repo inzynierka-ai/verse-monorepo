@@ -18,7 +18,7 @@
 
 .content {
   width: 100%;
-  margin: auto;
+  margin: 2rem auto;
   max-width: 800px;
   padding: 2rem;
   border-radius: 10px;
@@ -30,7 +30,6 @@
   position: relative;
   z-index: 1;
   overflow: hidden;
-  margin-bottom: 2rem;
   
   &::before {
     content: '';
@@ -202,4 +201,28 @@
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+
+.stepContainer {
+  position: relative;
+  width: 100%;
+  min-height: 200px;
+}
+
+.step {
+  opacity: 0;
+  transform: translateX(20px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+  position: relative;
+  width: 100%;
+}
+
+.stepEnter {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.stepExit {
+  opacity: 0;
+  transform: translateX(-20px);
 } 

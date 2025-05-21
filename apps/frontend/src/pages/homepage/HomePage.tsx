@@ -6,6 +6,7 @@ import Button from '../../common/components/Button/Button';
 import Link from '../../common/components/Link/Link';
 import { useAuth } from '../../common/hooks';
 import { Container } from '@/common/components';
+import { CharactersCarousel } from './components';
 
 const HomePage = (): ReactElement => {
   const navigate = useNavigate();
@@ -26,20 +27,23 @@ const HomePage = (): ReactElement => {
   return (
     <Container className={styles.container}>
       <div className={styles.content}>
-        <Logo className={styles.logo} />
-        <h2 className={styles.tagline}>Interactive Fiction Reimagined</h2>
-        <p className={styles.description}>
-          Dive into immersive stories where your choices shape the narrative. Experience a new generation of interactive
-          storytelling.
-        </p>
+        <div className={styles.heroSection}>
+          <Logo className={styles.logo} width={100} height={100} />
+          <h2 className={styles.tagline}>Interactive Fiction Reimagined</h2>
+          <p className={styles.description}>
+            Dive into immersive stories where your choices shape the narrative. Experience a new generation of
+            interactive storytelling with AI-generated characters and worlds.
+          </p>
+        </div>
+
+        <div className={styles.showcaseSection}>
+          <CharactersCarousel className={styles.carousel} />
+        </div>
 
         {isLoggedIn ? (
           <div className={styles.authButtons}>
             <Button onClick={handleExploreStories} className={styles.exploreButton}>
               Explore Stories
-            </Button>
-            <Button onClick={handleCreateStory} variant="secondary" className={styles.createButton}>
-              Create New Story
             </Button>
           </div>
         ) : (
@@ -55,4 +59,4 @@ const HomePage = (): ReactElement => {
   );
 };
 
-export default HomePage; 
+export default HomePage;

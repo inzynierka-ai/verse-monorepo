@@ -1,0 +1,91 @@
+@use '@/common/styles/variables' as *;
+@use '@/common/styles/mixins' as *;
+
+.menuContainer {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.hamburgerButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hamburgerIcon {
+  width: 24px;
+  height: 18px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+
+  span {
+    display: block;
+    height: 2px;
+    width: 100%;
+    background: linear-gradient(90deg, $primary-color, $accent-color);
+    background-size: 200% 200%;
+    animation: gradientBg 5s ease infinite;
+    border-radius: 2px;
+    transition: all 0.3s ease;
+    box-shadow: 0 0 4px rgba($accent-color, 0.4);
+  }
+
+  &.open {
+    span:first-child {
+      transform: translateY(8px) rotate(45deg);
+    }
+
+    span:nth-child(2) {
+      opacity: 0;
+    }
+
+    span:last-child {
+      transform: translateY(-8px) rotate(-45deg);
+    }
+  }
+}
+
+.dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 8px;
+  background-color: $dark-bg;
+  border: 1px solid rgba($light-text, 0.1);
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 10;
+  min-width: 120px;
+  overflow: hidden;
+  animation: fadeIn 0.2s ease;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, $primary-color, $accent-color);
+    background-size: 200% 200%;
+    animation: gradientBg 5s ease infinite;
+  }
+}
+
+.logoutButton {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  justify-content: center;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+} 
