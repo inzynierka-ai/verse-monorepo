@@ -18,7 +18,7 @@ const StoryGenerationForm = ({ onSubmit }: StoryGenerationFormProps) => {
     },
     playerCharacter: {
       name: '',
-      age: 0,
+      age: '',
       appearance: '',
       background: '',
     },
@@ -54,6 +54,11 @@ const StoryGenerationForm = ({ onSubmit }: StoryGenerationFormProps) => {
       newErrors.setting = 'Setting is required';
       isValid = false;
     }
+    console.log(formData);
+    if (!formData.story.year) {
+      newErrors.year = 'Year is required';
+      isValid = false;
+    }
 
     // Validate character
     if (!formData.playerCharacter.name.trim()) {
@@ -68,6 +73,11 @@ const StoryGenerationForm = ({ onSubmit }: StoryGenerationFormProps) => {
 
     if (!formData.playerCharacter.background.trim()) {
       newErrors.background = 'Character background is required';
+      isValid = false;
+    }
+
+    if (!formData.playerCharacter.age) {
+      newErrors.age = 'Character age is required';
       isValid = false;
     }
 
@@ -193,6 +203,7 @@ const StoryGenerationForm = ({ onSubmit }: StoryGenerationFormProps) => {
             <Input
               label="Age"
               name="playerCharacter.age"
+              placeholder="Your character's age"
               type="number"
               value={formData.playerCharacter.age}
               onChange={handleChange}
