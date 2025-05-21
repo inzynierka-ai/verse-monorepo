@@ -97,15 +97,22 @@ const SceneView = () => {
     return (
       <div className={styles.introductionOverlay}>
         <Card className={styles.introductionContent}>
-          <h1>Welcome to {scene.location.name}</h1>
+          <h1 className={styles.introductionHeader}>Welcome to {scene.location.name}</h1>
 
-          <div className={styles.introductionDescription}>
-            <p>{scene.description}</p>
+          <div className={styles.introductionScroll}>
+            <div className={styles.introductionDescription}>
+              <div className={styles.introductionImage}>
+                <img src={scene.location.image_dir} alt={scene.location.name} />
+              </div>
+              <p className={styles.introductionDescriptionText}>{scene.description}</p>
+            </div>
           </div>
 
-          <Button onClick={handleContinueFromIntro} fullWidth>
-            Continue to Scene
-          </Button>
+          <div className={styles.introductionButtonContainer}>
+            <Button onClick={handleContinueFromIntro} fullWidth>
+              Continue to Scene
+            </Button>
+          </div>
         </Card>
       </div>
     );
