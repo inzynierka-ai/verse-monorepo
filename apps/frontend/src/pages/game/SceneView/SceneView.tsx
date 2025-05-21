@@ -16,7 +16,6 @@ const SceneView = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [showIntroduction, setShowIntroduction] = useState(true);
-  const [descriptionExpanded, setDescriptionExpanded] = useState(false);
 
   const { data: scene, isLoading, error } = useLatestScene(storyId);
   const { mutate: completeScene, isPending: isCompleting } = useCompleteScene();
@@ -72,9 +71,6 @@ const SceneView = () => {
     );
   };
 
-  const toggleDescription = () => {
-    setDescriptionExpanded(!descriptionExpanded);
-  };
 
   if (isLoading) {
     return (
