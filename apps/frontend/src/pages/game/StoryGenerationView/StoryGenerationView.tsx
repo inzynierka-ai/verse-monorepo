@@ -1,18 +1,21 @@
-import { ReactElement, useEffect } from 'react';
+import { ReactElement, useEffect, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import styles from './StoryGenerationView.module.scss';
-import { StoryGenerationRequest } from '@/services/api/hooks';
+import { AdvancedStoryGenerationRequest, SimpleGameInput } from '@/services/api/hooks/useStoryGeneration';
 import StoryGenerationForm from './StoryGenerationForm';
+import SimpleStoryGenerationForm from './SimpleStoryGenerationForm';
 import StoryGenerationLoading from './StoryGenerationLoading';
 import StoryGenerationError from './StoryGenerationError';
 import StoryGenerationCompleted from './StoryGenerationCompleted';
 import { useStoryGeneration } from '@/services/api/hooks/useStoryGeneration';
 import { useAuth } from '@/common/hooks/useAuth';
 import { Container } from '@/common/components';
+import ModeToggle from './ModeToggle';
 
 const StoryGenerationView = (): ReactElement => {
   const { isLoggedIn } = useAuth();
   const navigate = useNavigate();
+  const [isSimpleMode, setIsSimpleMode] = useState(true);
 
   // Add debug logging
   useEffect(() => {
@@ -31,14 +34,23 @@ const StoryGenerationView = (): ReactElement => {
     }
   }, [isLoggedIn, navigate]);
 
-  const { state: generationState, generateStory, reset } = useStoryGeneration();
+  const { state: generationState, generateSimpleStory, generateAdvancedStory, reset } = useStoryGeneration();
   console.log(generationState);
-  const handleGenerateStory = (data: StoryGenerationRequest) => {
-    generateStory(data);
+
+  const handleAdvancedSubmit = (data: AdvancedStoryGenerationRequest) => {
+    generateAdvancedStory(data);
+  };
+
+  const handleSimpleSubmit = (data: SimpleGameInput) => {
+    generateSimpleStory(data.story_description, data.character_description);
   };
 
   const handleReset = () => {
     reset();
+  };
+
+  const toggleMode = () => {
+    setIsSimpleMode(!isSimpleMode);
   };
 
   // Show loading indicator rather than nothing
@@ -48,7 +60,17 @@ const StoryGenerationView = (): ReactElement => {
 
   return (
     <Container>
-      {generationState.status === 'idle' && <StoryGenerationForm onSubmit={handleGenerateStory} />}
+      {generationState.status === 'idle' && (
+        <>
+          <ModeToggle isSimpleMode={isSimpleMode} onToggle={toggleMode} />
+
+          {isSimpleMode ? (
+            <SimpleStoryGenerationForm onSubmit={handleSimpleSubmit} />
+          ) : (
+            <StoryGenerationForm onSubmit={handleAdvancedSubmit} />
+          )}
+        </>
+      )}
 
       {(generationState.status === 'connecting' || generationState.status === 'generating') && (
         <StoryGenerationLoading message={generationState.statusMessage} />

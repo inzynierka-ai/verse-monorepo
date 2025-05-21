@@ -38,7 +38,7 @@ class CharacterGenerator:
     async def create_character_draft_from_description(
         self,
         description: str,
-        story: Story
+        story: Optional[Story] = None
     ) -> CharacterDraft:
         """
         Create a basic character draft from a simple description.
@@ -51,8 +51,8 @@ class CharacterGenerator:
             A CharacterDraft object that can be used for further character generation
         """
         user_prompt = CREATE_CHARACTER_DRAFT_USER_PROMPT_TEMPLATE.format(
-            story_description=story.description,
-            story_rules=story.rules,
+            story_description=story.description if story else "",
+            story_rules=story.rules if story else "",
             description=description
         )
         
@@ -63,7 +63,7 @@ class CharacterGenerator:
         
         response = await self.llm_service.generate_completion(
             messages=messages,
-            model=ModelName.GEMINI_2_FLASH_LITE,
+            model=ModelName.GEMINI_25_FLASH_LITE,
             temperature=0.7,
             stream=False
         )
