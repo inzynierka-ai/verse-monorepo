@@ -2,6 +2,8 @@ from typing import Optional, Callable, Awaitable, Union
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
+from langfuse.decorators import observe # type: ignore
+
 from app.services.game_engine.tools.story_generator import StoryGenerator
 from app.services.game_engine.tools.character_generator import CharacterGenerator
 from app.schemas.story_generation import (
@@ -65,6 +67,7 @@ class GameInitializer:
         self.character_generator = character_generator or CharacterGenerator(db_session=db_session)
         self.db_session = db_session
     
+    @observe(name="initialize_game")
     async def initialize_game(
         self, 
         user_input: Union[StoryGenerationInput, SimpleGameInput],

@@ -10,6 +10,7 @@ import StoryGenerationCompleted from './StoryGenerationCompleted';
 import { useStoryGeneration } from '@/services/api/hooks/useStoryGeneration';
 import { useAuth } from '@/common/hooks/useAuth';
 import { Container } from '@/common/components';
+import ModeToggle from './ModeToggle';
 
 const StoryGenerationView = (): ReactElement => {
   const { isLoggedIn } = useAuth();
@@ -61,13 +62,7 @@ const StoryGenerationView = (): ReactElement => {
     <Container>
       {generationState.status === 'idle' && (
         <>
-          <div className={styles.modeToggle}>
-            <label className={styles.switch}>
-              <input type="checkbox" checked={isSimpleMode} onChange={toggleMode} />
-              <span className={styles.slider}></span>
-            </label>
-            <span>{isSimpleMode ? 'Simple Mode' : 'Advanced Mode'}</span>
-          </div>
+          <ModeToggle isSimpleMode={isSimpleMode} onToggle={toggleMode} />
 
           {isSimpleMode ? (
             <SimpleStoryGenerationForm onSubmit={handleSimpleSubmit} />
