@@ -8,6 +8,7 @@ class Location(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String)
     description = Column(String)
+    brief_description = Column(String)
     image_prompt = Column(String)
     rules = Column(String) # rules for the location
     colors = Column(String) # interface colors

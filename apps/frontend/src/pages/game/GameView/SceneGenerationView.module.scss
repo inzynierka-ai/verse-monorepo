@@ -92,7 +92,7 @@
   align-items: center;
   margin-bottom: 2.5rem;
   text-align: center;
-  
+
   h2 {
     margin-top: 1rem;
     font-size: 1.75rem;
@@ -103,7 +103,7 @@
     flex-direction: column;
     align-items: center;
     margin-top: 1rem;
-    
+
     .actionItem {
       font-size: 1rem;
       color: #64748b;
@@ -111,7 +111,7 @@
       margin-top: 0.5rem;
       text-align: center;
       animation: fadeInOut 2s ease-in-out infinite;
-      
+
       &:not(:last-child) {
         margin-bottom: 0.25rem;
       }
@@ -120,8 +120,13 @@
 }
 
 @keyframes fadeInOut {
-  0%, 100% { opacity: 0.6; }
-  50% { opacity: 1; }
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 
 .generationProgress {
@@ -146,7 +151,7 @@
   overflow: hidden;
   max-width: 800px;
   margin: 0 auto;
-  
+
   @media (min-width: 768px) {
     flex-direction: row;
   }
@@ -155,12 +160,12 @@
 .locationInfo {
   padding: 1.5rem;
   flex: 1;
-  
+
   h4 {
     font-size: 1.25rem;
     margin-bottom: 0.75rem;
   }
-  
+
   p {
     line-height: 1.6;
   }
@@ -187,7 +192,7 @@
   flex-direction: column;
   height: 100%;
   transition: transform 0.2s ease-in-out;
-  
+
   &:hover {
     transform: translateY(-5px);
   }
@@ -198,12 +203,12 @@
   display: flex;
   flex-direction: column;
   flex: 1;
-  
+
   h4 {
     font-size: 1.125rem;
     margin-bottom: 0.5rem;
   }
-  
+
   .characterRole {
     font-size: 0.875rem;
     color: var(--color-text-secondary);
@@ -214,12 +219,6 @@
 .imageContainer {
   width: 100%;
   overflow: hidden;
-  
-  .locationCard & {
-    @media (min-width: 768px) {
-      width: 40%;
-    }
-  }
 }
 
 .locationImage,
@@ -238,4 +237,4 @@
 
 .characterImage {
   height: 220px;
-} 
+}

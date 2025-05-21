@@ -4,235 +4,242 @@
 .sceneView {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 2rem;
+  padding-bottom: 2rem;
   animation: fadeIn 0.8s ease-out forwards;
 }
 
-.sceneHeader {
+// Introduction Overlay
+.introductionOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba($dark-bg, 0.95);
+  backdrop-filter: blur(8px);
+  z-index: 100;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.5rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid rgba($accent-color, 0.15);
+  justify-content: center;
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+.introductionContent {
+  max-width: 800px;
+  width: 90%;
+  padding: 2.5rem;
   position: relative;
-  
-  &::after {
-    content: '';
-    position: absolute;
-    bottom: -1px;
-    left: 0;
-    width: 15%;
-    height: 2px;
-    background: linear-gradient(90deg, $primary-color, $accent-color);
-  }
-}
-
-.sceneHeader h1 {
-  margin: 0;
-  font-size: 2.2rem;
-  font-weight: 600;
-  color: $accent-color;
-  text-shadow: 0 0 10px rgba($accent-color, 0.3);
-  letter-spacing: 1px;
-}
-
-// Two column layout container
-.sceneContent {
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-  
-  @media (min-width: 992px) {
-    flex-direction: row;
-  }
-}
-
-// Left column
-.sceneContextColumn {
-  flex: 1;
-  
-  @media (min-width: 992px) {
-    flex: 0.65;
-    padding-right: 2rem;
-  }
-}
-
-// Right column
-.charactersColumn {
-  flex: 1;
-  
-  @media (min-width: 992px) {
-    flex: 0.35;
-    position: sticky;
-    top: 2rem;
-    align-self: flex-start;
-    max-height: calc(100vh - 4rem);
-    overflow-y: auto;
-    padding-right: 0.5rem;
-    
-    &::-webkit-scrollbar {
-      width: 5px;
-    }
-    
-    &::-webkit-scrollbar-track {
-      background: rgba($dark-bg, 0.2);
-      border-radius: 4px;
-    }
-    
-    &::-webkit-scrollbar-thumb {
-      background: rgba($accent-color, 0.3);
-      border-radius: 4px;
-    }
-  }
-}
-
-.sceneDescription {
-  @include card-container;
-  margin-bottom: 2rem;
-  font-size: 1rem;
-  line-height: 1.6;
-  padding: 1.5rem;
-  position: relative;
-}
-
-.toggleDescription {
-  position: absolute;
-  bottom: 0.75rem;
-  right: 0.75rem;
-  background: transparent;
-  border: none;
-  color: $accent-color;
-  cursor: pointer;
-  font-size: 0.85rem;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  transition: all 0.3s ease;
-  
-  &:hover {
-    background: rgba($accent-color, 0.1);
-  }
-}
-
-.descriptionCollapsed {
-  max-height: 100px;
   overflow: hidden;
-  mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
-}
-
-.locationInfo {
-  margin-bottom: 2rem;
-}
-
-.locationSectionHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-}
-
-.locationInfo h2 {
-  margin-bottom: 0;
-  font-size: 1.5rem;
-  color: $light-text;
-  position: relative;
-  display: inline-block;
-  
-  &::after {
-    content: '';
-    position: absolute;
-    bottom: -8px;
-    left: 0;
-    width: 40px;
-    height: 3px;
-    background: linear-gradient(90deg, $primary-color, $accent-color);
-    border-radius: 3px;
-  }
-}
-
-.locationCard {
-  @include card-container;
-  display: flex;
-  flex-direction: column;
-  padding: 0;
-}
-
-.locationImage {
-  width: 100%;
-  height: 200px;
-  overflow: hidden;
-  border-radius: 12px 12px 0 0;
-  position: relative;
   
   &::before {
     content: '';
     position: absolute;
     top: 0;
     left: 0;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(to bottom, transparent 70%, rgba($dark-bg, 0.7));
-    z-index: 1;
-    pointer-events: none;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, $primary-color, $accent-color);
+  }
+  
+  h1 {
+    margin-top: 0;
+    margin-bottom: 1.5rem;
+    color: $accent-color;
+    font-size: 2.2rem;
+    text-shadow: 0 0 10px rgba($accent-color, 0.3);
+    text-align: center;
   }
 }
 
-.locationImage img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.5s ease;
+.introductionDescription {
+  background: rgba($dark-bg, 0.3);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  font-size: 1.1rem;
+  line-height: 1.7;
+  color: $light-text;
+  border-left: 3px solid $primary-color;
+  max-height: 50vh;
+  overflow-y: auto;
   
-  &:hover {
+  &::-webkit-scrollbar {
+    width: 5px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: rgba($dark-bg, 0.2);
+    border-radius: 4px;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: rgba($accent-color, 0.3);
+    border-radius: 4px;
+  }
+}
+
+// Location Banner
+.locationBanner {
+  width: 100%;
+  height: 300px;
+  overflow: hidden;
+  position: relative;
+  margin-bottom: 1.5rem;
+  
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.8s ease;
+  }
+  
+  &:hover img {
     transform: scale(1.05);
   }
 }
 
-.locationDetails {
-  padding: 1.5rem;
+.locationBannerOverlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 3.5rem 2rem 1.5rem;
+  background: linear-gradient(to top, rgba($dark-bg, 0.9), transparent);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  
+  h1 {
+    margin: 0;
+    font-size: 2.5rem;
+    font-weight: 600;
+    color: $light-text;
+    text-shadow: 0 0 15px rgba(0, 0, 0, 0.7);
+  }
+  
+  .bannerActions {
+    display: flex;
+    gap: 0.75rem;
+  }
+  
+  .iconButton {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba($dark-bg, 0.5);
+    border: 1px solid rgba($light-text, 0.3);
+    padding: 0;
+    font-size: 1.2rem;
+    color: $light-text;
+    transition: all 0.3s ease;
+    
+    &:hover {
+      background: rgba($accent-color, 0.2);
+      border-color: rgba($accent-color, 0.6);
+      transform: translateY(-2px);
+    }
+  }
+}
+
+// Layout Structure
+.sceneContent {
+  display: flex;
+  padding: 0 2rem;
+  gap: 2rem;
+  
+  @media (max-width: 991px) {
+    flex-direction: column;
+  }
+}
+
+.locationSidebar {
+  flex: 0 0 25%;
+  
+  @media (max-width: 991px) {
+    flex: 1;
+  }
+}
+
+.mainContent {
   flex: 1;
 }
 
-.locationDetails h3 {
-  margin-top: 0;
-  margin-bottom: 0.75rem;
-  font-size: 1.4rem;
-  color: $accent-color;
-  text-shadow: 0 0 8px rgba($accent-color, 0.3);
+// Location Info
+.locationInfo {
+  margin-bottom: 2rem;
 }
 
+.locationSectionHeader {
+  margin-bottom: 1rem;
+  
+  h2 {
+    margin-bottom: 0;
+    font-size: 1.5rem;
+    color: $light-text;
+    position: relative;
+    display: inline-block;
+    
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: -8px;
+      left: 0;
+      width: 40px;
+      height: 3px;
+      background: linear-gradient(90deg, $primary-color, $accent-color);
+      border-radius: 3px;
+    }
+  }
+}
+
+.locationCard {
+  padding: 1.5rem;
+}
+
+.locationDetails {
+  color: $light-text;
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+// Characters Section
 .charactersSection {
   margin-bottom: 2rem;
 }
 
 .charactersSectionHeader {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
   margin-bottom: 1.5rem;
-}
-
-.charactersSection h2 {
-  margin-bottom: 0;
-  font-size: 1.5rem;
-  color: $light-text;
-  position: relative;
-  display: inline-block;
-  
-  &::after {
-    content: '';
-    position: absolute;
-    bottom: -8px;
-    left: 0;
-    width: 40px;
-    height: 3px;
-    background: linear-gradient(90deg, $primary-color, $accent-color);
-    border-radius: 3px;
-  }
 }
 
 .charactersTitle {
   position: relative;
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  
+  h2 {
+    margin-bottom: 0;
+    font-size: 1.5rem;
+    color: $light-text;
+    position: relative;
+    display: inline-block;
+    
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: -8px;
+      left: 0;
+      width: 40px;
+      height: 3px;
+      background: linear-gradient(90deg, $primary-color, $accent-color);
+      border-radius: 3px;
+    }
+  }
   
   .characterCount {
     display: inline-block;
@@ -246,33 +253,41 @@
   }
 }
 
+.charactersInstructions {
+  font-size: 0.9rem;
+  color: rgba($light-text, 0.8);
+  margin-top: 0.75rem;
+  font-style: italic;
+  background: rgba($accent-color, 0.05);
+  padding: 0.5rem 0.75rem;
+  border-radius: 4px;
+  border-left: 2px solid $accent-color;
+}
+
 .charactersGrid {
   display: grid;
   gap: 1.5rem;
   
-  @media (max-width: 991px) {
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  @media (max-width: 767px) {
+    grid-template-columns: 1fr;
+  }
+  
+  @media (min-width: 768px) and (max-width: 991px) {
+    grid-template-columns: repeat(2, 1fr);
   }
   
   @media (min-width: 992px) {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
   }
 }
 
 .characterCard {
-  background: $card-bg;
-  backdrop-filter: blur(10px);
-  border-radius: 12px;
   padding: 1.25rem;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  cursor: pointer;
-  transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
   color: $light-text;
   display: flex;
-  align-items: center;
-  gap: 1rem;
+  flex-direction: column;
   
   &::before {
     content: '';
@@ -286,48 +301,24 @@
     animation: gradientBg 10s ease infinite;
   }
 
-  &::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: radial-gradient(circle at top right, rgba($accent-color, 0.08), transparent 70%);
-    pointer-events: none;
-  }
-
   &:hover {
     transform: translateY(-5px);
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3), 0 0 15px rgba($primary-color, 0.15);
     
     .characterPortrait img {
       transform: scale(1.05);
     }
   }
-  
-  @media (min-width: 992px) {
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    padding: 1rem;
-  }
 }
 
 .characterPortrait {
-  width: 60px;
-  height: 60px;
+  width: 100%;
+  height: 180px;
   border-radius: 8px;
   overflow: hidden;
   flex-shrink: 0;
   position: relative;
   box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
-  
-  @media (min-width: 992px) {
-    width: 100%;
-    height: 120px;
-    margin-bottom: 0.5rem;
-  }
+  margin-bottom: 1rem;
 }
 
 .characterPortrait img {
@@ -338,36 +329,23 @@
 }
 
 .characterInfo {
-  flex: 1;
-  min-width: 0;
-  
-  @media (min-width: 992px) {
-    width: 100%;
-  }
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
 }
 
 .characterCard h3 {
-  margin: 0;
+  margin: 0 0 0.75rem 0;
   font-size: 1.1rem;
   font-weight: 600;
   color: $accent-color;
   text-shadow: 0 0 8px rgba($accent-color, 0.3);
   transition: all 0.3s ease;
-  text-overflow: ellipsis;
-  overflow: hidden;
-  white-space: nowrap;
 }
 
-.characterPlaceholder {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, $primary-color, $accent-color);
-  color: white;
-  font-size: 2rem;
-  font-weight: bold;
+.talkButton {
+  margin-top: 0.75rem;
 }
 
 .finishSceneContainer {
@@ -399,6 +377,27 @@
 @keyframes spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes gradientBg {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
   }
 }
 
