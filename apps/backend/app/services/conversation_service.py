@@ -10,6 +10,8 @@ from app.services.world_entity_service import WorldEntityService
 from app.services.memory_manager import MemoryManager
 from datetime import datetime
 from app.utils.embedding import optimize_text_for_embedding, get_embedding
+from app.utils.json_service import JSONService
+from app.schemas.conversation import ConversationTopic, ConversationTopicsResponse
 import uuid
 from langfuse.decorators import observe  # type: ignore
 
@@ -255,6 +257,93 @@ class ConversationService:
         logger.info(f"Character prompt: {character_prompt}...")  # Log only the first 100 characters for brevity
         return character_prompt  
     
+    @observe(name="generate_conversation_topics")
+    async def generate_conversation_topics(self, db: Session, character: Character, scene: Scene) -> ConversationTopicsResponse:
+        """Generate conversation topics for a character in a specific scene"""
+        logger.info(f"Generating conversation topics for character {character.name} in scene {scene.uuid}")
+        
+        try:
+            # Get player character info
+            player_character = next((char for char in scene.characters if char.role == "player"), None)
+            player_name = player_character.name if player_character else "unknown player"
+            
+            # Prepare location information
+            location_info = f"You are currently at {scene.location.name}. {scene.location.description}" if scene.location else ""
+            
+            system_prompt = f"""You are a conversation topic generator for a narrative text adventure game.
+
+Character Information:
+- Name: {character.name}
+- Description: {character.description}
+- Personality: {character.personality_traits}
+- Backstory: {character.backstory}
+- Goals: {character.goals}
+- Speaking Style: {character.speaking_style}
+- Relationship Level with {player_name}: {character.relationship_level}/100
+
+Current Situation:
+- Story: {scene.story.title}
+- Scene: {scene.description}
+- Location: {location_info}
+
+Generate 3 conversation starter topics that would be natural and engaging for {player_name} to discuss with {character.name} in this context.
+
+For each topic, provide:
+1. A short title (2-3 words maximum, like a conversation category)
+2. A full message that the player would say
+
+The topics should:
+1. Be appropriate for their current relationship level
+2. Consider the character's personality, goals, and speaking style
+3. Be relevant to the current scene and location
+4. Be phrased as natural conversation starters from the player's perspective
+
+Return your response as a JSON array of objects with "title" and "message" fields:
+[
+  {{"title": "Their Plans", "message": "What are you planning to do after this?"}},
+  {{"title": "Strange Noise", "message": "Did you hear that odd sound earlier? It seemed to come from the corridor."}},
+  {{"title": "Compliment", "message": "I really like your outfit today, it suits you well."}}
+]
+
+Keep titles very short and messages natural and conversational."""
+
+            messages = [
+                self.llm_service.create_message("system", system_prompt)
+            ]
+            
+            response = await self.llm_service.generate_completion(
+                messages=messages,
+                model=ModelName.GPT41_MINI,
+                temperature=0.8,
+                max_tokens=500
+            )
+            
+            # Handle streaming response
+            content: str = ""
+            if hasattr(response, "__aiter__"):
+                content = await self.llm_service.extract_content(response)
+            else:
+                content = str(response)
+            
+            # Use JSONService to parse and validate the response
+            try:
+                topics_list = JSONService.parse_and_validate_json_list(content, ConversationTopic)
+                # Limit to 3 topics as specified in the prompt
+                topics_list = topics_list[:3]
+                logger.info(f"Successfully generated {len(topics_list)} conversation topics")
+                
+            except ValueError as e:
+                logger.error(f"Failed to parse or validate topics JSON: {str(e)}")
+                logger.error(f"Raw content: {content}")
+                topics_list = []
+                
+            return ConversationTopicsResponse(topics=topics_list)
+            
+        except Exception as e:
+            logger.error(f"Error generating conversation topics for character {character.name}: {str(e)}")
+            # Return empty topics list on error
+            return ConversationTopicsResponse(topics=[])
+    
     async def save_message(self, db: Session, scene_id: Any, 
                          character_id: Any, content: str, role: Literal["user", "assistant", "system"]) -> Dict[str, Any]:
         """Save a message to the database"""
@@ -280,4 +369,5 @@ class ConversationService:
             uuid=str(uuid.uuid4())
         )
         
-        return create_message(db, message) 
+        return create_message(db, message)
+ 

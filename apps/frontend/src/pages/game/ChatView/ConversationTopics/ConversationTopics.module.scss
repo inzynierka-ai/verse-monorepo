@@ -1,0 +1,94 @@
+@use '@/common/styles/variables.scss' as *;
+
+.conversationTopics {
+  margin-bottom: 1.5rem;
+  padding: 1rem 1.25rem;
+  background: rgba($dark-bg, 0.85);
+  border-radius: 0.75rem;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba($accent-color, 0.2);
+  position: relative;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: -1px;
+    left: 20%;
+    right: 20%;
+    height: 2px;
+    background: linear-gradient(
+      to right,
+      transparent,
+      rgba($accent-color, 0.6),
+      transparent
+    );
+    border-radius: 1px;
+  }
+}
+
+.topicsHeader {
+  margin-bottom: 0.75rem;
+}
+
+.headerText {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: rgba($light-text, 0.7);
+  text-transform: uppercase;
+  letter-spacing: 0.75px;
+  font-family: $game-font;
+}
+
+.topicsList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.topicButton {
+  flex: 0 0 auto;
+  padding: 0.5rem 0.875rem;
+  background: rgba($primary-color, 0.15);
+  border: 1px solid rgba($primary-color, 0.3);
+  border-radius: 1.25rem;
+  color: $light-text;
+  transition: all 0.25s ease;
+  font-size: 0.8rem;
+  font-weight: 500;
+  font-family: $game-font;
+  line-height: 1.2;
+  white-space: nowrap;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, transparent 0%, rgba($accent-color, 0.1) 50%, transparent 100%);
+    opacity: 0;
+    transition: opacity 0.25s ease;
+  }
+
+  &:hover {
+    background: rgba($primary-color, 0.25);
+    border-color: rgba($accent-color, 0.5);
+    transform: translateY(-1px);
+    color: $light-text;
+    box-shadow: 
+      0 4px 12px rgba($primary-color, 0.2),
+      0 0 0 1px rgba($accent-color, 0.3);
+
+    &::before {
+      opacity: 1;
+    }
+  }
+
+  &:active {
+    transform: translateY(0);
+    box-shadow: 
+      0 2px 6px rgba($primary-color, 0.15),
+      0 0 0 1px rgba($accent-color, 0.2);
+  }
+} 

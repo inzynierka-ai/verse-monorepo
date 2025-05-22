@@ -18,3 +18,4 @@ class Story(Base):
     locations = relationship("Location", back_populates="story")
     characters = relationship("Character", back_populates="story")
     scenes = relationship("Scene", back_populates="story")
+    world_entities = relationship("WorldEntity", back_populates="story")

@@ -1,7 +1,6 @@
 import { ReactElement } from 'react';
 import { useAuth } from '../../../common/hooks/useAuth';
 import styles from './Header.module.scss';
-import { Link } from '@tanstack/react-router';
 import Button from '../Button';
 import { useNavigate } from '@tanstack/react-router';
 import { Logo } from '@/pages/auth/components';
@@ -19,9 +18,7 @@ export const Header = (): ReactElement => {
   return (
     <header className={styles.header}>
       <div className={styles.headerContent}>
-        <Link to="/">
-          <Logo inline />
-        </Link>
+        <Logo inline />
         <div className={styles.authStatus}>
           {isLoggedIn ? (
             <div className={styles.userInfo}>

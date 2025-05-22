@@ -71,3 +71,14 @@
   animation: fadeIn 0.8s ease-out 0.2s forwards;
   opacity: 0.9;
 }
+
+.logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.card {
+ max-width: 450px;
+}

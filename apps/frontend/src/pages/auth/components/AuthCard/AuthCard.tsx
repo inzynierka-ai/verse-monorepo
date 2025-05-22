@@ -21,26 +21,18 @@ export const AuthCard = ({
   className = ''
 }: AuthCardProps): ReactElement => {
   return (
-    <Card className={className}>
-      <Logo />
-      
+    <Card className={`${styles.card} ${className}`}>
+      <Logo className={styles.logo} width={80} height={80} />
+
       <h2 className={styles.title}>{title}</h2>
-      
-      {subtitle && (
-        <p className={styles.subtitle}>{subtitle}</p>
-      )}
-      
-      {errorMessage && (
-        <div className={styles.error}>{errorMessage}</div>
-      )}
-      
+
+      {subtitle && <p className={styles.subtitle}>{subtitle}</p>}
+
+      {errorMessage && <div className={styles.error}>{errorMessage}</div>}
+
       {children}
-      
-      {footer && (
-        <div className={styles.linkContainer}>
-          {footer}
-        </div>
-      )}
+
+      {footer && <div className={styles.linkContainer}>{footer}</div>}
     </Card>
   );
 };

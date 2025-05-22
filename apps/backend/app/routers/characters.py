@@ -3,8 +3,14 @@ from sqlalchemy.orm import Session
 from typing import List
 from app.schemas import character as character_schema
 from app.schemas import character_memory as character_memory_schema
+from app.schemas.conversation import ConversationTopicsResponse
 from app.db.session import get_db
-from app.crud.characters import get_character, get_characters, create_character as create_character_service
+from app.crud.characters import get_character, get_characters, create_character as create_character_service, get_character_by_uuid
+from app.crud.scenes import get_scene_by_uuid
+from app.services.conversation_service import ConversationService
+import logging
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(
     prefix="/characters",
@@ -37,3 +43,22 @@ async def get_character_memories(character_id: int, db: Session = Depends(get_db
 async def create_character(character: character_schema.CharacterCreate, db: Session = Depends(get_db)):
     """Create a new character"""
     return create_character_service(db, character)
+
+@router.get("/{character_uuid}/conversation-topics/{scene_uuid}", response_model=ConversationTopicsResponse)
+async def get_conversation_topics(character_uuid: str, scene_uuid: str, db: Session = Depends(get_db)):
+    """Get suggested conversation topics for a character in a specific scene"""
+    character = get_character_by_uuid(db, character_uuid)
+    if not character:
+        raise HTTPException(status_code=404, detail=f"Character with UUID {character_uuid} not found")
+    
+    scene = get_scene_by_uuid(db, scene_uuid)
+    if not scene:
+        raise HTTPException(status_code=404, detail=f"Scene with UUID {scene_uuid} not found")
+    
+    try:
+        conversation_service = ConversationService()
+        return await conversation_service.generate_conversation_topics(db, character, scene)
+        
+    except Exception as e:
+        logger.error(f"Error generating conversation topics: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to generate conversation topics")

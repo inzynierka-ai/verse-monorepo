@@ -5,7 +5,7 @@ import { useRegister, RegisterCredentials } from '@/services/api';
 import Button from '@/common/components/Button';
 import Input from '@/common/components/Input';
 import { useNavigate } from '@tanstack/react-router';
-
+import styles from './RegisterView.module.scss';
 
 const RegisterView = () => {
   const [formData, setFormData] = useState<RegisterCredentials>({
@@ -15,11 +15,9 @@ const RegisterView = () => {
   });
 
   const [confirmPassword, setConfirmPassword] = useState('');
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
-  const [errors, setErrors] = useState<Partial<RegisterCredentials & { confirmPassword: string }>>(
-    {},
-  );
+  const [errors, setErrors] = useState<Partial<RegisterCredentials & { confirmPassword: string }>>({});
   const [registerError, setRegisterError] = useState<string | null>(null);
 
   const { mutate: register, isPending: isLoading } = useRegister();
@@ -94,9 +92,7 @@ const RegisterView = () => {
         navigate({ to: '/login' });
       },
       onError: (error) => {
-        setRegisterError(
-          error instanceof Error ? error.message : 'Registration failed. Please try again.',
-        );
+        setRegisterError(error instanceof Error ? error.message : 'Registration failed. Please try again.');
       },
     });
   };
@@ -109,70 +105,72 @@ const RegisterView = () => {
   );
 
   return (
-    <AuthCard 
-      title="Join the Adventure"
-      subtitle="Create your account to begin your journey"
-      errorMessage={registerError}
-      footer={footerContent}
-    >
-      <AuthForm onSubmit={handleSubmit}>
-        <Input
-          type="text"
-          id="username"
-          name="username"
-          value={formData.username}
-          onChange={handleChange}
-          placeholder="Choose a username"
-          disabled={isLoading}
-          label="Username"
-          error={errors.username}
-          fullWidth
-        />
+    <div className={styles.container}>
+      <AuthCard
+        title="Join the Adventure"
+        subtitle="Create your account to begin your journey"
+        errorMessage={registerError}
+        footer={footerContent}
+      >
+        <AuthForm onSubmit={handleSubmit}>
+          <Input
+            type="text"
+            id="username"
+            name="username"
+            value={formData.username}
+            onChange={handleChange}
+            placeholder="Choose a username"
+            disabled={isLoading}
+            label="Username"
+            error={errors.username}
+            fullWidth
+          />
 
-        <Input
-          type="email"
-          id="email"
-          name="email"
-          value={formData.email}
-          onChange={handleChange}
-          placeholder="Enter your email"
-          disabled={isLoading}
-          label="Email"
-          error={errors.email}
-          fullWidth
-        />
+          <Input
+            type="email"
+            id="email"
+            name="email"
+            value={formData.email}
+            onChange={handleChange}
+            placeholder="Enter your email"
+            disabled={isLoading}
+            label="Email"
+            error={errors.email}
+            fullWidth
+          />
 
-        <Input
-          type="password"
-          id="password"
-          name="password"
-          value={formData.password}
-          onChange={handleChange}
-          placeholder="Create a password"
-          disabled={isLoading}
-          label="Password"
-          error={errors.password}
-          fullWidth
-        />
+          <Input
+            type="password"
+            id="password"
+            name="password"
+            value={formData.password}
+            onChange={handleChange}
+            placeholder="Create a password"
+            disabled={isLoading}
+            label="Password"
+            error={errors.password}
+            fullWidth
+          />
 
-        <Input
-          type="password"
-          id="confirmPassword"
-          name="confirmPassword"
-          value={confirmPassword}
-          onChange={handleChange}
-          placeholder="Confirm your password"
-          disabled={isLoading}
-          label="Confirm Password"
-          error={errors.confirmPassword}
-          fullWidth
-        />
+          <Input
+            type="password"
+            id="confirmPassword"
+            name="confirmPassword"
+            value={confirmPassword}
+            onChange={handleChange}
+            placeholder="Confirm your password"
+            disabled={isLoading}
+            label="Confirm Password"
+            error={errors.confirmPassword}
+            fullWidth
+          />
 
-        <Button type="submit" disabled={isLoading} fullWidth>
-          {isLoading ? 'Creating Account...' : 'Create Account'}
-        </Button>
-      </AuthForm>
-    </AuthCard>
+          <Button type="submit" disabled={isLoading} fullWidth>
+            {isLoading ? 'Creating Account...' : 'Create Account'}
+          </Button>
+        </AuthForm>
+      </AuthCard>
+    </div>
   );
 };
 

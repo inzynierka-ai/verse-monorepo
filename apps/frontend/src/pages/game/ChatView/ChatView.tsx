@@ -7,6 +7,7 @@ import Input from '@/common/components/Input/Input';
 import Button from '@/common/components/Button/Button';
 import { useConversation } from '@/common/hooks/useConversation';
 import { useMessages } from '@/common/hooks/useMessages';
+import ConversationTopics from './ConversationTopics/ConversationTopics';
 
 import styles from './ChatView.module.scss';
 import { useQueryClient } from '@tanstack/react-query';
@@ -34,6 +35,9 @@ const Chat = () => {
   // Get messages that are updated in real-time by the WebSocket handler in useScene
   const { data: messages = [] } = useMessages(sceneId, characterId);
 
+  // Show conversation topics only if there are no messages yet
+  const showConversationTopics = messages.length === 0;
+
   const handleSendMessage = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const trimmedMessage = message.trim();
@@ -56,6 +60,10 @@ const Chat = () => {
         },
       },
     );
+  };
+
+  const handleTopicSelect = (message: string) => {
+    sendMessage(message);
   };
 
   if (isLoadingScene) {
@@ -137,6 +145,12 @@ const Chat = () => {
         </div>
 
         <div className={styles.inputContainer}>
+          <ConversationTopics
+            characterId={characterId}
+            sceneId={sceneId}
+            onTopicSelect={handleTopicSelect}
+            show={showConversationTopics}
+          />
           <form onSubmit={handleSendMessage} className={styles.inputWrapper}>
             <Input
               autoFocus
