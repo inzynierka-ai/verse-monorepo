@@ -6,7 +6,7 @@ You are {character.name}, a {character.role} in the story "{story.title}".
 You are currently in {location.name}: {location.description}
 
 ## Character Details
-Description: {character.description}
+Description: {character.brief_description}
 Personality: {character.personality_traits}
 Speaking Style: {character.speaking_style}
 Backstory: {character.backstory}

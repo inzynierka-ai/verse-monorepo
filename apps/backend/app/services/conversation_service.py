@@ -1,6 +1,6 @@
 import logging
 import json
-from typing import List, AsyncGenerator, Dict, Any, Literal
+from typing import List, AsyncGenerator, Dict, Any, Literal, Optional
 from fastapi import WebSocket
 from sqlalchemy.orm import Session
 from app.services.llm import LLMService, ModelName
@@ -11,7 +11,7 @@ from app.services.memory_manager import MemoryManager
 from datetime import datetime
 from app.utils.embedding import optimize_text_for_embedding, get_embedding
 from app.utils.json_service import JSONService
-from app.schemas.conversation import ConversationTopic, ConversationTopicsResponse
+from app.schemas.conversation import ConversationTopic, ConversationTopicsResponse, ProcessingStatusMessage, ModerationResult, EntityExtractionResult, VectorSearchResult
 import uuid
 from langfuse.decorators import observe  # type: ignore
 
@@ -37,8 +37,10 @@ class ConversationService:
     
     @observe(name="process_message")
     async def process_message(self, db: Session, messages: List[Dict[str, Any]], 
-                             character: Character, scene: Scene) -> AsyncGenerator[str, None]:
+                             character: Character, scene: Scene, websocket: Optional[WebSocket] = None) -> AsyncGenerator[str, None]:
         """Process a message and generate a response"""
+        import time
+        
         latest_message = messages[-1]["content"]
         await self.save_message(
             db=db,
@@ -47,10 +49,47 @@ class ConversationService:
             content=latest_message,
             role="user"
         )
+        
+        # Step 1: Moderation
+        if websocket:
+            status_msg = ProcessingStatusMessage(
+                type="processing_status",
+                step="moderating",
+                message="Checking content for safety..."
+            )
+            await websocket.send_text(status_msg.model_dump_json())
+            
+        start_time = time.time()
         violated_categories = await self.moderation_service.process_moderation(latest_message)
+        moderation_time = (time.time() - start_time) * 1000
+        
+        if websocket:
+            moderation_result = ModerationResult(
+                is_flagged=bool(violated_categories),
+                violated_categories=violated_categories,
+                processing_time_ms=moderation_time
+            )
+            status_msg = ProcessingStatusMessage(
+                type="processing_status", 
+                step="moderating",
+                message="Content moderation complete",
+                debug_info=moderation_result
+            )
+            await websocket.send_text(status_msg.model_dump_json())
+            
         if violated_categories:
             logger.warning(f"Violated categories: {violated_categories}")
-        system_prompt = await self._build_character_prompt(db, character, scene)
+            
+        # Step 2: Building prompt (includes entity extraction and vector search)
+        if websocket:
+            status_msg = ProcessingStatusMessage(
+                type="processing_status",
+                step="building_prompt", 
+                message="Building character context..."
+            )
+            await websocket.send_text(status_msg.model_dump_json())
+            
+        system_prompt = await self._build_character_prompt(db, character, scene, websocket)
         
         # Convert messages to the format expected by the LLM service
         formatted_messages = [
@@ -61,6 +100,15 @@ class ConversationService:
         for msg in messages:
             formatted_messages.append(self.llm_service.create_message(msg["role"], msg["content"]))
         
+        # Step 3: Generate response
+        if websocket:
+            status_msg = ProcessingStatusMessage(
+                type="processing_status",
+                step="generating_response",
+                message="Generating character response..."
+            )
+            await websocket.send_text(status_msg.model_dump_json())
+
         # Prepare arguments for LLM service
         llm_args: Dict[str, Any] = {
             "messages": formatted_messages,
@@ -116,8 +164,10 @@ class ConversationService:
         
     
     
-    async def _build_character_prompt(self, db:Session, character: Character, scene: Scene) -> str:
+    async def _build_character_prompt(self, db:Session, character: Character, scene: Scene, websocket: Optional[WebSocket] = None) -> str:
         """Build a system prompt for the character"""
+        import time
+        
         # Get location information
         story = scene.story
         logger.info(f"Building character prompt for {character.name} in scene {scene.uuid}")
@@ -126,18 +176,57 @@ class ConversationService:
         player_name = player_character.name if player_character else "unknown player"
         logger.info(f"Player character identified as: {player_name}")
 
+        # Entity extraction step
+        if websocket:
+            status_msg = ProcessingStatusMessage(
+                type="processing_status",
+                step="extracting_entities",
+                message="Extracting entities from message..."
+            )
+            await websocket.send_text(status_msg.model_dump_json())
+
+        start_time = time.time()
         optimized_last_message = await optimize_text_for_embedding(scene.messages[-1].content)
         logger.info(f"Last message: {optimized_last_message[:100]}...")
         last_message = scene.messages[-1].content
         last_message_embedding = get_embedding(optimized_last_message)
         logger.info(f"Generated embedding of length: {len(last_message_embedding) if last_message_embedding else 'None'}")
+        
+        # Extract entities for debug info
+        world_entity_service = WorldEntityService(db_session=db, story_id=scene.story_id) # type: ignore
+        extracted_entities = await world_entity_service.extract_entity_names(last_message)
+        entity_extraction_time = (time.time() - start_time) * 1000
+        
+        if websocket:
+            entity_extraction_result = EntityExtractionResult(
+                extracted_entities=extracted_entities,
+                processing_time_ms=entity_extraction_time
+            )
+            status_msg = ProcessingStatusMessage(
+                type="processing_status",
+                step="extracting_entities",
+                message=f"Extracted {len(extracted_entities)} entities",
+                debug_info=entity_extraction_result
+            )
+            await websocket.send_text(status_msg.model_dump_json())
+
+        # Vector search step
+        if websocket:
+            status_msg = ProcessingStatusMessage(
+                type="processing_status",
+                step="searching_vectors",
+                message="Searching vector database for relevant context..."
+            )
+            await websocket.send_text(status_msg.model_dump_json())
+
+        start_time = time.time()
 
         # Get character memories
         logger.info(f"Retrieving memories for character ID: {character.id}")
         memory_manager = MemoryManager(db_session=db)
 
         memories = await memory_manager.find_similar_memories(
-            character_id=character.id, 
+            character_id=int(character.id),  # type: ignore
             query=last_message, 
             top_n=5,
             similarity_threshold=0.3
@@ -146,7 +235,6 @@ class ConversationService:
 
         # Get relevant world entities with detailed logging
         logger.info(f"Retrieving world entities for story ID: {scene.story_id}")
-        world_entity_service = WorldEntityService(db_session=db, story_id=scene.story_id)
         
         try:
             logger.info(f"Calling get_relevant_world_entities with message length {len(optimized_last_message)} and embedding length {len(last_message_embedding) if last_message_embedding else 'None'}")
@@ -166,6 +254,44 @@ class ConversationService:
             logger.error(traceback.format_exc())
             world_entities = []
 
+        vector_search_time = (time.time() - start_time) * 1000
+        
+        # Send vector search results
+        if websocket:
+            # Format entities for debug info
+            entities_debug = []
+            for entity in world_entities or []:
+                entities_debug.append({
+                    "name": entity.name,
+                    "description": entity.canonical_description[:100] + "..." if len(entity.canonical_description) > 100 else entity.canonical_description,
+                    "aliases": entity.aliases
+                })
+            
+            # Format memories for debug info
+            memories_debug = []
+            for memory in memories or []:
+                memory_text = getattr(memory, 'memory_text', '') or ""
+                memories_debug.append({  # type: ignore
+                    "text": memory_text[:100] + "..." if len(memory_text) > 100 else memory_text
+                }) 
+            
+            vector_search_result = VectorSearchResult(
+                entities_found=entities_debug,  # type: ignore
+                memories_found=memories_debug,  # type: ignore
+                name_matches=0,  # These would need to be tracked in the world entity service
+                description_matches=0,
+                vector_matches=len(world_entities or []),
+                total_results=len(world_entities or []) + len(memories or []),
+                processing_time_ms=vector_search_time
+            )
+            status_msg = ProcessingStatusMessage(
+                type="processing_status",
+                step="searching_vectors",
+                message=f"Found {len(world_entities or [])} entities, {len(memories or [])} memories",
+                debug_info=vector_search_result
+            )
+            await websocket.send_text(status_msg.model_dump_json())
+
 
         # Log location info
         location_info = f"You are currently at {scene.location.name}. {scene.location.description}" if scene.location else ""
@@ -184,9 +310,9 @@ class ConversationService:
                         alias_text = ", ".join(entity.aliases)
                         entity_text += f" (Also known as: {alias_text})"
                     
-                    entities_text_list.append(entity_text)
+                    entities_text_list.append(entity_text) # type: ignore
                 
-                entities_text = chr(10).join(entities_text_list)
+                entities_text = chr(10).join(entities_text_list) # type: ignore 
                 logger.info(f"Including {len(world_entities)} world entities in prompt")
             else:
                 entities_text = "None"
@@ -258,7 +384,7 @@ class ConversationService:
         return character_prompt  
     
     @observe(name="generate_conversation_topics")
-    async def generate_conversation_topics(self, db: Session, character: Character, scene: Scene) -> ConversationTopicsResponse:
+    async def generate_conversation_topics(self, db: Session, character: Character, scene: Scene, messages: Optional[List[Dict[str, Any]]] = None) -> ConversationTopicsResponse:
         """Generate conversation topics for a character in a specific scene"""
         logger.info(f"Generating conversation topics for character {character.name} in scene {scene.uuid}")
         
@@ -270,29 +396,113 @@ class ConversationService:
             # Prepare location information
             location_info = f"You are currently at {scene.location.name}. {scene.location.description}" if scene.location else ""
             
-            system_prompt = f"""You are a conversation topic generator for a narrative text adventure game.
+            # Get previous scene summary if available and fetch previous messages
+            previous_scene_context = ""
+            previous_scene = None
+            try:
+                from app.crud.scenes import get_latest_completed_scene_by_story
+                # Extract the actual integer value from the scene.story_id column
+                story_id = int(scene.story_id)  # type: ignore
+                previous_scene = get_latest_completed_scene_by_story(db, story_id)
+                if previous_scene and getattr(previous_scene, 'summary', None):
+                    summary_text = str(previous_scene.summary)
+                    # previous_scene.messages
+                    previous_scene_context = f"\nPrevious scene summary: {summary_text}"
+                    logger.info(f"Including previous scene summary: {summary_text[:100]}...")
+            except Exception as e:
+                logger.warning(f"Could not fetch previous scene summary: {str(e)}")
+            
+            # Prepare message history context
+            message_history_context = ""
+            all_messages: List[Dict[str, Any]] = []
+            
+            # First, get previous messages from the last scene with this character if available (limited)
+            if previous_scene is not None:
+                try:
+                    from app.crud.messages import get_messages_by_scene_and_character
+                    # Convert Column objects to string values
+                    prev_scene_uuid = str(previous_scene.uuid)
+                    character_uuid = str(character.uuid)
+                    prev_messages = get_messages_by_scene_and_character(db, prev_scene_uuid, character_uuid)
+                    # Limit previous scene messages to last 3 to avoid overwhelming the prompt
+                    limited_prev_messages = prev_messages[-3:] if len(prev_messages) > 3 else prev_messages
+                    # Convert to the format expected (dict with role and content)
+                    for msg in limited_prev_messages:
+                        all_messages.append({
+                            "role": msg.role,
+                            "content": msg.content
+                        })
+                    logger.info(f"Retrieved {len(limited_prev_messages)} messages from previous scene (out of {len(prev_messages)} total)")
+                except Exception as e:
+                    logger.warning(f"Could not fetch previous messages: {str(e)}")
+            
+            # Add ALL current messages if provided (no limitation)
+            if messages and len(messages) > 0:
+                all_messages.extend(messages)
+                logger.info(f"Added {len(messages)} current messages")
+            
+            # Prepare last message analysis and conversation hooks
+            last_message_analysis = ""
+            
+            # Use all messages for context (no additional limitation)
+            if all_messages:
+                message_texts: List[str] = []
+                for msg in all_messages:
+                    role = "Player" if msg.get("role") == "user" else character.name
+                    content = msg.get("content", "")
+                    message_texts.append(f"{role}: {content}")
+                
+                if message_texts:
+                    message_history_context = f"\nRecent conversation:\n" + "\n".join(message_texts)
+                    logger.info(f"Including {len(all_messages)} total messages in context")
+                
+                # Extract and analyze the very last message for hooks
+                if len(all_messages) > 0:
+                    last_msg = all_messages[-1]
+                    last_role = "Player" if last_msg.get("role") == "user" else character.name
+                    last_content = last_msg.get("content", "")
+                    last_message_analysis = f"\nLAST MESSAGE ANALYSIS:\n{last_role}: \"{last_content}\""
+   
+            
+            system_prompt = f"""You are a conversation topic generator for a narrative text adventure game that creates natural, flowing conversation topics based on the most recent interaction.
+            PRIMARY GOAL: Generate 3 conversation topics that naturally flow from the LAST MESSAGE above. These should feel like organic responses that {character.name} would naturally think to explore.
 
-Character Information:
-- Name: {character.name}
-- Description: {character.description}
-- Relationship Level with {player_name}: {character.relationship_level}/100
+TOPIC GENERATION STRATEGY:
+1. **Last Message Priority**: Focus heavily on the most recent exchange - what was said, what wasn't said, and what emotions/subtext were present
+2. **Natural Flow**: Topics should feel like they directly follow from the conversation, not random new subjects
+3. **Character Voice**: Each topic should reflect what {character.name} would genuinely be curious about or want to explore
+4. **Emotional Intelligence**: Pick up on emotional cues, unspoken concerns, or underlying tensions
+5. **Relationship Building**: Use the conversation momentum to deepen understanding between characters
 
-Current Situation:
-- Story: {scene.story.title}
-- Scene: {scene.description}
-- Location: {location_info}
+CRITICAL REQUIREMENTS:
+- **Hook Analysis**: Identify specific elements from the last message that can be expanded upon
+- **Emotional Resonance**: Look for feelings, concerns, or interests that weren't fully explored
+- **Natural Transitions**: Topics should feel like the next logical step in the conversation
+- **Character Motivation**: Consider what {character.name} would genuinely want to know or discuss
+- **Avoid Generic**: Don't suggest broad topics unless they directly relate to what was just discussed
 
-Generate 3 conversation starter topics that would be natural and engaging for {player_name} to discuss with {character.name} in this context.
+CONVERSATION HOOKS TO EXPLORE FROM LAST MESSAGE:
+Analyze the last message for these potential conversation starters:
+- Emotions expressed or hinted at that could be explored
+- Unfinished thoughts or statements that trail off
+- Questions asked that could be expanded upon
+- Concerns, fears, or worries mentioned
+- Achievements, successes, or positive moments that could be celebrated
+- References to past events that could be discussed further
+- Contradictions or inconsistencies that could be gently questioned
+- Body language, tone, or subtext that {character.name} would pick up on
+- Information gaps that {character.name} might be curious about
+- Opportunities for {character.name} to share similar experiences or relate
+
+Examples of GOOD conversation hooks:
+- If someone mentions being tired → "You seem exhausted, what's been keeping you up?"
+- If someone hesitates before speaking → "You looked like you wanted to say something else..."
+- If someone mentions a person → "Tell me more about [that person], they sound important to you"
+- If someone shows emotion → "I can see this really matters to you..."
 
 For each topic, provide:
-1. A short title (2-3 words maximum, like a conversation category)
-2. A full message that the player would say
-
-The topics should:
-1. Be appropriate for their current relationship level
-2. Consider the character's personality, goals, and speaking style
-3. Be relevant to the current scene and location
-4. Be phrased as natural conversation starters from the player's perspective
+1. A short title (2-3 words maximum)
+2. A message that naturally follows from the conversation
 
 Return your response as a JSON array of objects with "title" and "message" fields:
 [
@@ -301,7 +511,18 @@ Return your response as a JSON array of objects with "title" and "message" field
   {{"title": "Compliment", "message": "I really like your outfit today, it suits you well."}}
 ]
 
-Keep titles very short and messages natural and conversational."""
+Keep titles very short and messages natural and conversational.
+
+Character Information:
+- Name: {character.name}
+- Description: {character.brief_description}
+- Relationship Level with {player_name}: {character.relationship_level}/100
+
+Current Situation:
+- Story: {scene.story.title}
+- Scene: {scene.description}
+- Location: {location_info}{previous_scene_context}{message_history_context}{last_message_analysis}
+"""
 
             messages = [
                 self.llm_service.create_message("system", system_prompt)

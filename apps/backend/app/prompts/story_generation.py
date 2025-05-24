@@ -78,7 +78,7 @@ Given a text description of a story world or concept, extract the following elem
 
 1. Theme: The emotional or philosophical core concept (e.g., isolation, rebellion, discovery)
 2. Genre: The storytelling approach or style (e.g., hard sci-fi, fantasy, horror)
-3. Year: The time period in which the story is set (should be a numeric value)
+3. Year: The time period in which the story is set (should be a numeric value). The year should be deduced from the description otherwise use the current year (2025).
 4. Setting: The physical environment specifics (e.g., space station, underwater city, desert outpost)
 
 Your task is to identify these elements explicitly stated in the description or to infer them if they are implied.

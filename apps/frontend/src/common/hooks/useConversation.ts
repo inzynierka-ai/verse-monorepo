@@ -1,33 +1,36 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useWebSocket } from './webSockets/useWebSocket';
 import { sendWebSocketMessage } from '@/utils/webSocket';
-import { Message } from '@/types/message.types';
+import { Message, ConversationMessage, ProcessingStatusMessage } from '@/types/message.types';
 import { messagesQueryKey } from './useMessages';
-
-interface ConversationMessage {
-  type: 'chat_chunk' | 'chat_complete';
-  content?: string;
-}
 
 interface UseConversationProps {
   sceneId: string;
   characterId: string;
   onConnectionChange?: (isConnected: boolean) => void;
+  onStreamingStateChange?: (isStreaming: boolean) => void;
+  onProcessingStatusChange?: (status: ProcessingStatusMessage | null) => void;
 }
 
 interface UseConversationReturn {
   sendMessage: (content: string) => boolean;
   isConnected: boolean;
+  isStreaming: boolean;
   reconnect: () => void;
+  processingStatus: ProcessingStatusMessage | null;
 }
 
 export const useConversation = ({
   sceneId,
   characterId,
   onConnectionChange,
+  onStreamingStateChange,
+  onProcessingStatusChange,
 }: UseConversationProps): UseConversationReturn => {
   const queryClient = useQueryClient();
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [processingStatus, setProcessingStatus] = useState<ProcessingStatusMessage | null>(null);
 
   // Handle incoming messages from WebSocket
   const handleMessage = useCallback(
@@ -37,6 +40,18 @@ export const useConversation = ({
         switch (message.type) {
           case 'chat_chunk': {
             if (!message.content) break;
+
+            if (!isStreaming) {
+              setIsStreaming(true);
+              onStreamingStateChange?.(true);
+            }
+
+            // Clear processing status when we start receiving chunks
+            if (processingStatus) {
+              setProcessingStatus(null);
+              onProcessingStatusChange?.(null);
+            }
+
             queryClient.setQueryData(messagesQueryKey(sceneId, characterId), (old: Message[] = []) => {
               const messages = [...old];
               const lastMessage = messages[messages.length - 1];
@@ -52,13 +67,36 @@ export const useConversation = ({
             break;
           }
           case 'chat_complete':
+            setIsStreaming(false);
+            onStreamingStateChange?.(false);
+            setProcessingStatus(null);
+            onProcessingStatusChange?.(null);
             break;
+          case 'processing_status': {
+            const statusMessage: ProcessingStatusMessage = {
+              type: 'processing_status',
+              step: message.step!,
+              message: message.message!,
+              debug_info: message.debug_info,
+            };
+            setProcessingStatus(statusMessage);
+            onProcessingStatusChange?.(statusMessage);
+            break;
+          }
         }
       } catch (error) {
         console.error(error);
       }
     },
-    [queryClient, sceneId, characterId],
+    [
+      queryClient,
+      sceneId,
+      characterId,
+      isStreaming,
+      onStreamingStateChange,
+      onProcessingStatusChange,
+      processingStatus,
+    ],
   );
 
   // Handle WebSocket connection changes
@@ -96,11 +134,13 @@ export const useConversation = ({
       queryClient.setQueryData(messagesQueryKey(sceneId, characterId), updatedMessages);
 
       // Send message through WebSocket with all required fields from ClientMessage model
-      return sendWebSocketMessage(socket, {
+      const success = sendWebSocketMessage(socket, {
         sceneId,
         characterId,
         messages: updatedMessages,
       });
+
+      return success;
     },
     [socket, sceneId, characterId, queryClient],
   );
@@ -108,6 +148,8 @@ export const useConversation = ({
   return {
     sendMessage,
     isConnected,
+    isStreaming,
     reconnect,
+    processingStatus,
   };
 };

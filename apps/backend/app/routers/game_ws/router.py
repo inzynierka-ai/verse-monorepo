@@ -431,7 +431,8 @@ async def scene_websocket(websocket: WebSocket, scene_uuid: str, character_uuid:
             db=db,
             messages=message.messages,
             character=character,
-            scene=scene
+            scene=scene,
+            websocket=websocket
         ):
             chunk_message = ChatChunkMessage(
                 type="chat_chunk",

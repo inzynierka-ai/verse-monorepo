@@ -1,7 +1,7 @@
 import { useNavigate, useParams } from '@tanstack/react-router';
 import { useLatestScene } from '@/services/api/hooks/useLatestScene';
 import { useCreateWorldEntities } from '@/services/api/hooks/useCreateWorldEntities';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import Markdown from 'react-markdown';
 
 import Input from '@/common/components/Input/Input';
@@ -10,6 +10,8 @@ import { useConversation } from '@/common/hooks/useConversation';
 import { useMessages } from '@/common/hooks/useMessages';
 import ConversationTopics from './ConversationTopics/ConversationTopics';
 import CharacterDetailsModal from './CharacterDetailsModal/CharacterDetailsModal';
+import ProcessingIndicator from './ProcessingIndicator/ProcessingIndicator';
+import { ProcessingStatusMessage } from '@/types/message.types';
 
 import styles from './ChatView.module.scss';
 import { useQueryClient } from '@tanstack/react-query';
@@ -23,13 +25,25 @@ const Chat = () => {
   const { data: scene, isLoading: isLoadingScene, error } = useLatestScene(storyId);
   const [message, setMessage] = useState('');
   const [isCharacterModalOpen, setIsCharacterModalOpen] = useState(false);
+  const [isNpcStreaming, setIsNpcStreaming] = useState(false);
+  const [processingStatus, setProcessingStatus] = useState<ProcessingStatusMessage | null>(null);
   const createWorldEntities = useCreateWorldEntities();
   const queryClient = useQueryClient();
+
+  const handleStreamingStateChange = useCallback((streaming: boolean) => {
+    setIsNpcStreaming(streaming);
+  }, []);
+
+  const handleProcessingStatusChange = useCallback((status: ProcessingStatusMessage | null) => {
+    setProcessingStatus(status);
+  }, []);
 
   // Setup scene and real-time messaging with WebSocket
   const { sendMessage, isConnected: wsConnected } = useConversation({
     sceneId,
     characterId,
+    onStreamingStateChange: handleStreamingStateChange,
+    onProcessingStatusChange: handleProcessingStatusChange,
   });
 
   const playerCharacter = scene?.characters.find((c) => c.role === 'player');
@@ -38,8 +52,8 @@ const Chat = () => {
   // Get messages that are updated in real-time by the WebSocket handler in useScene
   const { data: messages = [] } = useMessages(sceneId, characterId);
 
-  // // Show conversation topics only if there are no messages yet
-  const showConversationTopics = true;
+  const lastMessage = messages?.[messages.length - 1];
+  const showConversationTopics = !messages?.length || (lastMessage?.role === 'assistant' && !isNpcStreaming);
 
   const handleSendMessage = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -150,6 +164,7 @@ const Chat = () => {
                   <Markdown>{message.content}</Markdown>
                 </div>
               ))}
+              <ProcessingIndicator status={processingStatus} isVisible={!!processingStatus && !isNpcStreaming} />
             </div>
           )}
         </div>
@@ -160,6 +175,8 @@ const Chat = () => {
             sceneId={sceneId}
             onTopicSelect={handleTopicSelect}
             show={showConversationTopics}
+            messages={messages}
+            isStreaming={isNpcStreaming}
           />
           <form onSubmit={handleSendMessage} className={styles.inputWrapper}>
             <Input

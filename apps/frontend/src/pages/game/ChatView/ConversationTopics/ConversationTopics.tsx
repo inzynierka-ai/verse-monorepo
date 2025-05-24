@@ -1,5 +1,6 @@
 import Button from '@/common/components/Button/Button';
 import { useConversationTopics } from '@/services/api/hooks/useConversationTopics';
+import { Message } from '@/types/message.types';
 import styles from './ConversationTopics.module.scss';
 
 interface ConversationTopicsProps {
@@ -7,10 +8,20 @@ interface ConversationTopicsProps {
   sceneId: string;
   onTopicSelect: (message: string) => void;
   show: boolean;
+  messages?: Message[];
+  isStreaming?: boolean;
 }
 
-const ConversationTopics = ({ characterId, sceneId, onTopicSelect, show }: ConversationTopicsProps) => {
-  const { data: topicsData, isLoading, error } = useConversationTopics(characterId, sceneId);
+const ConversationTopics = ({
+  characterId,
+  sceneId,
+  onTopicSelect,
+  show,
+  messages,
+  isStreaming,
+}: ConversationTopicsProps) => {
+  const { data: topicsData, isLoading, error } = useConversationTopics(characterId, sceneId, messages, isStreaming);
+  const isFirstConversation = !messages?.length;
 
   if (!show || isLoading || error || !topicsData?.topics?.length) {
     return null;
@@ -19,7 +30,9 @@ const ConversationTopics = ({ characterId, sceneId, onTopicSelect, show }: Conve
   return (
     <div className={styles.conversationTopics}>
       <div className={styles.topicsHeader}>
-        <span className={styles.headerText}>Conversation starters:</span>
+        <span className={styles.headerText}>
+          {isFirstConversation ? 'Conversation starters:' : 'Continue the conversation:'}
+        </span>
       </div>
       <div className={styles.topicsList}>
         {topicsData.topics.map((topic, index) => (

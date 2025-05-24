@@ -1,0 +1,295 @@
+@use "@/common/styles/variables" as *;
+
+.processingIndicator {
+  background: $card-bg;
+  border: 1px solid rgba($accent-color, 0.2);
+  border-radius: 8px;
+  margin: 8px 0;
+  font-size: 14px;
+  font-family: $game-font;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  transition: all 0.2s ease;
+
+  &:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+    border-color: rgba($accent-color, 0.4);
+  }
+}
+
+.statusBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-radius: 8px;
+}
+
+.statusContent {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.statusIcon {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+}
+
+.icon {
+  font-size: 18px;
+  z-index: 2;
+  color: $accent-color;
+}
+
+.spinner {
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  border: 2px solid rgba($accent-color, 0.2);
+  border-top: 2px solid $accent-color;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  z-index: 1;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.statusText {
+  flex: 1;
+}
+
+.stepName {
+  font-weight: 600;
+  color: $light-text;
+  margin-bottom: 2px;
+  font-family: $game-font;
+}
+
+.statusMessage {
+  color: rgba($light-text, 0.7);
+  font-size: 13px;
+  font-family: $game-font;
+}
+
+.debugToggle {
+  background: $input-bg;
+  border: 1px solid rgba($accent-color, 0.2);
+  border-radius: 4px;
+  padding: 6px 12px;
+  color: rgba($light-text, 0.7);
+  cursor: pointer;
+  font-size: 12px;
+  font-family: $game-font;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: rgba($accent-color, 0.1);
+    color: $light-text;
+    border-color: rgba($accent-color, 0.4);
+  }
+
+  &[aria-expanded="true"] {
+    background: $primary-color;
+    color: white;
+    border-color: $primary-color;
+  }
+}
+
+.debugInfo {
+  border-top: 1px solid rgba($accent-color, 0.2);
+  padding: 16px;
+  background: rgba($dark-bg, 0.6);
+  border-radius: 0 0 8px 8px;
+}
+
+.debugSection {
+  margin-bottom: 16px;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+
+  h4 {
+    margin: 0 0 12px 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: $light-text;
+    font-family: $game-font;
+    border-bottom: 1px solid rgba($accent-color, 0.2);
+    padding-bottom: 4px;
+  }
+
+  h5 {
+    margin: 12px 0 8px 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: $light-text;
+    font-family: $game-font;
+  }
+}
+
+.debugItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 8px;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.label {
+  font-weight: 500;
+  color: rgba($light-text, 0.7);
+  min-width: 120px;
+  flex-shrink: 0;
+  font-family: $game-font;
+}
+
+.clean {
+  color: $success-color;
+  font-weight: 500;
+  font-family: $game-font;
+}
+
+.flagged {
+  color: $error-color;
+  font-weight: 500;
+  font-family: $game-font;
+}
+
+.violationsList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.violation {
+  background: rgba($error-color, 0.2);
+  color: $error-color;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 500;
+  font-family: $game-font;
+}
+
+.entitiesList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.entity {
+  background: rgba($primary-color, 0.2);
+  color: $primary-color;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 500;
+  font-family: $game-font;
+}
+
+.searchStats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.statItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 8px;
+  background: $input-bg;
+  border-radius: 4px;
+  border: 1px solid rgba($accent-color, 0.2);
+}
+
+.statLabel {
+  font-size: 11px;
+  color: rgba($light-text, 0.7);
+  font-weight: 500;
+  font-family: $game-font;
+}
+
+.statValue {
+  font-size: 12px;
+  color: $light-text;
+  font-weight: 600;
+  font-family: $game-font;
+}
+
+.resultsSection {
+  margin-top: 12px;
+}
+
+.resultItem {
+  background: $input-bg;
+  border: 1px solid rgba($accent-color, 0.2);
+  border-radius: 4px;
+  padding: 8px;
+  margin-bottom: 8px;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.resultName {
+  font-weight: 600;
+  color: $light-text;
+  font-size: 12px;
+  margin-bottom: 4px;
+  font-family: $game-font;
+}
+
+.resultDescription {
+  color: rgba($light-text, 0.7);
+  font-size: 11px;
+  line-height: 1.4;
+  margin-bottom: 4px;
+  font-family: $game-font;
+}
+
+.resultAliases {
+  color: rgba($light-text, 0.5);
+  font-size: 10px;
+  font-style: italic;
+  font-family: $game-font;
+}
+
+.memoryText {
+  color: rgba($light-text, 0.7);
+  font-size: 11px;
+  line-height: 1.4;
+  font-style: italic;
+  font-family: $game-font;
+}
+
+// CSS variables for theming (these should be defined in your global styles)
+:root {
+  --background-secondary: #f8f9fa;
+  --background-tertiary: #f1f3f4;
+  --background-hover: #e9ecef;
+  --border-primary: #dee2e6;
+  --border-secondary: #e9ecef;
+  --text-primary: #212529;
+  --text-secondary: #6c757d;
+  --text-tertiary: #adb5bd;
+  --primary: #007bff;
+  --primary-background: #e3f2fd;
+  --success: #28a745;
+  --error: #dc3545;
+  --error-background: #f8d7da;
+} 

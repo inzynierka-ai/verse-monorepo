@@ -1,6 +1,6 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Body
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional, Dict, Any
 from app.schemas import character as character_schema
 from app.schemas import character_memory as character_memory_schema
 from app.schemas.conversation import ConversationTopicsResponse
@@ -44,8 +44,13 @@ async def create_character(character: character_schema.CharacterCreate, db: Sess
     """Create a new character"""
     return create_character_service(db, character)
 
-@router.get("/{character_uuid}/conversation-topics/{scene_uuid}", response_model=ConversationTopicsResponse)
-async def get_conversation_topics(character_uuid: str, scene_uuid: str, db: Session = Depends(get_db)):
+@router.post("/{character_uuid}/conversation-topics/{scene_uuid}", response_model=ConversationTopicsResponse)
+async def get_conversation_topics(
+    character_uuid: str, 
+    scene_uuid: str, 
+    db: Session = Depends(get_db),
+    messages: Optional[List[Dict[str, Any]]] = Body(None)
+):
     """Get suggested conversation topics for a character in a specific scene"""
     character = get_character_by_uuid(db, character_uuid)
     if not character:
@@ -57,7 +62,7 @@ async def get_conversation_topics(character_uuid: str, scene_uuid: str, db: Sess
     
     try:
         conversation_service = ConversationService()
-        return await conversation_service.generate_conversation_topics(db, character, scene)
+        return await conversation_service.generate_conversation_topics(db, character, scene, messages)
         
     except Exception as e:
         logger.error(f"Error generating conversation topics: {str(e)}")

@@ -172,7 +172,7 @@ class RelationshipAnalysisService:
         Character information:
         - Name: {character.name}
         - Role: {character.role}
-        - Description: {character.description}
+        - Description: {character.brief_description}
         - Personality: {personality}
         - Goals: {goals}
         

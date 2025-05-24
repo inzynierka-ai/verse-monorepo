@@ -22,6 +22,34 @@ class ErrorMessage(BaseModel):
     content: str
     details: Optional[str] = None
 
+class ModerationResult(BaseModel):
+    """Result of content moderation"""
+    is_flagged: bool
+    violated_categories: Optional[Dict[str, bool]] = None
+    processing_time_ms: Optional[float] = None
+
+class EntityExtractionResult(BaseModel):
+    """Result of entity extraction for vector search"""
+    extracted_entities: List[str]
+    processing_time_ms: Optional[float] = None
+
+class VectorSearchResult(BaseModel):
+    """Result of vector database search"""
+    entities_found: List[Dict[str, Any]]  # List of entities with scores
+    memories_found: List[Dict[str, Any]]  # List of memories with scores
+    name_matches: int
+    description_matches: int  
+    vector_matches: int
+    total_results: int
+    processing_time_ms: Optional[float] = None
+
+class ProcessingStatusMessage(BaseModel):
+    """Status update message during message processing"""
+    type: Literal["processing_status"]
+    step: Literal["moderating", "extracting_entities", "searching_vectors", "building_prompt", "generating_response"]
+    message: str
+    debug_info: Optional[Union[ModerationResult, EntityExtractionResult, VectorSearchResult, Dict[str, Any]]] = None
+
 class ConversationTopic(BaseModel):
     """A conversation topic with a short title and full message"""
     title: str  # Short 2-3 word title
@@ -32,4 +60,4 @@ class ConversationTopicsResponse(BaseModel):
     topics: List[ConversationTopic]
 
 # Union type for server messages
-ServerMessage = Union[ChatChunkMessage, ChatCompleteMessage, ErrorMessage] 
+ServerMessage = Union[ChatChunkMessage, ChatCompleteMessage, ErrorMessage, ProcessingStatusMessage]
