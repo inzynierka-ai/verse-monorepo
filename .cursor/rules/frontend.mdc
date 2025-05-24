@@ -22,6 +22,9 @@ alwaysApply: false
 - Keep styling files close to their components
 - Use variables for colors, fonts, and spacing
 
+## Package manager
+- use yarn
+
 ## Testing
 - Write unit tests for components and utilities
 - Use React Testing Library for component testing

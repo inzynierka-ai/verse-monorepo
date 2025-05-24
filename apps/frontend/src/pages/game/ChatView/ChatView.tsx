@@ -2,12 +2,14 @@ import { useNavigate, useParams } from '@tanstack/react-router';
 import { useLatestScene } from '@/services/api/hooks/useLatestScene';
 import { useCreateWorldEntities } from '@/services/api/hooks/useCreateWorldEntities';
 import { useState } from 'react';
+import Markdown from 'react-markdown';
 
 import Input from '@/common/components/Input/Input';
 import Button from '@/common/components/Button/Button';
 import { useConversation } from '@/common/hooks/useConversation';
 import { useMessages } from '@/common/hooks/useMessages';
 import ConversationTopics from './ConversationTopics/ConversationTopics';
+import CharacterDetailsModal from './CharacterDetailsModal/CharacterDetailsModal';
 
 import styles from './ChatView.module.scss';
 import { useQueryClient } from '@tanstack/react-query';
@@ -20,6 +22,7 @@ const Chat = () => {
   const navigate = useNavigate();
   const { data: scene, isLoading: isLoadingScene, error } = useLatestScene(storyId);
   const [message, setMessage] = useState('');
+  const [isCharacterModalOpen, setIsCharacterModalOpen] = useState(false);
   const createWorldEntities = useCreateWorldEntities();
   const queryClient = useQueryClient();
 
@@ -35,8 +38,8 @@ const Chat = () => {
   // Get messages that are updated in real-time by the WebSocket handler in useScene
   const { data: messages = [] } = useMessages(sceneId, characterId);
 
-  // Show conversation topics only if there are no messages yet
-  const showConversationTopics = messages.length === 0;
+  // // Show conversation topics only if there are no messages yet
+  const showConversationTopics = true;
 
   const handleSendMessage = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -118,6 +121,13 @@ const Chat = () => {
               <div className={styles.characterInfo}>
                 <h2>{selectedCharacter.name}</h2>
                 <p>{selectedCharacter.brief_description}</p>
+                <Button
+                  onClick={() => setIsCharacterModalOpen(true)}
+                  variant="secondary"
+                  className={styles.readMoreButton}
+                >
+                  Read More
+                </Button>
               </div>
             </>
           )}
@@ -137,7 +147,7 @@ const Chat = () => {
                     message.role === 'user' ? styles.userMessage : styles.assistantMessage
                   }`}
                 >
-                  {message.content}
+                  <Markdown>{message.content}</Markdown>
                 </div>
               ))}
             </div>
@@ -165,6 +175,14 @@ const Chat = () => {
           </form>
         </div>
       </div>
+
+      {selectedCharacter && (
+        <CharacterDetailsModal
+          character={selectedCharacter}
+          isOpen={isCharacterModalOpen}
+          onClose={() => setIsCharacterModalOpen(false)}
+        />
+      )}
     </div>
   );
 };

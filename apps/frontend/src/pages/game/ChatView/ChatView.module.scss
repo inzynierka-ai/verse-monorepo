@@ -2,7 +2,7 @@
 @use '@/common/styles/mixins.scss' as *;
 
 .gameView {
-  min-height: 100vh;
+  height: 100vh;
   background-size: cover;
   background-position: center;
   position: relative;
@@ -37,7 +37,7 @@
     "input input input";
   grid-template-columns: 280px 1fr;
   grid-template-rows: auto 1fr auto;
-  min-height: 100vh;
+  height: 100vh;
   width: 100%;
   gap: 1px; 
   background-color: rgba(darken($dark-bg, 5%), 0.1);
@@ -192,11 +192,28 @@
     line-height: 1.5;
     opacity: 0.9;
     max-width: 95%;
-    margin: 0 auto;
+    margin: 0 auto 1rem auto;
     display: -webkit-box;
     -webkit-line-clamp: 6;
     -webkit-box-orient: vertical;
     overflow: hidden;
+  }
+}
+
+.readMoreButton {
+  font-size: 0.8rem;
+  padding: 0.5rem 1rem;
+  background: rgba($accent-color, 0.2);
+  border: 1px solid rgba($accent-color, 0.4);
+  color: $light-text;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background: rgba($accent-color, 0.3);
+    border-color: $accent-color;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba($accent-color, 0.2);
   }
 }
 
@@ -208,10 +225,11 @@
   grid-area: content;
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
+  justify-content: flex-start;
   position: relative;
   padding: 2rem 3rem 2rem 2rem;
-  overflow: hidden;
+  overflow-y: auto;
+  min-height: 0;
   
 }
 
@@ -272,6 +290,7 @@
   display: flex;
   flex-direction: column;
   max-width: 85%;
+  margin-top: auto;
   margin-bottom: 8rem;
 }
 

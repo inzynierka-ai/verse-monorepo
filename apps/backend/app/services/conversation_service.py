@@ -275,10 +275,6 @@ class ConversationService:
 Character Information:
 - Name: {character.name}
 - Description: {character.description}
-- Personality: {character.personality_traits}
-- Backstory: {character.backstory}
-- Goals: {character.goals}
-- Speaking Style: {character.speaking_style}
 - Relationship Level with {player_name}: {character.relationship_level}/100
 
 Current Situation:
