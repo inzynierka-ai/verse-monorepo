@@ -237,7 +237,7 @@ class WorldEntityService:
         all_entities = get_entity_names_by_story_id(self.db_session, self.story.id)
         
         # Create lookup sets for both names and aliases (converted to lowercase for case-insensitive matching)
-        known_names = {entity.name.lower() for entity in all_entities}
+        known_names = {entity.lower() for entity in all_entities}
         
         # Gather all aliases across all entities
         known_aliases = set()
