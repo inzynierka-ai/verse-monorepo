@@ -7,7 +7,7 @@ from app.schemas.conversation import ConversationTopicsResponse
 from app.db.session import get_db
 from app.crud.characters import get_character, get_characters, create_character as create_character_service, get_character_by_uuid
 from app.crud.scenes import get_scene_by_uuid
-from app.services.conversation_service import ConversationService
+from app.services.scenes.conversation_service import ConversationService
 import logging
 
 logger = logging.getLogger(__name__)

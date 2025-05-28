@@ -1,12 +1,11 @@
 import asyncio
-import os
 import sys
+import os
 
-# Add the project root to the path to ensure imports work correctly
-project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
-sys.path.insert(0, project_root)
+# Add the parent directory to the path so we can import from app
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from app.services.game_engine.tools.story_generator import StoryGenerator
+from app.services.world.story_generator import StoryGenerator
 from app.schemas.story_generation import StoryInput
 from app.services.llm import LLMService
 

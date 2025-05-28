@@ -1,9 +1,9 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from app.services.game_engine.tools.story_generator import StoryGenerator
+from app.services.world.story_generator import StoryGenerator
 from app.schemas.story_generation import Story, StoryInput
-from app.services.llm import LLMService
+from app.services.platform.llm import LLMService
 
 
 @pytest.fixture

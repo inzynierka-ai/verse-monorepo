@@ -1,14 +1,14 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from app.services.game_engine.tools.character_generator import CharacterGenerator
+from app.services.characters.character_generator import CharacterGenerator
 from app.schemas.story_generation import (
     CharacterDraft, 
     Story, 
     Character, 
     CharacterFromLLM,
 )
-from app.services.llm import LLMService
+from app.services.platform.llm import LLMService
 
 
 @pytest.fixture

@@ -3,11 +3,12 @@ from typing import Optional, cast, List, Dict
 import uuid
 from app.models.scene import Scene
 from app.crud import scenes
-from app.services.llm import LLMService, ModelName
+from app.services.platform.llm import LLMService, ModelName
 from app.schemas.message import Message as MessageSchema
 from app.schemas.scene import Scene as SceneSchema
 from app.crud.characters import get_character
 from langfuse.decorators import observe  # type: ignore
+import logging
 
 class SceneService:
     def __init__(self):

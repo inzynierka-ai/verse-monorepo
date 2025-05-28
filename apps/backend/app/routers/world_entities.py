@@ -1,11 +1,10 @@
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from typing import List
-from app.schemas import character as character_schema
 from app.schemas.world_entity import WorldEntity
 from app.crud.world_entities import get_entities_by_story_id, get_entity_by_id
 from app.crud.scenes import get_scene_by_uuid
-from app.services.world_entity_service import WorldEntityService
+from app.services.world.world_entity_service import WorldEntityService
 from app.db.session import get_db
 from pydantic import BaseModel
 

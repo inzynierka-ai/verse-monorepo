@@ -5,7 +5,7 @@ import json
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, Field
 from app.models.character import Character
-from app.services.llm import LLMService, ModelName
+from app.services.platform.llm import LLMService, ModelName
 from langfuse.decorators import observe  # type: ignore
 
 from app.crud.characters import get_character

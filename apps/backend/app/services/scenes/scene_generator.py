@@ -2,10 +2,10 @@ from typing import List, Dict, Any, Optional, Coroutine, Callable
 import logging
 import asyncio
 
-from app.services.llm import LLMService, ModelName
+from app.services.platform.llm import LLMService, ModelName
 from app.schemas.scene_generator import SceneGeneratorState, SceneGenerationResult
-from app.services.game_engine.tools.location_generator import LocationGenerator
-from app.services.game_engine.tools.character_generator import CharacterGenerator
+from app.services.world.location_generator import LocationGenerator
+from app.services.characters.character_generator import CharacterGenerator
 from app.schemas.story_generation import Story, Location, Character, Scene
 from langfuse.decorators import observe  # type: ignore
 from langfuse import Langfuse  # type: ignore
@@ -242,7 +242,7 @@ class SceneGeneratorAgent:
         
         try:
             # Create world entity service
-            from app.services.world_entity_service import WorldEntityService
+            from app.services.world.world_entity_service import WorldEntityService
             
             world_entity_service = WorldEntityService(
                 llm_service=self.llm,

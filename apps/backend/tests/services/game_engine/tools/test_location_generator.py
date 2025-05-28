@@ -1,9 +1,9 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from app.services.game_engine.tools.location_generator import LocationGenerator
+from app.services.world.location_generator import LocationGenerator
 from app.schemas.story_generation import Location, Story, LocationFromLLM
-from app.services.llm import LLMService
+from app.services.platform.llm import LLMService
 
 
 @pytest.fixture

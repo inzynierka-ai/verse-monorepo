@@ -2,8 +2,8 @@
 import openai
 import logging
 import os
-from app.services.llm import LLMService
-from app.services.llm import ModelName
+from app.services.platform.llm import LLMService
+from app.services.platform.llm import ModelName
 from typing import Optional
 from langfuse.decorators import observe  # type: ignore
 
@@ -40,7 +40,7 @@ async def optimize_text_for_embedding(text: str, llm_service: Optional[LLMServic
         
     # Create LLM service if not provided
     if llm_service is None:
-        from app.services.llm import LLMService
+        from app.services.platform.llm import LLMService
         llm_service = LLMService()
     
     # Create the system prompt

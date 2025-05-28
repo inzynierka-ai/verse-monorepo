@@ -4,8 +4,8 @@ from typing import Optional, List
 from sqlalchemy.orm import Session
 from langfuse.decorators import observe, langfuse_context # type: ignore
 
-from app.services.llm import LLMService, ModelName
-from app.services.world_entity_service import WorldEntityService
+from app.services.platform.llm import LLMService, ModelName
+from app.services.world.world_entity_service import WorldEntityService
 from app.schemas.story_generation import (
     Story,
     StoryDetails,
@@ -22,7 +22,7 @@ from app.prompts.story_generation import (
     CREATE_STORY_INPUT_SYSTEM_PROMPT,
     CREATE_STORY_INPUT_USER_PROMPT
 )
-from app.services.moderations import ModerationsService
+from app.services.platform.moderations import ModerationsService
 
 class StoryGenerator:
     """

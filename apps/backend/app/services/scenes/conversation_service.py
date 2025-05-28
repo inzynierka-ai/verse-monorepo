@@ -3,11 +3,11 @@ import json
 from typing import List, AsyncGenerator, Dict, Any, Literal, Optional
 from fastapi import WebSocket
 from sqlalchemy.orm import Session
-from app.services.llm import LLMService, ModelName
+from app.services.platform.llm import LLMService, ModelName
 from app.models.character import Character
 from app.models.scene import Scene
-from app.services.world_entity_service import WorldEntityService
-from app.services.memory_manager import MemoryManager
+from app.services.world.world_entity_service import WorldEntityService
+from app.services.characters.memory_manager import MemoryManager
 from datetime import datetime
 from app.utils.embedding import optimize_text_for_embedding, get_embedding
 from app.utils.json_service import JSONService
@@ -15,7 +15,7 @@ from app.schemas.conversation import ConversationTopic, ConversationTopicsRespon
 import uuid
 from langfuse.decorators import observe  # type: ignore
 
-from app.services.moderations import ModerationsService
+from app.services.platform.moderations import ModerationsService
 
 logger = logging.getLogger(__name__)
 

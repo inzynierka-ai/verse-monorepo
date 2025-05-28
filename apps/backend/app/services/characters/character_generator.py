@@ -1,7 +1,7 @@
 import logging
 import uuid
 from typing import Optional
-from app.services.llm import LLMService, ModelName
+from app.services.platform.llm import LLMService, ModelName
 from app.schemas.story_generation import (
     CharacterFromLLM,
     Story,

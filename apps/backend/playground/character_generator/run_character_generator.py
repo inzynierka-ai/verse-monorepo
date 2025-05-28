@@ -8,7 +8,7 @@ from pathlib import Path
 backend_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
 sys.path.insert(0, backend_dir)
 
-from app.services.game_engine.tools.character_generator import CharacterGenerator
+from app.services.characters.character_generator import CharacterGenerator
 from app.schemas.story_generation import CharacterDraft, Story
 from app.services.llm import LLMService
 

@@ -15,9 +15,9 @@ from app.db.session import get_db, Session
 from app.schemas.conversation import ClientMessage, ChatChunkMessage, ChatCompleteMessage, ErrorMessage
 from app.crud.characters import get_character_by_uuid
 from app.crud.scenes import get_scene_by_uuid
-from app.services.conversation_service import ConversationService
-from app.services.auth import ALGORITHM, SECRET_KEY
-from app.services.users import get_user
+from app.services.scenes.conversation_service import ConversationService
+from app.services.auth.auth import ALGORITHM, SECRET_KEY
+from app.services.auth.users import get_user
 
 # Set up logging
 logger = logging.getLogger(__name__)

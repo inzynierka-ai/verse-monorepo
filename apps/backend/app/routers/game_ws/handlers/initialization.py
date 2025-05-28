@@ -6,7 +6,7 @@ from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
 from app.schemas.story_generation import StoryGenerationInput, Story, Character
-from app.services.game_engine.orchestrators.game_initializer import GameInitializer, SimpleGameInput
+from app.services.game.initialization.game_initializer import GameInitializer, SimpleGameInput
 from app.routers.game_ws.base import BaseMessageHandler
 
 # Set up logging

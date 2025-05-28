@@ -2,7 +2,7 @@ import logging
 from typing import Optional, List, Dict, Any
 from sqlalchemy.orm import Session
 from langfuse.decorators import observe  # type: ignore
-from app.services.llm import LLMService, ModelName
+from app.services.platform.llm import LLMService, ModelName
 from app.utils.json_service import JSONService
 from app.models.scene import Scene
 from app.models.world_entity import WorldEntity as WorldEntityModel

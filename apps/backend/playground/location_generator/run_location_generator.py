@@ -4,11 +4,11 @@ import sys
 import os
 from pathlib import Path
 
-# Add the parent directory to the Python path
-backend_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
-sys.path.insert(0, backend_dir)
+# Add the project root to the path to ensure imports work correctly
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
+sys.path.insert(0, project_root)
 
-from app.services.game_engine.tools.location_generator import LocationGenerator
+from app.services.world.location_generator import LocationGenerator
 from app.schemas.story_generation import Story
 from app.services.llm import LLMService
 

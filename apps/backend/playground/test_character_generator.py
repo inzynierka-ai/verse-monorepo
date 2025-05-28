@@ -1,5 +1,5 @@
 import asyncio
-from app.services.game_engine.tools.character_generator import CharacterGenerator
+from app.services.characters.character_generator import CharacterGenerator
 from app.schemas.story_generation import Story, CharacterDraft
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch

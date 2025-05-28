@@ -7,7 +7,7 @@ from fastapi import HTTPException
 from sklearn.metrics.pairwise import cosine_similarity
 from sqlalchemy.orm import Session
 from typing import Optional, List, Dict, Any
-from app.services.llm import LLMService, ModelName
+from app.services.platform.llm import LLMService, ModelName
 from app.utils.json_service import JSONService
 from app.models.character import Character
 from app.models.scene import Scene

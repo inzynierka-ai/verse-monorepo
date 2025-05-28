@@ -9,9 +9,9 @@ from sqlalchemy.orm import Session
 from app.models.scene import Scene as SceneModel
 from app.models.character import Character as CharacterOrmModel
 from app.models.location import Location as LocationOrmModel
-from app.services.scene_service import SceneService
-from app.services.scene_generator import SceneGeneratorAgent
-from app.services.llm import LLMService
+from app.services.scenes.scene_service import SceneService
+from app.services.scenes.scene_generator import SceneGeneratorAgent
+from app.services.platform.llm import LLMService
 from app.crud.stories import get_story_by_uuid
 from app.models.story import Story
 from app.schemas.story import StoryRead
