@@ -6,6 +6,7 @@ from app.schemas.message import Message
 from app.schemas.character import Character
 from app.schemas.location import Location
 
+
 class Scene(BaseModel):
     id: int
     description: str
@@ -19,4 +20,3 @@ class Scene(BaseModel):
     summary: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
-

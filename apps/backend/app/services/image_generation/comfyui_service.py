@@ -63,7 +63,7 @@ class ComfyUIService:
         # Use the factory to create the appropriate loader
         loader = WorkflowLoaderFactory.create_loader(context_type)
         workflow: Dict[str, Any] = loader.load_workflow(prompt, generation_id)
-        
+
         return workflow
 
     def _get_history(self, prompt_id: str) -> Dict[str, Any]:
@@ -92,12 +92,14 @@ class ComfyUIService:
                 "type": folder_type
             }
 
-            logging.info(f"Fetching image from ComfyUI: {self.comfy_url}/view with params {params}")
+            logging.info(
+                f"Fetching image from ComfyUI: {self.comfy_url}/view with params {params}")
             response = requests.get(
                 f"{self.comfy_url}/view", params=params, timeout=10)
 
             if response.status_code == 200:
-                logging.info(f"Image downloaded successfully: {len(response.content)} bytes")
+                logging.info(
+                    f"Image downloaded successfully: {len(response.content)} bytes")
                 return response.content
             else:
                 logging.error(
@@ -181,30 +183,33 @@ class ComfyUIService:
             max_wait_time = 300  # 5 minutes timeout
             start_time = time.time()
             poll_interval = 2  # Check every 2 seconds
-            
+
             # Poll until job is complete or timeout occurs
             while time.time() - start_time < max_wait_time:
                 # Check if the job is complete by getting history
                 history = self._get_history(prompt_id)
                 prompt_outputs = history.get(prompt_id, {}).get("outputs", {})
-                
+
                 if prompt_outputs:
-                    logging.info(f"Generation complete after {int(time.time() - start_time)} seconds")
+                    logging.info(
+                        f"Generation complete after {int(time.time() - start_time)} seconds")
                     break
-                    
+
                 # Log progress periodically
                 if int((time.time() - start_time) % 10) == 0:
-                    logging.info(f"Still waiting for image generation... ({int(time.time() - start_time)}s elapsed)")
-                
+                    logging.info(
+                        f"Still waiting for image generation... ({int(time.time() - start_time)}s elapsed)")
+
                 # Wait before polling again
                 time.sleep(poll_interval)
             else:
                 # Loop completed without breaking - timeout occurred
-                logging.error(f"Timeout waiting for image generation after {max_wait_time} seconds")
+                logging.error(
+                    f"Timeout waiting for image generation after {max_wait_time} seconds")
                 return {"success": False, "error": "Timeout waiting for image generation", "imagePath": ""}
 
             logging.info(f"Generation complete, processing results")
-            
+
             # Get history to find output image
             history = self._get_history(prompt_id)
             if not history:
@@ -220,7 +225,8 @@ class ComfyUIService:
                 # Get outputs from the prompt history
                 prompt_outputs = history.get(prompt_id, {}).get("outputs", {})
                 if not prompt_outputs:
-                    logging.error(f"No outputs found in history for prompt ID: {prompt_id}")
+                    logging.error(
+                        f"No outputs found in history for prompt ID: {prompt_id}")
                     return {"success": False, "error": "No outputs in history", "imagePath": ""}
 
                 # Find the first node with images
@@ -286,5 +292,3 @@ class ComfyUIService:
             import traceback
             logging.error(traceback.format_exc())
             return {"success": False, "error": f"Error generating image: {str(e)}", "imagePath": ""}
-
-    

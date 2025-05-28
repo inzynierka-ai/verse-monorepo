@@ -15,6 +15,7 @@ Base = declarative_base()
 # SessionLocal to interact with the database
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
+
 def get_db() -> Generator[Session, None, None]:
     db = SessionLocal()
     try:

@@ -1,3 +1,9 @@
+from app.core.config import settings
+from app.routers.api import api_router
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi import FastAPI
+import os
 import logging
 
 from app.db.seed import seed_database
@@ -9,16 +15,9 @@ logging.basicConfig(
     handlers=[logging.StreamHandler()]
 )
 
-import os
-from fastapi import FastAPI
-from fastapi.staticfiles import StaticFiles
-from fastapi.middleware.cors import CORSMiddleware
 
-from app.routers.api import api_router
-from app.core.config import settings
-
-
-app = FastAPI(title=settings.PROJECT_NAME, description="Create your own story", version="0.1.0", redirect_slashes=True)
+app = FastAPI(title=settings.PROJECT_NAME, description="Create your own story",
+              version="0.1.0", redirect_slashes=True)
 
 # Configure CORS
 app.add_middleware(
@@ -36,15 +35,16 @@ app.include_router(api_router, prefix="/api")
 os.makedirs(settings.MEDIA_ROOT, exist_ok=True)
 app.mount("/media", StaticFiles(directory=settings.MEDIA_ROOT), name="media")
 
+
 @app.on_event("startup")
 def startup_event():
     seed_database()
-    pass
 
 
 @app.get("/")
 def read_root():
     return {"message": "Welcome to Verse API"}
+
 
 @app.get("/health")
 async def health_check():

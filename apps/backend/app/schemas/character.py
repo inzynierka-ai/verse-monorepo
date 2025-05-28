@@ -1,9 +1,10 @@
 from pydantic import BaseModel, ConfigDict
 from typing import Optional
 
+
 class CharacterBase(BaseModel):
     name: str
-    role: str 
+    role: str
     description: str
     brief_description: Optional[str] = None
     story_id: int
@@ -15,15 +16,17 @@ class CharacterBase(BaseModel):
     image_prompt: Optional[str] = None
     relationship_level: Optional[int] = None
     uuid: str
-    
+
 
 class CharacterCreate(CharacterBase):
     pass
 
+
 class Character(CharacterBase):
     id: int
-    
+
     model_config = ConfigDict(from_attributes=True)
+
 
 class PlayerCharacterRead(BaseModel):
     name: str

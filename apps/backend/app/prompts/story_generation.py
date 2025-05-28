@@ -33,7 +33,6 @@ Begin Narrative Description:
 """
 
 
-
 # Phase 2: Generating Structured Story Details (JSON)
 # This prompt guides the LLM to extract a title, brief description, and world rules
 # from the previously generated story description, ensuring alignment with the original inputs.
@@ -65,7 +64,7 @@ Full Story Description (from Phase 1):
 {generated_story_description}
 
 ---
-""" 
+"""
 
 CREATE_STORY_DETAILS_JSON_USER_PROMPT = """
 Generate the JSON output:

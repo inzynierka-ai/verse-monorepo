@@ -4,6 +4,6 @@ from .location_generator import LocationGenerator
 
 __all__ = [
     "StoryGenerator",
-    "WorldEntityService", 
+    "WorldEntityService",
     "LocationGenerator"
-] 
+]

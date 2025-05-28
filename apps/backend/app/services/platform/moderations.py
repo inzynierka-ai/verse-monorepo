@@ -6,7 +6,7 @@ from openai import AsyncOpenAI
 from openai.types import Moderation
 from tenacity import retry, stop_after_attempt, wait_exponential
 
-from langfuse.decorators import observe # type: ignore
+from langfuse.decorators import observe  # type: ignore
 
 
 class ModerationModelName(str, Enum):
@@ -21,6 +21,7 @@ class ModerationsService:
     """
     Service for moderating content using the OpenAI Moderations API.
     """
+
     def __init__(self, openai_client: AsyncOpenAI):
         self.openai_client = openai_client
         self.logger = logging.getLogger(__name__)
@@ -74,9 +75,9 @@ class ModerationsService:
         if not is_flagged:
             return None
         violated_categories = self.get_violated_categories(moderation_response)
-        
+
         return violated_categories
-    
+
     def is_flagged(self, moderation_response: Moderation) -> bool:
         """Checks if the moderation response is flagged.
 

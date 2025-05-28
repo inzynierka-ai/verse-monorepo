@@ -3,31 +3,35 @@ from typing import Optional, List
 from uuid import UUID
 from datetime import datetime
 
+
 class WorldEntityBase(BaseModel):
     id: int
     story_id: int
-    name: str  
+    name: str
     canonical_description: str
     embedding: Optional[List[float]] = None
     aliases: List[str] = []
     discovered_in_scene: Optional[UUID] = None
     created_at: Optional[datetime] = None
 
+
 class WorldEntity(WorldEntityBase):
     class Config:
-        orm_mode = True
         from_attributes = True
+        from_attributes = True
+
 
 class WorldEntityFromLLM(BaseModel):
     name: str
     description: str
     aliases: List[str] = []
 
+
 class WorldEntityCreate(BaseModel):
     story_id: int
-    name: str  
+    name: str
     canonical_description: str
-    
+
     class Config:
-        orm_mode = True
+        from_attributes = True
         from_attributes = True

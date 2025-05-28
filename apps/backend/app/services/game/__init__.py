@@ -2,6 +2,6 @@ from .initialization.game_initializer import GameInitializer, InitialGameState, 
 
 __all__ = [
     "GameInitializer",
-    "InitialGameState", 
+    "InitialGameState",
     "SimpleGameInput"
-] 
+]

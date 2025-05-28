@@ -15,4 +15,3 @@ api_router.include_router(world_entities.router)
 api_router.include_router(locations.router)
 api_router.include_router(game_ws_router.router)
 api_router.include_router(comfyui.router)
-

@@ -3,6 +3,7 @@ from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from app.db.session import Base
 
+
 class Message(Base):
     __tablename__ = 'messages'
 
@@ -14,8 +15,8 @@ class Message(Base):
     uuid = Column(String, nullable=False)
     role = Column(String, nullable=False)
     # Relationships
-    scene = relationship("Scene", back_populates="messages")  
-    character = relationship("Character", back_populates="messages")  
+    scene = relationship("Scene", back_populates="messages")
+    character = relationship("Character", back_populates="messages")
 
     def __str__(self):
         return f"{self.character.name if self.role == 'assistant' else self.role}: {self.content}"

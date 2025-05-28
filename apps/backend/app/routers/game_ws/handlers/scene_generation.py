@@ -59,24 +59,27 @@ class SceneGenerationHandler:
             story_data = StoryRead.model_validate(story_orm)
 
             story_internal_id = story_data.id
-            
+
             # Directly fetch only active scenes
             active_scene = self._fetch_latest_active_scene(story_internal_id)
 
             if active_scene:
                 # Send the active scene to the client
-                logger.info(f"Found active scene {active_scene.id} for story {self.story_uuid}")
+                logger.info(
+                    f"Found active scene {active_scene.id} for story {self.story_uuid}")
                 await self._send_scene_complete(active_scene)
             else:
                 # No active scene found, generate a new one
-                logger.info(f"No active scene found for story {self.story_uuid}. Starting generation.")
+                logger.info(
+                    f"No active scene found for story {self.story_uuid}. Starting generation.")
                 await self._run_generation(story_data, story_orm)
 
             while True:
                 await asyncio.sleep(1)
 
         except WebSocketDisconnect:
-            logger.info(f"WebSocket disconnected for story {self.story_uuid}. Cleaning up.")
+            logger.info(
+                f"WebSocket disconnected for story {self.story_uuid}. Cleaning up.")
             await self._cleanup()
         except PermissionError as e:
             logger.warning(f"Permission denied for story {self.story_uuid}: {e}")
@@ -87,7 +90,8 @@ class SceneGenerationHandler:
             await self._send_error(f"Internal data error: {str(e)}")
             await self._cleanup()
         except Exception as e:
-            logger.exception(f"Error in SceneGenerationHandler for story {self.story_uuid}: {e}")
+            logger.exception(
+                f"Error in SceneGenerationHandler for story {self.story_uuid}: {e}")
             await self._send_error(f"An unexpected error occurred: {str(e)}")
             await self._cleanup()
 
@@ -106,14 +110,16 @@ class SceneGenerationHandler:
             raise
         except Exception as e:
             logger.exception(f"Database error fetching story {self.story_uuid}: {e}")
-            raise RuntimeError(f"Failed to retrieve story data due to database error: {e}")
+            raise RuntimeError(
+                f"Failed to retrieve story data due to database error: {e}")
 
     def _fetch_latest_scene(self, story_id: int) -> Optional[SceneModel]:
         """Fetches the latest scene from the database using the internal story ID."""
         try:
             return self.scene_service.fetch_latest_scene(self.db_session, story_id)
         except Exception as e:
-            logger.exception(f"Database error fetching latest scene for story ID {story_id}: {e}")
+            logger.exception(
+                f"Database error fetching latest scene for story ID {story_id}: {e}")
             raise
 
     def _fetch_latest_active_scene(self, story_id: int) -> Optional[SceneModel]:
@@ -121,7 +127,8 @@ class SceneGenerationHandler:
         try:
             return self.scene_service.fetch_latest_active_scene(self.db_session, story_id)
         except Exception as e:
-            logger.exception(f"Database error fetching latest active scene for story ID {story_id}: {e}")
+            logger.exception(
+                f"Database error fetching latest active scene for story ID {story_id}: {e}")
             raise
 
     def _is_scene_complete(self, scene: SceneModel) -> bool:
@@ -131,16 +138,20 @@ class SceneGenerationHandler:
     async def _run_generation(self, story_data: StoryRead, story_orm: Story):
         """Instantiates and runs the SceneGeneratorAgent."""
         try:
-            logger.info(f"Starting generation for story: {story_data.title} ({story_data.uuid})")
+            logger.info(
+                f"Starting generation for story: {story_data.title} ({story_data.uuid})")
 
-            player_character_orm = next((char for char in story_orm.characters if char.role == 'player'), None)
+            player_character_orm = next(
+                (char for char in story_orm.characters if char.role == 'player'), None)
 
             if not player_character_orm:
-                logger.error(f"Player character not found for story {story_data.uuid}. Cannot proceed.")
-                raise ValueError("Player character is required for scene generation but was not found.")
+                logger.error(
+                    f"Player character not found for story {story_data.uuid}. Cannot proceed.")
+                raise ValueError(
+                    "Player character is required for scene generation but was not found.")
             logger.info(f"Player character orm: {player_character_orm}")
             logger.info(f"Player character orm UUID: {player_character_orm.uuid}")
-            
+
             # Use the new converter utility
             player_character_schema = convert_character(player_character_orm)
             logger.info(f"Player character schema: {player_character_schema}")
@@ -166,30 +177,36 @@ class SceneGenerationHandler:
             )
             self.agent = agent
 
-            logger.info(f"Starting SceneGeneratorAgent task for story {self.story_uuid}")
+            logger.info(
+                f"Starting SceneGeneratorAgent task for story {self.story_uuid}")
 
             async def generation_task_wrapper():
                 try:
-                    characters_orm: List[CharacterOrmModel] = [char for char in story_orm.characters if char.role == 'npc']
+                    characters_orm: List[CharacterOrmModel] = [
+                        char for char in story_orm.characters if char.role == 'npc']
                     locations_orm: List[LocationOrmModel] = story_orm.locations or []
 
                     # Use the new converter utility for the list of characters
                     characters_pool_schema = convert_characters(characters_orm)
-                    
+
                     # Use the new converter utility for the list of locations
                     locations_pool_schema = convert_locations(locations_orm)
 
                     # Fetch the latest completed scene to use as context
                     previous_scenes_data = None
                     try:
-                        previous_completed_scenes = self.scene_service.fetch_completed_scenes(self.db_session, story_data.id)
+                        previous_completed_scenes = self.scene_service.fetch_completed_scenes(
+                            self.db_session, story_data.id)
                         if previous_completed_scenes:
-                            logger.info(f"Found previous completed scenes {previous_completed_scenes} for story {self.story_uuid}")
-                            
+                            logger.info(
+                                f"Found previous completed scenes {previous_completed_scenes} for story {self.story_uuid}")
+
                             # Use the converter utility for scene conversion
-                            previous_scenes_data = convert_scenes(previous_completed_scenes)
+                            previous_scenes_data = convert_scenes(
+                                previous_completed_scenes)
                     except Exception as e:
-                        logger.warning(f"Error fetching previous completed scene: {e}. Continuing without previous scene context.")
+                        logger.warning(
+                            f"Error fetching previous completed scene: {e}. Continuing without previous scene context.")
                         previous_scenes_data = None
 
                     assert self.agent is not None
@@ -198,25 +215,29 @@ class SceneGenerationHandler:
                         locations=locations_pool_schema,
                         previous_scenes=previous_scenes_data,
                     )
-                    logger.info(f"Final scene data received from agent: {final_scene_data}")
+                    logger.info(
+                        f"Final scene data received from agent: {final_scene_data}")
 
-                    
                     await self._send_scene_complete(final_scene_data)
-                    
-                    logger.info(f"Scene generation finished successfully for story {self.story_uuid}")
+
+                    logger.info(
+                        f"Scene generation finished successfully for story {self.story_uuid}")
 
                 except Exception as e:
-                    logger.exception(f"SceneGeneratorAgent failed for story {self.story_uuid}: {e}")
+                    logger.exception(
+                        f"SceneGeneratorAgent failed for story {self.story_uuid}: {e}")
                     await self._send_error(f"Scene generation failed: {str(e)}")
 
             self.agent_task = asyncio.create_task(generation_task_wrapper())
             await self.agent_task
 
         except ValueError as e:
-            logger.error(f"Configuration error during scene generation setup for story {self.story_uuid}: {e}")
+            logger.error(
+                f"Configuration error during scene generation setup for story {self.story_uuid}: {e}")
             await self._send_error(f"Setup error: {str(e)}")
         except Exception as e:
-            logger.exception(f"Failed to start scene generation for story {self.story_uuid}: {e}")
+            logger.exception(
+                f"Failed to start scene generation for story {self.story_uuid}: {e}")
             await self._send_error(f"Failed to start scene generation: {str(e)}")
 
     async def _send_update(self, message_type: str, payload: dict[str, Any]):
@@ -224,15 +245,18 @@ class SceneGenerationHandler:
         try:
             await self.websocket.send_json({"type": message_type, "payload": payload})
         except WebSocketDisconnect:
-            logger.warning(f"WebSocket disconnected while trying to send {message_type} for story {self.story_uuid}")
+            logger.warning(
+                f"WebSocket disconnected while trying to send {message_type} for story {self.story_uuid}")
             await self._cleanup()
         except Exception as e:
-            logger.exception(f"Failed to send {message_type} for story {self.story_uuid}: {e}")
+            logger.exception(
+                f"Failed to send {message_type} for story {self.story_uuid}: {e}")
 
     async def _send_location_added(self, location: LocationGenerationSchema):
         """Sends a LOCATION_ADDED message."""
         payload = location.model_dump()
-        logger.info(f"Sending LOCATION_ADDED update for story {self.story_uuid}: {payload}")
+        logger.info(
+            f"Sending LOCATION_ADDED update for story {self.story_uuid}: {payload}")
         await self._send_update("LOCATION_ADDED", payload)
 
     async def _send_character_added(self, character: CharacterGenerationSchema):
@@ -240,11 +264,11 @@ class SceneGenerationHandler:
         payload = character.model_dump()
         logger.info(f"Sending CHARACTER_ADDED update for story {self.story_uuid}")
         await self._send_update("CHARACTER_ADDED", payload)
-        
+
     async def _send_action_changed(self, action_type: str, action_message: Optional[str]):
         """
         Sends an ACTION_CHANGED message with the current agent actions.
-        
+
         Args:
             action_type: Type of action that changed
             action_message: Message describing the action, or None if action was removed
@@ -257,18 +281,19 @@ class SceneGenerationHandler:
         else:
             # Add or update action
             self.active_actions[action_type] = action_message
-            
+
         # Send the full set of active actions
         payload = {
             "storyId": str(self.story_uuid),
             "actions": self.active_actions
         }
-        logger.info(f"Sending ACTION_CHANGED update for story {self.story_uuid}, active actions: {self.active_actions}")
+        logger.info(
+            f"Sending ACTION_CHANGED update for story {self.story_uuid}, active actions: {self.active_actions}")
         await self._send_update("ACTION_CHANGED", payload)
 
     async def _send_scene_complete(self, scene: Union[SceneModel, SceneGenerationResult]):
         """Sends the SCENE_COMPLETE message with the final scene details."""
-            
+
         payload = {
             "storyId": str(self.story_uuid),
             "message": "Scene generation complete.",
@@ -283,37 +308,44 @@ class SceneGenerationHandler:
     async def _cleanup(self):
         """Cancels any running agent task."""
         if self.agent_task and not self.agent_task.done():
-            logger.info(f"Cancelling SceneGeneratorAgent task for story {self.story_uuid}")
+            logger.info(
+                f"Cancelling SceneGeneratorAgent task for story {self.story_uuid}")
             self.agent_task.cancel()
             try:
                 await self.agent_task
             except asyncio.CancelledError:
-                logger.info(f"SceneGeneratorAgent task cancelled successfully for story {self.story_uuid}")
+                logger.info(
+                    f"SceneGeneratorAgent task cancelled successfully for story {self.story_uuid}")
             except Exception as e:
-                logger.exception(f"Error during agent task cancellation for story {self.story_uuid}: {e}")
+                logger.exception(
+                    f"Error during agent task cancellation for story {self.story_uuid}: {e}")
         try:
             await self.websocket.close()
         except RuntimeError as e:
-            logger.warning(f"Error closing websocket during cleanup for story {self.story_uuid}: {e}")
+            logger.warning(
+                f"Error closing websocket during cleanup for story {self.story_uuid}: {e}")
 
     # --- Callback Methods --- #
     async def _handle_location_added(self, location: LocationGenerationSchema):
         """Callback triggered by SceneGeneratorAgent when a location is added."""
-        logger.debug(f"Callback _handle_location_added called for story {self.story_uuid}")
+        logger.debug(
+            f"Callback _handle_location_added called for story {self.story_uuid}")
         await self._send_location_added(location)
 
     async def _handle_character_added(self, character: CharacterGenerationSchema):
         """Callback triggered by SceneGeneratorAgent when a character is added."""
-        logger.debug(f"Callback _handle_character_added called for story {self.story_uuid}")
-        await self._send_character_added(character) 
-        
+        logger.debug(
+            f"Callback _handle_character_added called for story {self.story_uuid}")
+        await self._send_character_added(character)
+
     async def _handle_action_changed(self, action_type: str, action_message: Optional[str]):
         """
         Callback triggered by SceneGeneratorAgent when action status changes.
-        
+
         Args:
             action_type: Type of action (location, character, etc.)
             action_message: Message describing the action, or None if action was removed
         """
-        logger.debug(f"Callback _handle_action_changed called for story {self.story_uuid}: {action_type}={action_message}")
-        await self._send_action_changed(action_type, action_message) 
+        logger.debug(
+            f"Callback _handle_action_changed called for story {self.story_uuid}: {action_type}={action_message}")
+        await self._send_action_changed(action_type, action_message)

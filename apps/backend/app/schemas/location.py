@@ -1,6 +1,7 @@
 from pydantic import BaseModel, ConfigDict
 from typing import Optional
 
+
 class LocationBase(BaseModel):
     name: str
     description: str
@@ -12,8 +13,10 @@ class LocationBase(BaseModel):
     image_dir: Optional[str] = None
     uuid: str
 
+
 class LocationCreate(LocationBase):
     pass
+
 
 class Location(LocationBase):
     id: int

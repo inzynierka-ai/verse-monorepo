@@ -25,6 +25,7 @@ from sqlalchemy.orm import Session
 from app.models.character import Character as CharacterModel
 from langfuse.decorators import observe  # type: ignore
 
+
 class CharacterGenerator:
     """
     Service for generating characters.        
@@ -42,11 +43,11 @@ class CharacterGenerator:
     ) -> CharacterDraft:
         """
         Create a basic character draft from a simple description.
-        
+
         Args:
             description: A simple description of the character
             story: Story object for context
-            
+
         Returns:
             A CharacterDraft object that can be used for further character generation
         """
@@ -55,32 +56,30 @@ class CharacterGenerator:
             story_rules=story.rules if story else "",
             description=description
         )
-        
+
         messages = [
-            self.llm_service.create_message("system", CREATE_CHARACTER_DRAFT_SYSTEM_PROMPT),
+            self.llm_service.create_message(
+                "system", CREATE_CHARACTER_DRAFT_SYSTEM_PROMPT),
             self.llm_service.create_message("user", user_prompt)
         ]
-        
+
         response = await self.llm_service.generate_completion(
             messages=messages,
             model=ModelName.GEMINI_25_FLASH_LITE,
             temperature=0.7,
             stream=False
         )
-        
+
         response_text = await self.llm_service.extract_content(response)
-        
-        
+
         # Parse the JSON response into a CharacterDraft object
         character_draft = JSONService.parse_and_validate_json_response(
             response_text, CharacterDraft)
-            
+
         if not character_draft:
             raise ValueError("No character draft data found in response")
-            
+
         return character_draft
-            
-        
 
     async def generate_character_from_description(
         self,
@@ -90,19 +89,19 @@ class CharacterGenerator:
     ) -> Character:
         """
         Generate a complete character from a simple description.
-        
+
         Args:
             description: A simple description of the character
             story: Story object for context
             is_player: Whether this character is the player character
-            
+
         Returns:
             A fully generated Character object
         """
         # First create a character draft from the description
         character_draft = await self.create_character_draft_from_description(
             description, story)
-            
+
         # Then use the existing process to generate the full character
         return await self.generate_character(
             character_draft, story, is_player)
@@ -122,16 +121,16 @@ class CharacterGenerator:
         """
         # 1. Generate UUID first - we need it for the entire process
         character_uuid = str(uuid.uuid4())
-        
+
         # 2. Generate detailed character description
         character_description = await self._describe_character(character_draft, story, character_uuid)
-        
+
         # 3. Create character JSON from description
         character_from_llm = await self._create_character_json(character_description, character_uuid, is_player)
-        
+
         # 4. Generate image prompt for the character
         image_prompt = await self._generate_image_prompt(character_from_llm.name, character_description, story.description, character_uuid)
-        
+
         # 5. Generate image for the character
         image_url = await self._generate_image(image_prompt)
 
@@ -143,26 +142,25 @@ class CharacterGenerator:
             role="player" if is_player else "npc",
             uuid=character_uuid
         )
-        
+
         # 7. Save to database as a side effect
         if story.id is not None:
             await self._save_character_to_db(character, story.id, image_prompt)
         else:
             logging.warning("Story ID is None, skipping database save")
-        
+
         # 8. Return the Pydantic Character object
         return character
-         
-        
+
     async def _save_character_to_db(self, character: Character, story_id: int, image_prompt: str) -> CharacterModel:
         """
         Save the generated character to the database.
-        
+
         Args:
             character: The generated character object with UUID already set
             story_id: ID of the story to associate with
             image_prompt: The image prompt used to generate the character image
-            
+
         Returns:
             The saved database model
         """
@@ -175,7 +173,8 @@ class CharacterGenerator:
                 brief_description=character.brief_description,  # Add the brief description
                 personality_traits=character.personality_traits,
                 backstory=character.backstory,
-                goals=", ".join(character.goals) if hasattr(character, 'goals') and character.goals else "",
+                goals=", ".join(character.goals) if hasattr(
+                    character, 'goals') and character.goals else "",
                 speaking_style=character.speaking_style,
                 image_dir=character.image_dir,
                 image_prompt=image_prompt,
@@ -183,15 +182,17 @@ class CharacterGenerator:
                 story_id=story_id,
                 uuid=character.uuid  # Use the UUID from character object
             )
-            
+
             # Add to database session if available
             if self.db_session is not None:
                 self.db_session.add(db_character)
                 self.db_session.commit()
-                logging.info(f"Character {character.name} saved to database with ID {db_character.id}")
+                logging.info(
+                    f"Character {character.name} saved to database with ID {db_character.id}")
                 return db_character
             else:
-                logging.warning("No database session available, character not saved to database")
+                logging.warning(
+                    "No database session available, character not saved to database")
                 return db_character
         except Exception as e:
             logging.exception(f"Failed to save character to database: {str(e)}")
@@ -242,17 +243,17 @@ class CharacterGenerator:
         Generate an image for a character.
         """
         import asyncio
-        
+
         comfyui_service = ComfyUIService()
         logging.info(f"Generating image for prompt: {image_prompt}")
-        
+
         # Run the synchronous generate_image method in a thread pool
         loop = asyncio.get_event_loop()
         result_dict = await loop.run_in_executor(
-            None, 
+            None,
             lambda: comfyui_service.generate_image(image_prompt, "character")
         )
-        
+
         logging.info(f"Generated image: {result_dict}")
         return f"{settings.BACKEND_URL}{result_dict['imagePath']}"
 
@@ -281,7 +282,8 @@ class CharacterGenerator:
         )
 
         messages = [
-            self.llm_service.create_message("system", CHARACTER_IMAGE_PROMPT_SYSTEM_PROMPT),
+            self.llm_service.create_message(
+                "system", CHARACTER_IMAGE_PROMPT_SYSTEM_PROMPT),
             self.llm_service.create_message("user", user_prompt)
         ]
 
@@ -318,7 +320,8 @@ class CharacterGenerator:
         )
 
         messages = [
-            self.llm_service.create_message("system", CREATE_CHARACTER_JSON_SYSTEM_PROMPT(is_npc=not is_player)),
+            self.llm_service.create_message(
+                "system", CREATE_CHARACTER_JSON_SYSTEM_PROMPT(is_npc=not is_player)),
             self.llm_service.create_message("user", user_prompt)
         ]
 
@@ -341,7 +344,7 @@ class CharacterGenerator:
 
             if not character:
                 raise ValueError("No character data found in response")
-                
+
             return character
         except Exception as e:
             logging.error(f"Error processing character data: {str(e)}")

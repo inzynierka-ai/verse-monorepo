@@ -39,6 +39,7 @@ class Story(BaseModel):
     rules: List[str]
     uuid: str
 
+
 class StoryGenerationInput(BaseModel):
     """Input for generating a story"""
     story: StoryInput = Field(
@@ -56,7 +57,8 @@ class StoryOutput(BaseModel):
 class CharacterFromLLM(BaseModel):
     """Character in the generated story"""
     name: str = Field(..., description="Character name")
-    brief_description: str = Field(..., description="Short 3-4 sentence description for UI display")
+    brief_description: str = Field(...,
+                                   description="Short 3-4 sentence description for UI display")
     speaking_style: Optional[str] = Field(
         None, description="Character's speaking style, e.g., formal, informal, etc.")
     personality_traits: Optional[str] = Field(
@@ -66,19 +68,21 @@ class CharacterFromLLM(BaseModel):
     goals: List[str] = Field(...,
                              description="Character's goals")
     relationship_level: Optional[int] = Field(None,
-                                  description="Relationship level with the player character")
+                                              description="Relationship level with the player character")
+
 
 class Character(CharacterFromLLM):
     """Final character output structure"""
     description: str = Field(..., description="Detailed description of the character")
     model_config = ConfigDict(from_attributes=True)
     image_dir: str = Field(...,
-                         description="URL of the generated image for this character")
+                           description="URL of the generated image for this character")
     role: Literal["player", "npc"] = Field(
         ..., description="Character's role in the story (player or npc)")
     uuid: str = Field(
         ..., description="Unique identifier for the character")
-    immediate_goals: Optional[str] = Field(None, description="Character's immediate goals in the current context")
+    immediate_goals: Optional[str] = Field(
+        None, description="Character's immediate goals in the current context")
 
 
 # Location models
@@ -90,15 +94,15 @@ class LocationFromLLM(BaseModel):
     rules: List[str] = Field(...,
                              description="Rules specific to this location")
     brief_description: str = Field(...,
-                                  description="Brief description of the location for UI display")
+                                   description="Brief description of the location for UI display")
 
 
 class Location(LocationFromLLM):
     """Final location output structure"""
     id: Optional[int] = Field(None,
-                               description="Location ID in the database")
+                              description="Location ID in the database")
     image_dir: str = Field(...,
-                         description="URL of the generated image for this location")
+                           description="URL of the generated image for this location")
     uuid: str = Field(
         ..., description="Unique identifier for the location")
     description: str = Field(...,
@@ -111,10 +115,11 @@ class IntroductionOutput(BaseModel):
     steps: List[str] = Field(...,
                              description="List of sequential introduction text steps")
 
+
 class Scene(BaseModel):
     """Scene in the generated story"""
     location: Location = Field(...,
-                              description="Location of the scene")
+                               description="Location of the scene")
     characters: List[Character] = Field(...,
                                         description="Characters in the scene")
     description: str = Field(...,

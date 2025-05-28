@@ -96,4 +96,4 @@ Location Name: {location_name}
 Location Description: {location_description}
 
 Story Context: {story_description}
-""" 
+"""

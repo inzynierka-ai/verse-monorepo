@@ -10,10 +10,12 @@ router = APIRouter(
     tags=["locations"]
 )
 
+
 @router.get("", response_model=List[location_schema.Location])
 async def list_locations(db: Session = Depends(get_db)):
     """Get all available locations"""
     return get_all_locations(db)
+
 
 @router.get("/{location_id}", response_model=location_schema.Location)
 async def get_location_by_id(location_id: int, db: Session = Depends(get_db)):
@@ -24,7 +26,8 @@ async def get_location_by_id(location_id: int, db: Session = Depends(get_db)):
             status_code=404,
             detail=f"Location with ID {location_id} not found"
         )
-    return location 
+    return location
+
 
 @router.post("", response_model=location_schema.Location)
 async def create_location(location: location_schema.LocationCreate, db: Session = Depends(get_db)):

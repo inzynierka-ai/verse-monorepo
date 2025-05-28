@@ -24,7 +24,7 @@ ActionCallback = Callable[[str, Optional[str]], Coroutine[Any, Any, None]]
 
 class SceneGeneratorAgent:
     """Agent that generates scenes for the narrative adventure game"""
-    
+
     def __init__(
         self,
         llm_service: LLMService,
@@ -37,7 +37,7 @@ class SceneGeneratorAgent:
     ):
         """
         Initialize the scene generator agent.
-        
+
         Args:
             llm_service: LLM service for generating text
             story: Story object containing details about the game world
@@ -58,7 +58,7 @@ class SceneGeneratorAgent:
         self.on_character_added = on_character_added
         self.on_action_changed = on_action_changed
         self.db_session = db_session
-        
+
         # Initialize with empty state
         self.state = SceneGeneratorState(
             story=story,
@@ -68,10 +68,10 @@ class SceneGeneratorAgent:
             selected_characters=[],
             active_actions={}
         )
-        
+
     def _register_tools(self) -> List[Dict[str, Any]]:
         """Register tools for the agent to use during scene generation"""
-        
+
         location_generator = LLMService.create_tool({
             "name": "generate_location",
             "description": "Generate a new location or select an existing one for the scene",
@@ -79,18 +79,18 @@ class SceneGeneratorAgent:
                 "type": "object",
                 "properties": {
                     "brief_description": {
-                        "type": "string", 
+                        "type": "string",
                         "description": "Brief description to guide location generation when introducing a new location"
                     },
                     "existing_location_id": {
-                        "type": "string", 
+                        "type": "string",
                         "description": "UUID of existing location to use (optional)"
                     }
                 },
                 "required": []
             }
         })
-        
+
         character_generator = LLMService.create_tool({
             "name": "generate_character",
             "description": "Generate a new character or select existing ones for the scene (up to 3)",
@@ -116,7 +116,7 @@ class SceneGeneratorAgent:
                 "required": ["immediate_goals"]
             }
         })
-        
+
         finalize_scene = LLMService.create_tool({
             "name": "finalize_scene",
             "description": "Complete the scene with selected characters and location",
@@ -124,38 +124,38 @@ class SceneGeneratorAgent:
                 "type": "object",
                 "properties": {
                     "description": {
-                        "type": "string", 
+                        "type": "string",
                         "description": "Compelling scene description to display to the user"
                     },
                 },
                 "required": ["description"]
             }
         })
-        
+
         return [location_generator, character_generator, finalize_scene]
-        
+
     async def _update_action(self, action_type: str, action_message: str) -> None:
         """
         Update the current action and call the action changed callback
-        
+
         Args:
             action_type: Type of action (e.g., 'location', 'character', 'scene')
             action_message: Descriptive message about the action
         """
         # Update in state dictionary
         self.state.active_actions[action_type] = action_message
-        
+
         # Call the callback if available
         if self.on_action_changed:
             try:
                 await self.on_action_changed(action_type, action_message)
             except Exception as e:
                 logging.error(f"Error executing on_action_changed callback: {e}")
-            
+
     async def _remove_action(self, action_type: str) -> None:
         """
         Remove an action from the active actions list
-        
+
         Args:
             action_type: Type of action to remove
         """
@@ -166,8 +166,9 @@ class SceneGeneratorAgent:
                 try:
                     await self.on_action_changed(action_type, None)
                 except Exception as e:
-                    logging.error(f"Error executing on_action_changed callback for removal: {e}")
-        
+                    logging.error(
+                        f"Error executing on_action_changed callback for removal: {e}")
+
     @observe(name="generate_scene")
     async def generate_scene(
         self,
@@ -177,13 +178,13 @@ class SceneGeneratorAgent:
     ) -> SceneGenerationResult:
         """
         Generate a new scene for the game
-        
+
         Args:
             characters: Available characters pool
             locations: Available locations pool
             previous_scene: The previous scene data (if any)
             relevant_conversations: Retrieved conversations from vector DB
-            
+
         Returns:
             A dictionary containing the generated scene
         """
@@ -197,14 +198,14 @@ class SceneGeneratorAgent:
             selected_characters=[],
             active_actions={},
         )
-        
+
         # Run agent loop
         try:
             # Update scene status to "generating" during generation process
             await self._update_action("scene_status", "Generating new scene...")
-            
+
             result = await self._run_agent_loop()
-            
+
             # Save the scene to the database if a session is available
             if self.db_session and self.story.id is not None:
                 try:
@@ -214,12 +215,12 @@ class SceneGeneratorAgent:
                     # If saving fails, we should consider the scene generation failed
                     await self._update_action("scene_status", "Scene generation failed during database save")
                     raise
-                    
+
             return result
-            
+
         except Exception as e:
             logging.error(f"Scene generation failed: {str(e)}")
-            
+
             # No need to mark placeholder as failed since we don't create one
             await self._update_action("scene_status", "Scene generation failed")
             raise
@@ -228,48 +229,49 @@ class SceneGeneratorAgent:
     async def _extract_scene_entities(self, scene_result: SceneGenerationResult, scene_model: SceneModel) -> List[int]:
         """
         Extract world entities from a generated scene.
-        
+
         Args:
             scene_result: The scene generation result with description
             scene_model: The saved database model with UUID
-            
+
         Returns:
             List of IDs of saved entities
         """
         if not self.db_session or not self.story.id:
             logging.warning("Cannot extract entities: missing DB session or story ID")
             return []
-        
+
         try:
             # Create world entity service
             from app.services.world.world_entity_service import WorldEntityService
-            
+
             world_entity_service = WorldEntityService(
                 llm_service=self.llm,
                 db_session=self.db_session,
                 story_id=self.story.id
             )
-            
+
             # Process the scene description for entities
             entity_ids = await world_entity_service.process_text_for_entities(
                 text=scene_result.description,
                 story_id=self.story.id,
                 source_uuid=str(scene_model.uuid)  # Convert UUID to string
             )
-            
-            logging.info(f"Extracted {len(entity_ids)} world entities from scene {scene_model.id}")
+
+            logging.info(
+                f"Extracted {len(entity_ids)} world entities from scene {scene_model.id}")
             return entity_ids
-            
+
         except Exception as e:
             logging.error(f"Failed to extract world entities from scene: {str(e)}")
             import traceback
             logging.error(traceback.format_exc())
-            return []    
+            return []
 
     @observe(name="agent_loop")
     async def _run_agent_loop(self) -> SceneGenerationResult:
         """Run the agent loop until the scene is complete"""
-        
+
         # Create system prompt with key components from prompting guide
         system_prompt = """
         You are a scene generator for an AI-driven text adventure game. Your role is to create compelling scenes with characters and locations.
@@ -315,25 +317,25 @@ class SceneGeneratorAgent:
         3. How this scene fits into the player's overall Hero's Journey. Based on previous_scenes and story context, infer the current approximate phase (Departure, Initiation, Return) and align the scene accordingly. If the story is new, focus on 'Departure'. If well-developed, lean 'Initiation'. If nearing resolution of a major arc, consider 'Return'.
         </planning>
         """
-        
+
         try:
             # Create initial user prompt with state
             user_prompt = self._create_user_prompt()
-            
+
             # Loop until scene is complete
             scene_complete = False
             step_count = 0
             max_steps = 10
             while not scene_complete and step_count < max_steps:
-                
+
                 step_count += 1
-                
+
                 # Generate response from LLM with tools
                 logging.info(f"Agent step {step_count}: Generating LLM response")
                 logging.info(f"Current state: {self.state}")
-                
+
                 await self._update_action("planning", f"Planning next scene element")
-                
+
                 # This will be traced by LLMService's @observe decorator
                 response = await self.llm.generate_response(
                     input_text=user_prompt,
@@ -343,39 +345,46 @@ class SceneGeneratorAgent:
                     temperature=0.7,
                     metadata={"step": str(step_count), "max_steps": str(max_steps)}
                 )
-                
+
                 logging.info(f"Agent step {step_count}: Received response from LLM")
-                
+
                 # Remove planning action since we received the response
                 await self._remove_action("planning")
-                
+
                 # Extract function calls
                 function_calls = await LLMService.extract_function_calls(response)
-                
+
                 # Process function calls
                 if function_calls:
                     # Group function calls by type
-                    location_calls = [call for call in function_calls if call["name"] == "generate_location"]
-                    character_calls = [call for call in function_calls if call["name"] == "generate_character"]
-                    finalize_calls = [call for call in function_calls if call["name"] == "finalize_scene"]
-                    
+                    location_calls = [
+                        call for call in function_calls if call["name"] == "generate_location"]
+                    character_calls = [
+                        call for call in function_calls if call["name"] == "generate_character"]
+                    finalize_calls = [
+                        call for call in function_calls if call["name"] == "finalize_scene"]
+
                     # Process location and character calls in parallel
                     tasks: List[Coroutine[Any, Any, None]] = []
                     for call in location_calls:
-                        tasks.append(self._handle_location_generation(call["arguments"]))
+                        tasks.append(
+                            self._handle_location_generation(call["arguments"]))
                     for call in character_calls:
-                        tasks.append(self._handle_character_generation(call["arguments"]))
-                    
+                        tasks.append(
+                            self._handle_character_generation(call["arguments"]))
+
                     if tasks:
                         await asyncio.gather(*tasks)
-                        
+
                         # Log results after parallel processing
                         if location_calls:
                             location_name = self.state.selected_location.name if self.state.selected_location else "None"
-                            logging.info(f"Agent step {step_count}: Generated/selected location: {location_name}")
+                            logging.info(
+                                f"Agent step {step_count}: Generated/selected location: {location_name}")
                         if character_calls:
-                            logging.info(f"Agent step {step_count}: Character count: {len(self.state.selected_characters)}")
-                    
+                            logging.info(
+                                f"Agent step {step_count}: Character count: {len(self.state.selected_characters)}")
+
                     # Process finalize calls sequentially
                     for call in finalize_calls:
                         # Clear any previous error
@@ -383,11 +392,15 @@ class SceneGeneratorAgent:
                         try:
                             self.state.scene_description = call["arguments"]["description"]
                             if not self.state.selected_location:
-                                logging.warning("No location selected, skipping scene finalization")
-                                raise ValueError("No location selected, Generate location first and try again")
+                                logging.warning(
+                                    "No location selected, skipping scene finalization")
+                                raise ValueError(
+                                    "No location selected, Generate location first and try again")
                             if len(self.state.selected_characters) == 0:
-                                logging.warning("No characters selected, skipping scene finalization")
-                                raise ValueError("No characters selected, Generate characters first and try again")
+                                logging.warning(
+                                    "No characters selected, skipping scene finalization")
+                                raise ValueError(
+                                    "No characters selected, Generate characters first and try again")
                             scene_complete = True
                             logging.info(f"Agent step {step_count}: Scene finalized")
                             break
@@ -395,42 +408,43 @@ class SceneGeneratorAgent:
                             error_msg = f"Error finalizing scene: {e}"
                             logging.error(error_msg)
                             self.state.finalize_scene_error = error_msg
-                
+
                 # Update user prompt with new state
                 user_prompt = self._create_user_prompt()
-            
+
             if step_count >= max_steps and not scene_complete:
-                logging.warning(f"Scene generation hit maximum steps ({max_steps}) without completion")
+                logging.warning(
+                    f"Scene generation hit maximum steps ({max_steps}) without completion")
                 # Return whatever we have so far
                 self.state.scene_description = self.state.scene_description or "Scene generation timed out before completion."
-            
+
             # Make sure any lingering actions are removed
             for action_type in list(dict(self.state.active_actions).keys()):
                 await self._remove_action(action_type)
-            
+
             # Return the final scene
             return SceneGenerationResult(
-                location=self.state.selected_location, # type: ignore
+                location=self.state.selected_location,  # type: ignore
                 characters=self.state.selected_characters,
-                description=self.state.scene_description, # type: ignore
+                description=self.state.scene_description,  # type: ignore
                 steps_taken=step_count
             )
-            
+
         except Exception as e:
             logging.error(f"Scene generation failed: {str(e)}")
-            
+
             # No need to mark placeholder as failed since we don't create one
             await self._update_action("scene_status", "Scene generation failed")
             raise
-    
+
     @observe(name="handle_location_generation")
     async def _handle_location_generation(self, args: Dict[str, Any]) -> None:
         """Handle location generation or selection tool call"""
-        
+
         # Clear previous error
         self.state.location_generation_error = None
         selected_location: Optional[Location] = None
-        
+
         # Check if we're selecting an existing location
         if "existing_location_id" in args and args["existing_location_id"]:
             await self._update_action("location", f"Selecting existing location with UUID: {args['existing_location_id']}")
@@ -438,14 +452,13 @@ class SceneGeneratorAgent:
             for location in self.state.locations_pool:
                 if location.uuid == args["existing_location_id"]:
                     selected_location = location
-                    break # Found the location
+                    break  # Found the location
             if not selected_location:
-                 error_msg = f"Could not find existing location with UUID: {args['existing_location_id']}"
-                 logging.warning(error_msg)
-                 self.state.location_generation_error = error_msg
-                 await self._remove_action("location")
-                 return
-
+                error_msg = f"Could not find existing location with UUID: {args['existing_location_id']}"
+                logging.warning(error_msg)
+                self.state.location_generation_error = error_msg
+                await self._remove_action("location")
+                return
 
         # Otherwise, we need to generate a new location using LocationGenerator
         elif "brief_description" in args and args["brief_description"]:
@@ -466,12 +479,11 @@ class SceneGeneratorAgent:
                 await self._remove_action("location")
                 return
         else:
-             error_msg = "Location generation requires either 'existing_location_id' or 'brief_description'."
-             logging.warning(error_msg)
-             self.state.location_generation_error = error_msg
-             await self._remove_action("location")
-             return
-
+            error_msg = "Location generation requires either 'existing_location_id' or 'brief_description'."
+            logging.warning(error_msg)
+            self.state.location_generation_error = error_msg
+            await self._remove_action("location")
+            return
 
         # Set as selected location and trigger callback
         if selected_location:
@@ -481,19 +493,18 @@ class SceneGeneratorAgent:
                     await self.on_location_added(selected_location)
                 except Exception as e:
                     logging.error(f"Error executing on_location_added callback: {e}")
-        
+
             # Remove the action since it's complete
             await self._remove_action("location")
 
-    
     @observe(name="handle_character_generation")
-    async def  _handle_character_generation(self, args: Dict[str, Any]) -> None:
+    async def _handle_character_generation(self, args: Dict[str, Any]) -> None:
         """Handle character generation or selection tool call"""
-        
+
         # Clear previous error
         self.state.character_generation_error = None
         added_character: Optional[Character] = None
-        
+
         # Check if we're selecting an existing character
         if "existing_character_id" in args and args["existing_character_id"]:
             await self._update_action("character", f"Selecting existing character with UUID: {args['existing_character_id']}")
@@ -526,29 +537,35 @@ class SceneGeneratorAgent:
                 if len(self.state.selected_characters) < 3:
                     # Fetch character from database to ensure we have ID
                     if self.db_session:
-                        db_character = characters_crud.get_character_by_uuid(self.db_session, existing_char_uuid)
+                        db_character = characters_crud.get_character_by_uuid(
+                            self.db_session, existing_char_uuid)
                         if db_character:
                             try:
                                 # Use the converter utility to properly convert ORM model to Pydantic model
                                 pydantic_character = convert_character(db_character)
-                                
+
                                 # ID should already be set by the converter, but ensure it's there
                                 setattr(pydantic_character, 'id', db_character.id)
-                                
-                                current_characters = list(self.state.selected_characters)
+
+                                current_characters = list(
+                                    self.state.selected_characters)
                                 current_characters.append(pydantic_character)
                                 self.state.selected_characters = current_characters
                                 added_character = pydantic_character
-                                logging.info(f"Added character from database with ID {db_character.id}")
+                                logging.info(
+                                    f"Added character from database with ID {db_character.id}")
                             except Exception as e:
-                                logging.error(f"Error converting character from DB: {e}, falling back to character from pool")
-                                current_characters = list(self.state.selected_characters)
+                                logging.error(
+                                    f"Error converting character from DB: {e}, falling back to character from pool")
+                                current_characters = list(
+                                    self.state.selected_characters)
                                 current_characters.append(found_character)
                                 self.state.selected_characters = current_characters
                                 added_character = found_character
                         else:
                             # Fall back to the character from pool if not found in DB
-                            logging.warning(f"Character with UUID {existing_char_uuid} not found in database, using from pool")
+                            logging.warning(
+                                f"Character with UUID {existing_char_uuid} not found in database, using from pool")
                             current_characters = list(self.state.selected_characters)
                             current_characters.append(found_character)
                             self.state.selected_characters = current_characters
@@ -559,16 +576,20 @@ class SceneGeneratorAgent:
                         current_characters.append(found_character)
                         self.state.selected_characters = current_characters
                         added_character = found_character
-                        logging.warning("No database session available, character ID may be missing")
-                    
+                        logging.warning(
+                            "No database session available, character ID may be missing")
+
                     # Debug log to verify character ID
                     character_id = getattr(added_character, 'id', None)
                     if character_id is None:
-                        logging.warning(f"Selected character {added_character.name} has no database ID, scene-character association may fail")
+                        logging.warning(
+                            f"Selected character {added_character.name} has no database ID, scene-character association may fail")
                     else:
-                        logging.info(f"Selected character {added_character.name} has database ID {character_id}")
+                        logging.info(
+                            f"Selected character {added_character.name} has database ID {character_id}")
                 else:
-                    logging.warning("Maximum number of characters (3) already selected.")
+                    logging.warning(
+                        "Maximum number of characters (3) already selected.")
                     await self._remove_action("character")
             else:
                 logging.info(f"Character {found_character.name} already selected.")
@@ -588,7 +609,8 @@ class SceneGeneratorAgent:
                 return
 
             if len(self.state.selected_characters) >= 3:
-                logging.warning("Cannot generate new character, maximum number of characters (3) already selected.")
+                logging.warning(
+                    "Cannot generate new character, maximum number of characters (3) already selected.")
                 self.state.character_generation_error = "Maximum number of characters already selected."
                 await self._remove_action("character")
                 return
@@ -630,14 +652,13 @@ class SceneGeneratorAgent:
                 await self.on_character_added(added_character)
             except Exception as e:
                 logging.error(f"Error executing on_character_added callback: {e}")
-        
+
         # Remove the action since it's complete
         await self._remove_action("character")
 
-    
     def _create_user_prompt(self) -> str:
         """Create a user prompt with the current state using XML-style delimiters"""
-        
+
         # Format the selected location
         selected_location_str = "None"
         if self.state.selected_location:
@@ -645,7 +666,7 @@ class SceneGeneratorAgent:
             <uuid>{self.state.selected_location.uuid}</uuid>
             <name>{self.state.selected_location.name}</name>
             """
-        
+
         # Format the selected characters
         selected_characters_str = "[]"
         if self.state.selected_characters:
@@ -660,7 +681,7 @@ class SceneGeneratorAgent:
                 """
                 characters.append(char_str)
             selected_characters_str = "".join(characters)
-        
+
         # Format available characters
         available_characters_str = ""
         for character in self.state.characters_pool:
@@ -673,7 +694,7 @@ class SceneGeneratorAgent:
             </character>
             """
             available_characters_str += char_str
-        
+
         # Format available locations
         available_locations_str = ""
         for location in self.state.locations_pool:
@@ -685,7 +706,7 @@ class SceneGeneratorAgent:
             </location>
             """
             available_locations_str += loc_str
-        
+
         # Format the previous scenes if available
         previous_scenes_str = "None"
 
@@ -700,7 +721,7 @@ class SceneGeneratorAgent:
                         <uuid>{character.uuid}</uuid>
                     </character>
                 """
-            
+
                 previous_scene_str = f"""
                 <scene>
                     <location>
@@ -716,7 +737,7 @@ class SceneGeneratorAgent:
                 """
                 scenes.append(previous_scene_str)
             previous_scenes_str = "".join(scenes)
-        
+
         # Format error messages
         error_messages = ""
         if self.state.location_generation_error:
@@ -725,7 +746,7 @@ class SceneGeneratorAgent:
             error_messages += f"<character_error>{self.state.character_generation_error}</character_error>\n"
         if self.state.finalize_scene_error:
             error_messages += f"<finalize_error>{self.state.finalize_scene_error}</finalize_error>\n"
-        
+
         # Build the complete prompt with XML delimiters
         return f"""
         <context>
@@ -770,46 +791,49 @@ class SceneGeneratorAgent:
         </context>
         
         Based on the context above, continue generating the next scene. If you need to generate a location, use the generate_location tool. If you need to generate characters, use the generate_character tool. When you have selected a location and at least one character, use the finalize_scene tool to complete the scene.
-        """ 
+        """
 
     async def _save_scene_to_db(self, scene_result: SceneGenerationResult, story_id: int) -> SceneModel:
         """
         Save the generated scene to the database.
-        
+
         Args:
             scene_result: The generated scene result
             story_id: ID of the story to associate with
-            
+
         Returns:
             The saved database model
         """
         try:
             if not self.db_session:
                 raise ValueError("No database session available")
-                
+
             location = scene_result.location
             location_id = location.id if location else None
-                
-            # Check if we have a valid location_id 
+
+            # Check if we have a valid location_id
             if location_id is None:
                 raise ValueError("Cannot create scene without location_id")
-                
+
             # Collect character data (UUIDs and immediate_goals)
             characters_data_for_db: List[Dict[str, Any]] = []
             # Add player character
-            characters_data_for_db.append({"uuid": self.state.player.uuid, "immediate_goals": None})
-            
+            characters_data_for_db.append(
+                {"uuid": self.state.player.uuid, "immediate_goals": None})
+
             for character in scene_result.characters:
                 character_uuid = getattr(character, 'uuid', None)
                 immediate_goals = getattr(character, 'immediate_goals', None)
                 if character_uuid is not None:
-                    characters_data_for_db.append({"uuid": str(character_uuid), "immediate_goals": immediate_goals})
+                    characters_data_for_db.append(
+                        {"uuid": str(character_uuid), "immediate_goals": immediate_goals})
                 else:
-                    logging.warning(f"Character {getattr(character, 'name', 'unknown')} has no UUID, cannot save immediate goals")
-            
+                    logging.warning(
+                        f"Character {getattr(character, 'name', 'unknown')} has no UUID, cannot save immediate goals")
+
             if not characters_data_for_db:
                 logging.warning("No character data found to associate with the scene")
-            
+
             # Create a complete scene in one operation using character data
             db_scene = scenes_crud.create_complete_scene(
                 self.db_session,
@@ -818,18 +842,19 @@ class SceneGeneratorAgent:
                 scene_result.description,
                 characters_data_for_db if characters_data_for_db else None
             )
-            
+
             # Log completion
-            logging.info(f"Scene saved to database with ID {db_scene.id} with status 'active'")
+            logging.info(
+                f"Scene saved to database with ID {db_scene.id} with status 'active'")
 
             # Extract and save world entities
             await self._extract_scene_entities(scene_result, db_scene)
-            
+
             # Update action status
             await self._update_action("scene_status", "Scene generation completed successfully")
-            
+
             return db_scene
-            
+
         except Exception as e:
             logging.exception(f"Failed to save scene to database: {str(e)}")
-            raise ValueError(f"Failed to save scene to database: {str(e)}") 
+            raise ValueError(f"Failed to save scene to database: {str(e)}")

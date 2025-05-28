@@ -56,11 +56,13 @@ Generate a character draft based on this description.
 """
 
 # Second step: Convert narrative to JSON structure
+
+
 def CREATE_CHARACTER_JSON_SYSTEM_PROMPT(is_npc: bool):
     personality_traits_field = '"personality_traits": "string",  // personality traits separated by commas' if is_npc else ""
-    relationship_level_field = '"relationship_level": 0,  // Numeric level of relationship intensity (0-100) 0-20 - stranger or enemy, 20-40 - acquaintance, 40-60 - friend, 60-80 - close friend, 80-100 - family' if is_npc  else ""
+    relationship_level_field = '"relationship_level": 0,  // Numeric level of relationship intensity (0-100) 0-20 - stranger or enemy, 20-40 - acquaintance, 40-60 - friend, 60-80 - close friend, 80-100 - family' if is_npc else ""
     speaking_style_field = '"speaking_style": "string",  // Character\'s speaking style, e.g., formal, informal, etc.' if is_npc else ""
-    
+
     return f"""
 Create a structured JSON representation of character based on the detailed narrative descriptions.
 Return only valid JSON and nothing else.

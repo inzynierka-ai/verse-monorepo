@@ -4,4 +4,4 @@ __all__ = [
     "GameInitializer",
     "InitialGameState",
     "SimpleGameInput"
-] 
+]

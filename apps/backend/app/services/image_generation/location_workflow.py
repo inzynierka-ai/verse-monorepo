@@ -5,34 +5,34 @@ from .workflow_loader import WorkflowLoader
 
 class LocationWorkflowLoader(WorkflowLoader):
     """Loader for location generation workflows"""
-    
+
     def __init__(self):
         super().__init__()
         self.workflow_file = "locations_api.json"
-    
+
     def load_workflow(self, prompt: str, generation_id: str) -> Dict[str, Any]:
         """Load a location workflow and customize it with the given prompt"""
         workflow = self._load_workflow_file(self.workflow_file)
-        
+
         if not workflow:
             logging.warning(f"Location workflow not found, using fallback")
             return {}
-        
+
         # Customize the workflow with the prompt and random parameters
         random_seed = self._generate_random_seed()
-        
+
         # Find the text encode node (typically contains the prompt)
         for _, node in workflow.items():
             if node.get("class_type") == "CLIPTextEncode" and "text" in node.get("inputs", {}):
                 # Don't override an empty negative prompt
                 if node["inputs"]["text"] != "":
                     node["inputs"]["text"] = prompt
-        
+
         # Find the KSampler node to update random parameters
         for _, node in workflow.items():
             if node.get("class_type") == "KSampler":
                 node["inputs"]["seed"] = random_seed
-        
+
         # Find the SaveImage node (if any) to add our generation ID
         for _, node in workflow.items():
             if node.get("class_type") == "SaveImage":
@@ -50,5 +50,5 @@ class LocationWorkflowLoader(WorkflowLoader):
                         "images": [output_node_id, 0]
                     }
                 }
-        
-        return workflow 
+
+        return workflow

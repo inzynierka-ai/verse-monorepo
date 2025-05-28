@@ -18,6 +18,7 @@ router = APIRouter(
     tags=["world_entities"],
 )
 
+
 @router.get("/stories/{story_id}", response_model=List[WorldEntity])
 async def list_all_world_entites_by_story_id(
     db: Session = Depends(get_db),
@@ -28,6 +29,7 @@ async def list_all_world_entites_by_story_id(
         raise HTTPException(status_code=400, detail="story_id is required")
     entities = get_entities_by_story_id(db, story_id)
     return entities
+
 
 @router.get("/{world_entity_id}", response_model=WorldEntity)
 async def get_world_entity_by_id(
@@ -42,6 +44,7 @@ async def get_world_entity_by_id(
         raise HTTPException(status_code=404, detail="World entity not found")
     return entity
 
+
 @router.post("/", response_model=List[WorldEntity])
 async def create_entities(request: CreateEntitiesRequest, db: Session = Depends(get_db)):
     """Create world entities from a scene"""
@@ -49,16 +52,16 @@ async def create_entities(request: CreateEntitiesRequest, db: Session = Depends(
     scene = get_scene_by_uuid(db, request.sceneUuid)
     if not scene:
         raise HTTPException(status_code=404, detail="Scene not found")
-        
+
     # Create the service with all necessary context
     world_entity_service = WorldEntityService(db_session=db, story_id=scene.story_id)
-    
+
     # Process the scene - now we only pass scene_uuid as expected
     entity_ids = await world_entity_service.process_new_scene_entities(scene_uuid=request.sceneUuid)
-    
+
     if not entity_ids:
         empty_world_entities: List[WorldEntity] = []
         return empty_world_entities
-        
+
     # Return the created entities
     return [get_entity_by_id(db, entity_id) for entity_id in entity_ids]

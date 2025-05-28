@@ -22,10 +22,13 @@ from app.core.config import settings
 from sqlalchemy.orm import Session
 from app.models.location import Location as LocationModel
 from langfuse.decorators import observe  # type: ignore
+
+
 class LocationGenerator:
     """
     Service for generating locations.
     """
+
     def __init__(self, llm_service: Optional[LLMService] = None, db_session: Optional[Session] = None):
         self.llm_service = llm_service or LLMService()
         self.db_session = db_session
@@ -44,10 +47,10 @@ class LocationGenerator:
         """
         # 1. Generate UUID first - we need it for the entire process
         location_uuid = str(uuid.uuid4())
-        
+
         # 2. Generate detailed location description
         location_description = await self._describe_location(story, description, location_uuid)
-        
+
         # 3. Create location JSON from description
         location_from_llm = await self._create_location_json(location_description, location_uuid)
 
@@ -56,7 +59,7 @@ class LocationGenerator:
 
         # 5. Generate image for the location
         image_url = await self._generate_image(image_prompt)
-        
+
         # 6. Create the final location with image URL and UUID
         location = Location(
             **location_from_llm.model_dump(),
@@ -64,17 +67,17 @@ class LocationGenerator:
             image_dir=image_url,
             uuid=location_uuid
         )
-        
+
         # 7. Save to database as a side effect
         if story.id is not None and self.db_session is not None:
             await self._save_location_to_db(location, story.id, image_prompt)
         else:
-            logging.warning("Story ID is None or no database session, skipping database save")
-        
+            logging.warning(
+                "Story ID is None or no database session, skipping database save")
+
         # 8. Return the Pydantic Location object
         return location
 
-    
     @observe(name="describe_location")
     async def _describe_location(self, story: Story, description: str, location_uuid: str) -> str:
         """
@@ -156,20 +159,20 @@ class LocationGenerator:
         Generate an image for a location.
         """
         import asyncio
-        
+
         comfyui_service = ComfyUIService()
         logging.info(f"Generating image for prompt: {image_prompt}")
-        
+
         # Run the synchronous generate_image method in a thread pool
         loop = asyncio.get_event_loop()
         result_dict = await loop.run_in_executor(
-            None, 
+            None,
             lambda: comfyui_service.generate_image(image_prompt, "location")
         )
-        
+
         logging.info(f"Generated image: {result_dict}")
         return f"{settings.BACKEND_URL}{result_dict['imagePath']}"
-    
+
     @observe(name="create_location_json")
     async def _create_location_json(
         self,
@@ -205,7 +208,7 @@ class LocationGenerator:
                 "location_uuid": location_uuid
             }
         )
-        
+
         response_text = await self.llm_service.extract_content(response)
 
         try:
@@ -224,12 +227,12 @@ class LocationGenerator:
     async def _save_location_to_db(self, location: Location, story_id: int, image_prompt: str) -> LocationModel:
         """
         Save the generated location to the database.
-        
+
         Args:
             location: The generated location object with UUID already set
             story_id: ID of the story to associate with
             image_prompt: The image prompt used to generate the location image
-            
+
         Returns:
             The saved database model
         """
@@ -239,22 +242,25 @@ class LocationGenerator:
                 name=location.name,
                 description=location.description,
                 brief_description=location.brief_description,
-                rules=", ".join(location.rules) if hasattr(location, 'rules') and location.rules else "",
+                rules=", ".join(location.rules) if hasattr(
+                    location, 'rules') and location.rules else "",
                 image_dir=location.image_dir,
                 image_prompt=image_prompt,
                 story_id=story_id,
                 uuid=location.uuid
             )
-            
+
             # Add to database session if available
             if self.db_session is not None:
                 self.db_session.add(db_location)
                 self.db_session.commit()
-                logging.info(f"Location {location.name} saved to database with ID {db_location.id}")
+                logging.info(
+                    f"Location {location.name} saved to database with ID {db_location.id}")
                 location.id = db_location.id
                 return db_location
             else:
-                logging.warning("No database session available, location not saved to database")
+                logging.warning(
+                    "No database session available, location not saved to database")
                 return db_location
         except Exception as e:
             logging.exception(f"Failed to save location to database: {str(e)}")

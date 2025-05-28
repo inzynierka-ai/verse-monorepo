@@ -17,29 +17,31 @@ class GameInitializationHandler(BaseMessageHandler):
     """
     Handles game initialization messages.
     """
+
     def __init__(self, game_initializer: Optional[GameInitializer] = None, db_session: Optional[Session] = None):
         """
         Initialize the handler with explicit dependency injection.
-        
+
         Args:
             game_initializer: GameInitializer instance to use. If None, a new instance will be created.
             db_session: SQLAlchemy Session for database operations
         """
         super().__init__(db_session=db_session)
-        self.game_initializer = game_initializer or GameInitializer(db_session=db_session)
+        self.game_initializer = game_initializer or GameInitializer(
+            db_session=db_session)
         self.message_types: Set[str] = {"INITIALIZE_GAME"}
-    
+
     async def handle(self, message: Dict[str, Any], websocket: WebSocket) -> bool:
         message_type = message.get("type")
-        
+
         if message_type not in self.message_types:
             return False
-        
+
         if message_type == "INITIALIZE_GAME":
             await self._handle_initialize_game(message, websocket)
-        
+
         return True
-    
+
     async def _handle_initialize_game(self, message: Dict[str, Any], websocket: WebSocket):
         """
         Handle game initialization request
@@ -50,10 +52,10 @@ class GameInitializationHandler(BaseMessageHandler):
         try:
             # Validate input
             payload = message.get("payload", {})
-            
+
             # Determine if this is simple mode or advanced mode
             is_simple_mode = payload.get("isSimpleMode", False)
-            
+
             if is_simple_mode:
                 # Simple mode: validate using SimpleGameInput
                 input_data = SimpleGameInput(
@@ -63,14 +65,14 @@ class GameInitializationHandler(BaseMessageHandler):
             else:
                 # Advanced mode: validate using StoryGenerationInput
                 input_data = StoryGenerationInput(**payload)
-            
+
             # Get user ID from websocket state (set by AuthenticationHandler)
             user_id = getattr(websocket.state, "user_id", None)
-            
+
             if user_id is None:
                 logger.warning("User not authenticated")
                 await websocket.send_json({
-                    "type": "ERROR", 
+                    "type": "ERROR",
                     "payload": {"message": "User not authenticated. Please authenticate first."}
                 })
                 return
@@ -79,7 +81,7 @@ class GameInitializationHandler(BaseMessageHandler):
                 "type": "STATUS_UPDATE",
                 "payload": {"status": "GENERATING_STORY", "message": "Generating game story..."}
             })
-            
+
             # Define callbacks for real-time updates
             async def on_story_generated(story: Story):
                 await websocket.send_json({
@@ -90,29 +92,29 @@ class GameInitializationHandler(BaseMessageHandler):
                     "type": "STATUS_UPDATE",
                     "payload": {"status": "GENERATING_CHARACTER", "message": "Creating player character..."}
                 })
-            
+
             async def on_character_generated(character: Character):
                 await websocket.send_json({
                     "type": "CHARACTER_CREATED",
                     "payload": character.model_dump()
                 })
-            
+
             print("Initializing game", input_data)
-            
+
             # Start game initialization with callbacks
             await self.game_initializer.initialize_game(
                 input_data,
-                user_id=user_id, # type: ignore
+                user_id=user_id,  # type: ignore
                 on_story_generated=on_story_generated,
                 on_character_generated=on_character_generated,
             )
-            
+
             # Send initialization complete message
             await websocket.send_json({
                 "type": "INITIALIZATION_COMPLETE",
                 "payload": {"message": "Game initialization complete"}
             })
-            
+
         except ValidationError as e:
             await websocket.send_json({
                 "type": "ERROR",
@@ -123,4 +125,4 @@ class GameInitializationHandler(BaseMessageHandler):
             await websocket.send_json({
                 "type": "ERROR",
                 "payload": {"message": f"Game initialization failed: {str(e)}"}
-            }) 
+            })

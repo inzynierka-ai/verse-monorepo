@@ -19,10 +19,13 @@ from app.services.platform.moderations import ModerationsService
 
 logger = logging.getLogger(__name__)
 
+
 class ConversationService:
     def __init__(self):
         self.llm_service = LLMService()
-        self.moderation_service = ModerationsService(openai_client=self.llm_service.openai_client)
+        self.moderation_service = ModerationsService(
+            openai_client=self.llm_service.openai_client)
+
     async def manage_websocket(self, websocket: WebSocket):
         """Context manager for WebSocket connection handling"""
         await websocket.accept()
@@ -30,17 +33,17 @@ class ConversationService:
             yield
         finally:
             await websocket.close()
-    
+
     def verify_scene_id(self, message_scene_id: str, current_scene_id: str) -> bool:
         """Verify that the scene ID in the message matches the current scene ID"""
         return message_scene_id == current_scene_id
-    
+
     @observe(name="process_message")
-    async def process_message(self, db: Session, messages: List[Dict[str, Any]], 
-                             character: Character, scene: Scene, websocket: Optional[WebSocket] = None) -> AsyncGenerator[str, None]:
+    async def process_message(self, db: Session, messages: List[Dict[str, Any]],
+                              character: Character, scene: Scene, websocket: Optional[WebSocket] = None) -> AsyncGenerator[str, None]:
         """Process a message and generate a response"""
         import time
-        
+
         latest_message = messages[-1]["content"]
         await self.save_message(
             db=db,
@@ -49,7 +52,7 @@ class ConversationService:
             content=latest_message,
             role="user"
         )
-        
+
         # Step 1: Moderation
         if websocket:
             status_msg = ProcessingStatusMessage(
@@ -58,11 +61,11 @@ class ConversationService:
                 message="Checking content for safety..."
             )
             await websocket.send_text(status_msg.model_dump_json())
-            
+
         start_time = time.time()
         violated_categories = await self.moderation_service.process_moderation(latest_message)
         moderation_time = (time.time() - start_time) * 1000
-        
+
         if websocket:
             moderation_result = ModerationResult(
                 is_flagged=bool(violated_categories),
@@ -70,36 +73,37 @@ class ConversationService:
                 processing_time_ms=moderation_time
             )
             status_msg = ProcessingStatusMessage(
-                type="processing_status", 
+                type="processing_status",
                 step="moderating",
                 message="Content moderation complete",
                 debug_info=moderation_result
             )
             await websocket.send_text(status_msg.model_dump_json())
-            
+
         if violated_categories:
             logger.warning(f"Violated categories: {violated_categories}")
-            
+
         # Step 2: Building prompt (includes entity extraction and vector search)
         if websocket:
             status_msg = ProcessingStatusMessage(
                 type="processing_status",
-                step="building_prompt", 
+                step="building_prompt",
                 message="Building character context..."
             )
             await websocket.send_text(status_msg.model_dump_json())
-            
+
         system_prompt = await self._build_character_prompt(db, character, scene, websocket)
-        
+
         # Convert messages to the format expected by the LLM service
         formatted_messages = [
             self.llm_service.create_message("system", system_prompt)
         ]
-        
+
         # Add conversation history
         for msg in messages:
-            formatted_messages.append(self.llm_service.create_message(msg["role"], msg["content"]))
-        
+            formatted_messages.append(
+                self.llm_service.create_message(msg["role"], msg["content"]))
+
         # Step 3: Generate response
         if websocket:
             status_msg = ProcessingStatusMessage(
@@ -118,14 +122,15 @@ class ConversationService:
         }
 
         if violated_categories:
-            llm_args["metadata"] = {"violated_categories": json.dumps(violated_categories)}
-        
+            llm_args["metadata"] = {
+                "violated_categories": json.dumps(violated_categories)}
+
         # Get streaming response from LLM
         response = await self.llm_service.generate_completion(**llm_args)
-        
+
         # Collect the full response while streaming chunks
         full_response = ""
-        
+
         # Ensure we're always returning a generator
         if isinstance(response, AsyncGenerator):
             async def collect_and_stream() -> AsyncGenerator[str, None]:
@@ -133,7 +138,7 @@ class ConversationService:
                 async for chunk in response:
                     full_response += chunk
                     yield chunk
-                
+
                 # Save the complete message after all chunks are processed
                 await self.save_message(
                     db=db,
@@ -142,7 +147,7 @@ class ConversationService:
                     content=full_response,
                     role="assistant"
                 )
-            
+
             return collect_and_stream()
         else:
             # This branch should never be taken due to stream=True
@@ -150,7 +155,7 @@ class ConversationService:
             async def single_value_generator() -> AsyncGenerator[str, None]:
                 response_text = str(response)
                 yield response_text
-                
+
                 # Save the complete message
                 await self.save_message(
                     db=db,
@@ -159,20 +164,20 @@ class ConversationService:
                     content=response_text,
                     role="assistant"
                 )
-                
+
             return single_value_generator()
-        
-    
-    
-    async def _build_character_prompt(self, db:Session, character: Character, scene: Scene, websocket: Optional[WebSocket] = None) -> str:
+
+    async def _build_character_prompt(self, db: Session, character: Character, scene: Scene, websocket: Optional[WebSocket] = None) -> str:
         """Build a system prompt for the character"""
         import time
-        
+
         # Get location information
         story = scene.story
-        logger.info(f"Building character prompt for {character.name} in scene {scene.uuid}")
+        logger.info(
+            f"Building character prompt for {character.name} in scene {scene.uuid}")
 
-        player_character = next((char for char in scene.characters if char.role == "player"), None)
+        player_character = next(
+            (char for char in scene.characters if char.role == "player"), None)
         player_name = player_character.name if player_character else "unknown player"
         logger.info(f"Player character identified as: {player_name}")
 
@@ -190,13 +195,15 @@ class ConversationService:
         logger.info(f"Last message: {optimized_last_message[:100]}...")
         last_message = scene.messages[-1].content
         last_message_embedding = get_embedding(optimized_last_message)
-        logger.info(f"Generated embedding of length: {len(last_message_embedding) if last_message_embedding else 'None'}")
-        
+        logger.info(
+            f"Generated embedding of length: {len(last_message_embedding) if last_message_embedding else 'None'}")
+
         # Extract entities for debug info
-        world_entity_service = WorldEntityService(db_session=db, story_id=scene.story_id) # type: ignore
+        world_entity_service = WorldEntityService(
+            db_session=db, story_id=scene.story_id)  # type: ignore
         extracted_entities = await world_entity_service.extract_entity_names(last_message)
         entity_extraction_time = (time.time() - start_time) * 1000
-        
+
         if websocket:
             entity_extraction_result = EntityExtractionResult(
                 extracted_entities=extracted_entities,
@@ -227,27 +234,31 @@ class ConversationService:
 
         memories = await memory_manager.find_similar_memories(
             character_id=int(character.id),  # type: ignore
-            query=last_message, 
+            query=last_message,
             top_n=5,
             similarity_threshold=0.3
         )
-        logger.info(f"Retrieved {len(memories)} relevant memories for character {character.name}")
+        logger.info(
+            f"Retrieved {len(memories)} relevant memories for character {character.name}")
 
         # Get relevant world entities with detailed logging
         logger.info(f"Retrieving world entities for story ID: {scene.story_id}")
-        
+
         try:
-            logger.info(f"Calling get_relevant_world_entities with message length {len(optimized_last_message)} and embedding length {len(last_message_embedding) if last_message_embedding else 'None'}")
+            logger.info(
+                f"Calling get_relevant_world_entities with message length {len(optimized_last_message)} and embedding length {len(last_message_embedding) if last_message_embedding else 'None'}")
             world_entities = await world_entity_service.get_relevant_world_entities(
-                scene, 
-                optimized_last_message, 
+                scene,
+                optimized_last_message,
                 last_message_embedding
             )
-            
+
             # Log details about the retrieved entities
-            logger.info(f"Retrieved {len(world_entities) if world_entities else 0} world entities")
+            logger.info(
+                f"Retrieved {len(world_entities) if world_entities else 0} world entities")
             for i, entity in enumerate(world_entities if world_entities else []):
-                logger.info(f"Entity {i+1}: {entity.name} - {entity.canonical_description[:50]}...")
+                logger.info(
+                    f"Entity {i+1}: {entity.name} - {entity.canonical_description[:50]}...")
         except Exception as e:
             logger.error(f"Error retrieving world entities: {str(e)}")
             import traceback
@@ -255,7 +266,7 @@ class ConversationService:
             world_entities = []
 
         vector_search_time = (time.time() - start_time) * 1000
-        
+
         # Send vector search results
         if websocket:
             # Format entities for debug info
@@ -266,15 +277,15 @@ class ConversationService:
                     "description": entity.canonical_description[:100] + "..." if len(entity.canonical_description) > 100 else entity.canonical_description,
                     "aliases": entity.aliases
                 })
-            
+
             # Format memories for debug info
             memories_debug = []
             for memory in memories or []:
                 memory_text = getattr(memory, 'memory_text', '') or ""
                 memories_debug.append({  # type: ignore
                     "text": memory_text[:100] + "..." if len(memory_text) > 100 else memory_text
-                }) 
-            
+                })
+
             vector_search_result = VectorSearchResult(
                 entities_found=entities_debug,  # type: ignore
                 memories_found=memories_debug,  # type: ignore
@@ -292,10 +303,10 @@ class ConversationService:
             )
             await websocket.send_text(status_msg.model_dump_json())
 
-
         # Log location info
         location_info = f"You are currently at {scene.location.name}. {scene.location.description}" if scene.location else ""
-        logger.info(f"Location info: {location_info[:100]}..." if location_info else "No location info")
+        logger.info(
+            f"Location info: {location_info[:100]}..." if location_info else "No location info")
 
         # Prepare world entities section with error handling
         try:
@@ -304,15 +315,15 @@ class ConversationService:
                 for entity in world_entities:
                     # Format each entity with name, description and aliases if any
                     entity_text = f"- {entity.name}: {entity.canonical_description}"
-                    
+
                     # Add aliases if they exist
                     if entity.aliases and len(entity.aliases) > 0:
                         alias_text = ", ".join(entity.aliases)
                         entity_text += f" (Also known as: {alias_text})"
-                    
-                    entities_text_list.append(entity_text) # type: ignore
-                
-                entities_text = chr(10).join(entities_text_list) # type: ignore 
+
+                    entities_text_list.append(entity_text)  # type: ignore
+
+                entities_text = chr(10).join(entities_text_list)  # type: ignore
                 logger.info(f"Including {len(world_entities)} world entities in prompt")
             else:
                 entities_text = "None"
@@ -324,7 +335,8 @@ class ConversationService:
         # Prepare memories section with error handling
         try:
             if memories and len(memories) > 0:
-                memories_text = chr(10).join([f"- {memory.memory_text}" for memory in memories])
+                memories_text = chr(10).join(
+                    [f"- {memory.memory_text}" for memory in memories])
                 logger.info(f"Including {len(memories)} memories in prompt")
             else:
                 memories_text = "None"
@@ -378,23 +390,21 @@ class ConversationService:
         - Avoid finishing senteces with questions.
         """
 
-        # Log the final prompt length (not entire content for privacy/size reasons)
-        logger.info(f"Character prompt for {character.name} generated with {len(character_prompt)} characters")
-        logger.info(f"Character prompt: {character_prompt}...")  # Log only the first 100 characters for brevity
-        return character_prompt  
-    
+        return character_prompt
+
     @observe(name="generate_conversation_topics")
     async def generate_conversation_topics(self, db: Session, character: Character, scene: Scene, messages: Optional[List[Dict[str, Any]]] = None) -> ConversationTopicsResponse:
         """Generate conversation topics for a character in a specific scene"""
-        
+
         try:
             # Get player character info
-            player_character = next((char for char in scene.characters if char.role == "player"), None)
+            player_character = next(
+                (char for char in scene.characters if char.role == "player"), None)
             player_name = player_character.name if player_character else "unknown player"
-            
+
             # Prepare location information
             location_info = f"You are currently at {scene.location.name}. {scene.location.description}" if scene.location else ""
-            
+
             # Get previous scene summary if available and fetch previous messages
             previous_scene_context = ""
             previous_scene = None
@@ -407,14 +417,15 @@ class ConversationService:
                     summary_text = str(previous_scene.summary)
                     # previous_scene.messages
                     previous_scene_context = f"\nPrevious scene summary: {summary_text}"
-                    logger.info(f"Including previous scene summary: {summary_text[:100]}...")
+                    logger.info(
+                        f"Including previous scene summary: {summary_text[:100]}...")
             except Exception as e:
                 logger.warning(f"Could not fetch previous scene summary: {str(e)}")
-            
+
             # Prepare message history context
             message_history_context = ""
             all_messages: List[Dict[str, Any]] = []
-            
+
             # First, get previous messages from the last scene with this character if available (limited)
             if previous_scene is not None:
                 try:
@@ -422,27 +433,30 @@ class ConversationService:
                     # Convert Column objects to string values
                     prev_scene_uuid = str(previous_scene.uuid)
                     character_uuid = str(character.uuid)
-                    prev_messages = get_messages_by_scene_and_character(db, prev_scene_uuid, character_uuid)
+                    prev_messages = get_messages_by_scene_and_character(
+                        db, prev_scene_uuid, character_uuid)
                     # Limit previous scene messages to last 3 to avoid overwhelming the prompt
-                    limited_prev_messages = prev_messages[-3:] if len(prev_messages) > 3 else prev_messages
+                    limited_prev_messages = prev_messages[-3:] if len(
+                        prev_messages) > 3 else prev_messages
                     # Convert to the format expected (dict with role and content)
                     for msg in limited_prev_messages:
                         all_messages.append({
                             "role": msg.role,
                             "content": msg.content
                         })
-                    logger.info(f"Retrieved {len(limited_prev_messages)} messages from previous scene (out of {len(prev_messages)} total)")
+                    logger.info(
+                        f"Retrieved {len(limited_prev_messages)} messages from previous scene (out of {len(prev_messages)} total)")
                 except Exception as e:
                     logger.warning(f"Could not fetch previous messages: {str(e)}")
-            
+
             # Add ALL current messages if provided (no limitation)
             if messages and len(messages) > 0:
                 all_messages.extend(messages)
                 logger.info(f"Added {len(messages)} current messages")
-            
+
             # Prepare last message analysis and conversation hooks
             last_message_analysis = ""
-            
+
             # Use all messages for context (no additional limitation)
             if all_messages:
                 message_texts: List[str] = []
@@ -450,22 +464,24 @@ class ConversationService:
                     role = "Player" if msg.get("role") == "user" else character.name
                     content = msg.get("content", "")
                     message_texts.append(f"{role}: {content}")
-                
+
                 if message_texts:
-                    message_history_context = f"\nRecent conversation:\n" + "\n".join(message_texts)
-                    logger.info(f"Including {len(all_messages)} total messages in context")
-                
+                    message_history_context = f"\nRecent conversation:\n" + \
+                        "\n".join(message_texts)
+                    logger.info(
+                        f"Including {len(all_messages)} total messages in context")
+
                 # Extract and analyze the very last message for hooks
                 if len(all_messages) > 0:
                     last_msg = all_messages[-1]
-                    last_role = "Player" if last_msg.get("role") == "user" else character.name
+                    last_role = "Player" if last_msg.get(
+                        "role") == "user" else character.name
                     last_content = last_msg.get("content", "")
                     last_message_analysis = f"\nLAST MESSAGE ANALYSIS:\n{last_role}: \"{last_content}\""
-   
-            
+
             # Determine if this is a first interaction or continuation
             is_first_interaction = not all_messages or len(all_messages) == 0
-            
+
             if is_first_interaction:
                 system_prompt = f"""You are a conversation topic generator for a narrative text adventure game that creates natural conversation starters for a player meeting a character.
                 PRIMARY GOAL: Generate 3 conversation starter topics that the player can use to initiate their first interaction with {character.name}. These should feel natural and appropriate for their current relationship level and the situation.
@@ -581,56 +597,57 @@ Current Situation:
             messages = [
                 self.llm_service.create_message("system", system_prompt)
             ]
-            
+
             response = await self.llm_service.generate_completion(
                 messages=messages,
                 model=ModelName.GPT41_MINI,
                 temperature=0.8,
                 max_tokens=500
             )
-            
+
             # Handle streaming response
             content: str = ""
             if hasattr(response, "__aiter__"):
                 content = await self.llm_service.extract_content(response)
             else:
                 content = str(response)
-            
+
             # Use JSONService to parse and validate the response
             try:
-                topics_list = JSONService.parse_and_validate_json_list(content, ConversationTopic)
+                topics_list = JSONService.parse_and_validate_json_list(
+                    content, ConversationTopic)
                 # Limit to 3 topics as specified in the prompt
                 topics_list = topics_list[:3]
-                logger.info(f"Successfully generated {len(topics_list)} conversation topics")
-                
+
             except ValueError as e:
                 logger.error(f"Failed to parse or validate topics JSON: {str(e)}")
                 logger.error(f"Raw content: {content}")
                 topics_list = []
-                
+
             return ConversationTopicsResponse(topics=topics_list)
-            
+
         except Exception as e:
-            logger.error(f"Error generating conversation topics for character {character.name}: {str(e)}")
+            logger.error(
+                f"Error generating conversation topics for character {character.name}: {str(e)}")
             # Return empty topics list on error
             return ConversationTopicsResponse(topics=[])
-    
-    async def save_message(self, db: Session, scene_id: Any, 
-                         character_id: Any, content: str, role: Literal["user", "assistant", "system"]) -> Dict[str, Any]:
+
+    async def save_message(self, db: Session, scene_id: Any,
+                           character_id: Any, content: str, role: Literal["user", "assistant", "system"]) -> Dict[str, Any]:
         """Save a message to the database"""
         from app.crud.messages import create_message
         from app.schemas.message import MessageCreate
-        
+
         # Make sure we have integer values for IDs
         # This safely handles both direct integers and SQLAlchemy Column/objects
         scene_id_value = getattr(scene_id, "value", scene_id)
         if hasattr(scene_id, "id"):
             scene_id_value = scene_id.id
-            
+
         character_id_value = getattr(character_id, "value", character_id)
         if hasattr(character_id, "id"):
             character_id_value = character_id.id
-        
+
         message = MessageCreate(
             scene_id=scene_id_value,
             character_id=character_id_value,
@@ -639,6 +656,5 @@ Current Situation:
             timestamp=datetime.now(),
             uuid=str(uuid.uuid4())
         )
-        
+
         return create_message(db, message)
- 

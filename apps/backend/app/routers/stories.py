@@ -1,8 +1,7 @@
-import logging
 import uuid
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
-from typing import List, cast, Optional, Dict, Any
+from typing import List, cast, Optional
 from app.schemas.story import StoryCreate, StoryRead, StoryWithPlayerCharacterRead
 from app.schemas import scene as scene_schema
 from app.schemas.character import PlayerCharacterRead
@@ -21,6 +20,8 @@ router = APIRouter(
     prefix="/stories",
     tags=["stories"]
 )
+
+
 @router.get("/", response_model=List[StoryWithPlayerCharacterRead])
 async def list_stories(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """Get all available stories with player character info"""
@@ -29,11 +30,12 @@ async def list_stories(current_user: User = Depends(get_current_user), db: Sessi
 
     for db_story in db_stories:
         player_character_data: Optional[PlayerCharacterRead] = None
-        
+
         # db_story.characters should now be a list containing at most one character (the player)
         # due to the modified get_user_stories query.
-        if db_story.characters: # Check if the list is not empty
-            player_char_model = db_story.characters[0] # Get the first (and only) character
+        if db_story.characters:  # Check if the list is not empty
+            # Get the first (and only) character
+            player_char_model = db_story.characters[0]
             # player_char_model should always exist if db_story.characters is not empty
             player_character_data = PlayerCharacterRead(
                 name=player_char_model.name,
@@ -51,15 +53,17 @@ async def list_stories(current_user: User = Depends(get_current_user), db: Sessi
 
     return stories_with_player_char_response
 
-@router.get("/{story_id}", response_model=StoryRead)
-def get_story_by_id(story_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+
+@router.get("/{story_uuid}", response_model=StoryRead)
+def get_story_by_uuid(story_uuid: uuid.UUID, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """Get a specific story by ID"""
-    story = get_story(db, story_id, current_user.id)
+    story = get_story(db, story_uuid, current_user.id)
     return story
+
 
 @router.post("/", response_model=StoryRead)
 def create_story(
-    story: StoryCreate, 
+    story: StoryCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -67,16 +71,17 @@ def create_story(
     # Create a copy of the story data and inject the user_id
     story_data = story.dict()
     story_data["user_id"] = current_user.id
-    
+
     # Create a new StoryCreate instance with the updated data
     story_with_user = StoryCreate(**story_data)
-    
+
     return create_story_service(db, story_with_user)
 
-@router.get("/{story_id}/characters", response_model=List[scene_schema.Character])
-def list_characters(story_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+
+@router.get("/{story_uuid}/characters", response_model=List[scene_schema.Character])
+def list_characters(story_uuid: uuid.UUID, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """Get all characters for a specific story"""
-    story = get_story(db, story_id, current_user.id)
+    story = get_story(db, story_uuid, current_user.id)
     characters = story.characters
     return characters
 
@@ -90,19 +95,21 @@ def get_latest_scene(
     """Get the latest active scene for a story"""
     # Verify user owns the story
     story = get_story(db, story_uuid, current_user.id)
-    
+
     # Get the story ID as an integer
     story_id = cast(int, story.id)
-    
+
     # Instantiate the service and call the method
     scene_service = SceneService()
     latest_scene = scene_service.fetch_latest_active_scene(db, story_id)
-    
+
     # Handle not found cases
     if not latest_scene:
-        raise HTTPException(status_code=404, detail="No active scene found for this story")
-    
+        raise HTTPException(
+            status_code=404, detail="No active scene found for this story")
+
     return latest_scene
+
 
 @router.patch("/{story_uuid}/scenes/{scene_uuid}/complete")
 async def complete_scene(  # Make this function async
@@ -114,31 +121,31 @@ async def complete_scene(  # Make this function async
     """Mark a scene as completed"""
     # Verify user owns the story
     story = get_story(db, story_uuid, current_user.id)
-    
+
     # Get the story ID as an integer
     story_id = cast(int, story.id)
-    
+
     memory_manager = MemoryManager(db_session=db)
-    
+
     await memory_manager.create_memories(db, scene_uuid)
 
     # Get scene data to analyze relationships
     scene = scenes.get_scene_by_uuid(db, str(scene_uuid))
     if not scene:
         raise HTTPException(status_code=404, detail="Scene not found")
-    
+
     # Analyze relationship for each character in the scene
     relationship_analyzer = RelationshipAnalysisService(db)
-    
+
     relationship_updates: List[RelationshipAnalysisResult] = []
-    
+
     # Process and analyze relationships only if there are characters and messages
     if scene.characters and scene.messages:
         for character in scene.characters:
             # Extract message data from ORM objects to pass to relationship analyzer
             # The analyzer expects a list of message data, not ORM objects
             relevant_messages: List[Message] = []
-            
+
             for message in scene.messages:
                 if message.character_id == character.id:
                     # Use the message data directly from the ORM object
@@ -147,19 +154,20 @@ async def complete_scene(  # Make this function async
                 relevant_messages.reverse()
                 # Analyze relationship and update the database
                 relationship_result = await relationship_analyzer.analyze_relationship(
-                    character.id, 
+                    character.id,
                     relevant_messages,
                     update_db=True
                 )
                 if isinstance(relationship_result, RelationshipAnalysisResult):
                     relationship_updates.append(relationship_result)
-    
+
     # Mark the scene as completed
     scene_service = SceneService()
     completed_scene = await scene_service.mark_scene_completed(db, scene_uuid, story_id)
-    
+
     # Handle not found cases
     if not completed_scene:
-        raise HTTPException(status_code=404, detail="Scene not found or already completed")
-    
+        raise HTTPException(
+            status_code=404, detail="Scene not found or already completed")
+
     return {"message": "Scene completed successfully"}

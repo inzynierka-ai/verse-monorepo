@@ -31,12 +31,13 @@ class ModelName(Enum):
     DEEPSEEK_V3 = ('deepseek/deepseek-chat', ModelProvider.OPENROUTER)
     GEMINI_2_PRO = ('google/gemini-2.0-pro-exp-02-05:free', ModelProvider.OPENROUTER)
     GEMINI_25_PRO = ('google/gemini-2.5-pro-exp-03-25:free', ModelProvider.OPENROUTER)
-    GEMINI_25_FLASH_LITE = ('google/gemini-2.0-flash-lite-001', ModelProvider.OPENROUTER)
-    
+    GEMINI_25_FLASH_LITE = ('google/gemini-2.0-flash-lite-001',
+                            ModelProvider.OPENROUTER)
+
     def __init__(self, model_id: str, provider: ModelProvider):
         self.model_id = model_id
         self.provider = provider
-        
+
     @property
     def value(self) -> str:
         """For backwards compatibility with code expecting value to be the model ID"""
@@ -50,15 +51,15 @@ class LLMService:
             api_key=openai_api_key or settings.OPENAI_API_KEY,
             base_url=settings.OPENAI_API_BASE,
         )
-        
+
         # Initialize OpenRouter client
         self.openrouter_client = AsyncOpenAI(
             api_key=openrouter_api_key or settings.OPEN_ROUTER_API_KEY,
             base_url=settings.OPEN_ROUTER_API_BASE,
         )
-        
+
         self.logger = logging.getLogger(__name__)
-    
+
     def _get_client_for_model(self, model: ModelName):
         """Get the appropriate client based on the model provider"""
         if model.provider == ModelProvider.OPENAI:
@@ -98,9 +99,9 @@ class LLMService:
         }
         if metadata:
             trace_metadata.update(metadata)
-                        
+
             langfuse_context.update_current_observation(
-                level="WARNING" if "violated_categories" in metadata else "INFO", # type: ignore
+                level="WARNING" if "violated_categories" in metadata else "INFO",  # type: ignore
             )
 
         langfuse_context.update_current_trace(
@@ -111,7 +112,7 @@ class LLMService:
             langfuse_context.update_current_trace(
                 session_id=session_id
             )
-            
+
         if stream:
             return self._stream_completion(
                 messages=messages,
@@ -123,7 +124,7 @@ class LLMService:
         try:
             # Get the appropriate client for this model
             client = self._get_client_for_model(model)
-            
+
             response = await client.chat.completions.create(
                 model=model.model_id,
                 messages=messages,
@@ -136,14 +137,13 @@ class LLMService:
             if not response.choices:
                 # Pass the entire response object to the exception
                 raise ValueError(f"Error response received: {response}")
-            
+
             langfuse_context.update_current_observation(
                 usage=response.usage,
             )
             langfuse_context.update_current_trace(
                 output=response.choices[0].message.content,
             )
-            
 
             return response.choices[0].message.content or ""
 
@@ -157,7 +157,7 @@ class LLMService:
 
             # Re-raise all other errors
             raise
-            
+
     @retry(
         stop=stop_after_attempt(3),
         wait=wait_exponential(multiplier=1, min=4, max=10),
@@ -180,7 +180,7 @@ class LLMService:
     ) -> Any:
         """
         Generate a response using OpenAI's Responses API with function calling support.
-        
+
         Args:
             input_text: Text input to the model
             model: Model to use
@@ -193,7 +193,7 @@ class LLMService:
             stream: Whether to stream the response
             text_format: Format of the text response
             metadata: Additional metadata for the request
-            
+
         Returns:
             The complete response object from the Responses API
         """
@@ -205,19 +205,19 @@ class LLMService:
             "stream": stream,
             "has_previous_response": previous_response_id is not None
         }
-        
+
         if max_output_tokens:
             langfuse_metadata["max_output_tokens"] = max_output_tokens
-        
+
         if tools:
             langfuse_metadata["tools_count"] = len(tools)
-            
+
         langfuse_context.update_current_trace(metadata=langfuse_metadata)
-        
+
         try:
             # Get the appropriate client for this model
             client = self._get_client_for_model(model)
-            
+
             # Build request parameters
             request_params: Dict[str, Any] = {
                 "model": model.model_id,
@@ -225,7 +225,7 @@ class LLMService:
                 "temperature": temperature,
                 "stream": stream
             }
-            
+
             # Add optional parameters
             if instructions:
                 request_params["instructions"] = instructions
@@ -241,42 +241,43 @@ class LLMService:
                 request_params["text"] = {"format": text_format}
             if metadata:
                 request_params["metadata"] = metadata
-                
+
             # Call the Responses API
             response: Any = await client.responses.create(**request_params)
-            
+
             # Log the completion outcomes
             extracted_data = self._extract_response_data(response)
-            
+
             langfuse_context.update_current_trace(
                 output=response.to_dict()["output"],
                 metadata={
                     "function_calls": extracted_data.get("function_calls", []),
                     "has_function_calls": bool(extracted_data.get("function_calls"))
-                },    
+                },
             )
-            
+
             return response
-            
+
         except Exception as api_error:
             error_str = str(api_error)
             self.logger.error("API error in generate_response: %s", error_str)
-            
+
             # Log the error to Langfuse
             langfuse_context.update_current_observation(
                 level="ERROR",
                 status_message=error_str
             )
-            
-            raise ValueError(f"API error in generate_response: {error_str}") from api_error
-            
+
+            raise ValueError(
+                f"API error in generate_response: {error_str}") from api_error
+
     def _extract_response_data(self, response: Any) -> Dict[str, Any]:
         """
         Extract text and function calls from the response.
-        
+
         Args:
             response: The response from the OpenAI Responses API
-            
+
         Returns:
             A dictionary with "text" and "function_calls" keys
         """
@@ -284,20 +285,20 @@ class LLMService:
             "text": "",
             "function_calls": []
         }
-        
+
         try:
             if not hasattr(response, "output") or not response.output:
                 return result
-                
+
             for item in response.output:
                 # Handle text output
                 if hasattr(item, "type") and item.type == "message" and hasattr(item, "content"):
                     for content in item.content:
-                        if (hasattr(content, "type") and 
-                            content.type == "output_text" and 
-                            hasattr(content, "text")):
+                        if (hasattr(content, "type") and
+                            content.type == "output_text" and
+                                hasattr(content, "text")):
                             result["text"] += content.text
-                
+
                 # Handle function calls
                 elif hasattr(item, "type") and item.type == "function_call":
                     function_call: Dict[str, Any] = {
@@ -308,25 +309,25 @@ class LLMService:
                         "status": item.status if hasattr(item, "status") else None
                     }
                     result["function_calls"].append(function_call)
-                    
+
         except (AttributeError, TypeError, IndexError, json.JSONDecodeError) as e:
             self.logger.warning(f"Error extracting data from response: {e}")
-            
+
         return result
-    
+
     @staticmethod
     async def extract_function_calls(response: Any) -> List[Dict[str, Any]]:
         """
         Extract function calls from a response.
-        
+
         Args:
             response: The response from the OpenAI Responses API
-            
+
         Returns:
             A list of function call objects with name, arguments, and other metadata
         """
         function_calls: List[Dict[str, Any]] = []
-        
+
         try:
             if hasattr(response, "output") and response.output:
                 for item in response.output:
@@ -342,7 +343,7 @@ class LLMService:
         except (AttributeError, TypeError, json.JSONDecodeError):
             # Return empty list in case of errors
             pass
-            
+
         return function_calls
 
     @observe(name="stream_completion", as_type="generation")
@@ -368,7 +369,7 @@ class LLMService:
 
             # Get the appropriate client for this model
             client = self._get_client_for_model(model)
-            
+
             stream = await client.chat.completions.create(
                 model=model.model_id,
                 messages=messages,
@@ -389,7 +390,7 @@ class LLMService:
                         content_piece = choice.delta.content
                         full_response += content_piece
                         yield content_piece
-                
+
                 if chunk.usage:
                     final_usage_data = chunk.usage
 
@@ -422,19 +423,19 @@ class LLMService:
         if role == "assistant":
             return ChatCompletionAssistantMessageParam(role=role, content=content)
         raise ValueError(f"Unsupported role: {role}")
-        
+
     @staticmethod
     async def extract_content(response: Union[str, AsyncGenerator[str, None]]) -> str:
         """Extract string content from either str or AsyncGenerator response."""
         if isinstance(response, str):
             return response
-            
+
         # Handle AsyncGenerator case
         result = ""
         async for chunk in response:
             result += chunk
         return result
-        
+
     @staticmethod
     def create_tool(function_def: Dict[str, Any]) -> Dict[str, Any]:
         """Helper method to create a properly formatted tool for function calling"""

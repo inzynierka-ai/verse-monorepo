@@ -2,6 +2,7 @@ from typing import List, Optional, Dict
 from pydantic import BaseModel, Field
 from app.schemas.story_generation import Story, Location, Character, Scene
 
+
 class SceneGeneratorState(BaseModel):
     """State model for the Scene Generator Agent"""
     story: Story
@@ -9,26 +10,26 @@ class SceneGeneratorState(BaseModel):
     characters_pool: List[Character]  # All available characters
     locations_pool: List[Location]  # All available locations
     previous_scenes: Optional[List[Scene]] = None
-    
+
     # Selected elements for the new scene
     selected_location: Optional[Location] = None
     selected_characters: List[Character] = Field(default_factory=list)
-    
+
     # Output building
     scene_description: Optional[str] = None
-    
+
     # Current actions being performed (multiple can run in parallel)
     active_actions: Dict[str, str] = Field(default_factory=dict)
-    
+
     # Tool error messages
     location_generation_error: Optional[str] = None
     character_generation_error: Optional[str] = None
     finalize_scene_error: Optional[str] = None
-    
+
 
 class SceneGenerationResult(BaseModel):
     """Result model for the Scene Generator Agent"""
     location: Location
     characters: List[Character]
     description: str
-    steps_taken: int 
+    steps_taken: int

@@ -21,9 +21,11 @@ async def list_messages(db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail=f"No messages found")
     return messages
 
+
 @router.post("/", response_model=message_schema.Message)
 async def create_message(message: message_schema.MessageCreate, db: Session = Depends(get_db)):
     return create_message_service(db, message)
+
 
 @router.get("/scenes/{scene_uuid}/characters/{character_uuid}", response_model=List[message_schema.Message])
 async def gets_messages_by_scene_and_character(scene_uuid: str, character_uuid: str, db: Session = Depends(get_db)):

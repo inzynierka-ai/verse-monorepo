@@ -4,40 +4,40 @@ from pathlib import Path
 from typing import Dict, Any, Optional
 
 import requests
-from app.core.config import  settings
+from app.core.config import settings
 from .workflow_loader import WorkflowLoader
 
 
 class CharacterWorkflowLoader(WorkflowLoader):
     """Loader for character generation workflows"""
-    
+
     def __init__(self):
         super().__init__()
         self.workflow_file = "characters_api.json"
-    
+
     def load_workflow(self, prompt: str, generation_id: str) -> Dict[str, Any]:
         """Load a character workflow and customize it with the given prompt"""
         workflow = self._load_workflow_file(self.workflow_file)
-        
+
         if not workflow:
             logging.warning(f"Character workflow not found, using fallback")
             return {}
-        
+
         # Customize the workflow with the prompt and random parameters
         random_seed = self._generate_random_seed()
-        
+
         # Find the text encode node (typically contains the prompt)
         for _, node in workflow.items():
             if node.get("class_type") == "CLIPTextEncode" and "text" in node.get("inputs", {}):
                 # Don't override an empty negative prompt
                 if node["inputs"]["text"] != "":
                     node["inputs"]["text"] = prompt
-        
+
         # Find the KSampler node to update random parameters
         for _, node in workflow.items():
             if node.get("class_type") == "KSampler":
                 node["inputs"]["seed"] = random_seed
-        
+
         # Find the SaveImage node (if any) to add our generation ID
         for _, node in workflow.items():
             if node.get("class_type") == "SaveImage":
@@ -55,16 +55,17 @@ class CharacterWorkflowLoader(WorkflowLoader):
                         "images": [output_node_id, 0]
                     }
                 }
-        
+
         # Add reference image for character generation
         self._add_reference_image(workflow)
-        
+
         return workflow
-    
+
     def _add_reference_image(self, workflow: Dict[str, Any]) -> None:
         """Add reference image to character workflow"""
         # Find reference image path
-        reference_image_path = Path(settings.MEDIA_ROOT) / "comfyui" / "reference_images" / "model_reference.jpg"
+        reference_image_path = Path(settings.MEDIA_ROOT) / \
+            "comfyui" / "reference_images" / "model_reference.jpg"
         if reference_image_path.exists():
             uploaded_image = self._upload_image(str(reference_image_path))
             if uploaded_image:
@@ -73,19 +74,21 @@ class CharacterWorkflowLoader(WorkflowLoader):
                     if node_data.get("class_type") == "LoadImage":
                         # Add reference to our uploaded image
                         node_data["inputs"]["image"] = uploaded_image
-                        logging.info(f"Added reference image to workflow node {_node_id}")
+                        logging.info(
+                            f"Added reference image to workflow node {_node_id}")
             else:
-                logging.error("Failed to upload reference image for character generation")
+                logging.error(
+                    "Failed to upload reference image for character generation")
         else:
             logging.error(f"Reference image not found at {reference_image_path}")
 
     def _upload_image(self, image_path: str) -> Optional[str]:
         """
         Method for uploading reference image to ComfyUI
-        
+
         Args:
             image_path (str): Path to the image file
-        
+
         Returns:
             str: Image name on the ComfyUI server or None in case of error
         """

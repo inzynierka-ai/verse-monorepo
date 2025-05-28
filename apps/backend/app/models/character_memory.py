@@ -3,6 +3,7 @@ from sqlalchemy.orm import relationship
 from pgvector.sqlalchemy import Vector
 from app.db.session import Base  # Fix this import to match character.py
 
+
 class CharacterMemory(Base):
     __tablename__ = "character_memories"
 

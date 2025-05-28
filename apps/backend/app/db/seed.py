@@ -11,12 +11,15 @@ from passlib.context import CryptContext
 # Password hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
+
 def generate_uuid() -> str:
     """Generate a new UUID as a string."""
     return str(uuid.uuid4())
 
+
 def get_password_hash(password: str) -> str:
     return pwd_context.hash(password)
+
 
 def clear_database():
     """Clear all data from the database tables."""
@@ -30,7 +33,7 @@ def clear_database():
         db.query(Location).delete()
         db.query(Story).delete()
         db.query(User).delete()
-        
+
         # Commit the deletions
         db.commit()
         print("Database cleared successfully.")
@@ -41,29 +44,30 @@ def clear_database():
     finally:
         db.close()
 
+
 def seed_database(force_reseed=False):
     """Seed the database with initial test data.
-    
+
     Args:
         force_reseed: If True, clear all existing data before seeding
     """
     db = SessionLocal()
-    
+
     try:
         # Check if database needs seeding
         if not force_reseed and db.query(User).first():
             print("Database already contains data, skipping seed.")
             db.close()
             return
-        
+
         # Clear database if forced reseeding
         if force_reseed:
             db.close()
             clear_database()
             db = SessionLocal()
-        
+
         print("Starting database seeding...")
-        
+
         # Create test users
         user1 = User(
             email="test1@example.com",
@@ -71,17 +75,17 @@ def seed_database(force_reseed=False):
             hashed_password=get_password_hash("password123"),
             is_active=True
         )
-        
+
         user2 = User(
-            email="test2@example.com", 
+            email="test2@example.com",
             username="tester2",
             hashed_password=get_password_hash("password123"),
             is_active=True
         )
-        
+
         db.add_all([user1, user2])
         db.flush()  # Get IDs without committing
-        
+
         # Create stories for user1
         story1 = Story(
             title="The Lost Kingdom",
@@ -91,7 +95,7 @@ def seed_database(force_reseed=False):
             uuid=generate_uuid(),
             user_id=user1.id
         )
-        
+
         story2 = Story(
             title="Murder at Midnight",
             description="A thrilling detective story set in 1920s London. A mysterious murder in a mansion during a stormy night in Victorian London.",
@@ -100,7 +104,7 @@ def seed_database(force_reseed=False):
             uuid=generate_uuid(),
             user_id=user1.id
         )
-        
+
         # Create stories for user2
         story3 = Story(
             title="Space Odyssey",
@@ -110,7 +114,7 @@ def seed_database(force_reseed=False):
             uuid=generate_uuid(),
             user_id=user2.id
         )
-        
+
         story4 = Story(
             title="The Enchanted Forest",
             description="A magical tale for all ages. A mystical forest where magic is real and ancient spirits protect the land.",
@@ -119,10 +123,10 @@ def seed_database(force_reseed=False):
             uuid=generate_uuid(),
             user_id=user2.id
         )
-        
+
         db.add_all([story1, story2, story3, story4])
         db.flush()
-        
+
         # Create locations with all required fields
         location1 = Location(
             name="Ancient Castle",
@@ -135,7 +139,7 @@ def seed_database(force_reseed=False):
             uuid=generate_uuid(),
             story_id=story1.id
         )
-        
+
         location2 = Location(
             name="Victorian Mansion",
             description="An elegant mansion with dark secrets. The mansion includes a grand foyer, library, dining room, and several bedrooms. Connected to the gardens and servant quarters.",
@@ -147,7 +151,7 @@ def seed_database(force_reseed=False):
             uuid=generate_uuid(),
             story_id=story2.id
         )
-        
+
         location3 = Location(
             name="Starship Explorer",
             description="A futuristic vessel exploring the cosmos. The ship contains a bridge, engineering section, crew quarters, and science lab. Can travel to any planet in the system.",
@@ -159,7 +163,7 @@ def seed_database(force_reseed=False):
             uuid=generate_uuid(),
             story_id=story3.id
         )
-        
+
         location4 = Location(
             name="Whispering Woods",
             description="A mystical forest filled with ancient magic. The forest has a clearing with a magical pond, dense woods with hidden paths, and an ancient tree shrine. Connected to the village and mountains.",
@@ -171,10 +175,10 @@ def seed_database(force_reseed=False):
             uuid=generate_uuid(),
             story_id=story4.id
         )
-        
+
         db.add_all([location1, location2, location3, location4])
         db.flush()
-        
+
         # Create characters with all required fields
         # For story1
         characters_story1 = [
@@ -217,14 +221,14 @@ def seed_database(force_reseed=False):
                 backstory="Claims to be from a neighboring kingdom, but her extensive knowledge of the lost kingdom suggests otherwise. Her true identity and motivations remain a mystery even to her closest allies.",
                 goals="Locate a powerful magical artifact rumored to be hidden in the castle. Learn the truth about her own mysterious past. Forge powerful alliances.",
                 speaking_style="Elegant and refined, with a musical quality to her voice. Skilled at flattery and diversion when conversations touch on her past.",
-                image_dir="elara_images", 
+                image_dir="elara_images",
                 image_prompt="A beautiful princess with golden hair in an elegant purple and gold gown, with an intelligent and slightly calculating expression.",
                 relationship_level=3,
                 uuid=generate_uuid(),
                 story_id=story1.id
             )
         ]
-        
+
         # For story2
         characters_story2 = [
             Character(
@@ -273,7 +277,7 @@ def seed_database(force_reseed=False):
                 story_id=story2.id
             )
         ]
-        
+
         # For story3
         characters_story3 = [
             Character(
@@ -322,7 +326,7 @@ def seed_database(force_reseed=False):
                 story_id=story3.id
             )
         ]
-        
+
         # For story4
         characters_story4 = [
             Character(
@@ -371,11 +375,11 @@ def seed_database(force_reseed=False):
                 story_id=story4.id
             )
         ]
-        
-        db.add_all(characters_story1 + characters_story2 + characters_story3 + characters_story4)
+
+        db.add_all(characters_story1 + characters_story2 +
+                   characters_story3 + characters_story4)
         db.flush()
-        
-        
+
         # Create scenes with all required fields
         scene1 = Scene(
             uuid=generate_uuid(),
@@ -384,7 +388,7 @@ def seed_database(force_reseed=False):
             location_id=location1.id,
             characters=characters_story1  # Associate characters with scene
         )
-        
+
         scene2 = Scene(
             uuid=generate_uuid(),
             description="Detective Blake examines the body found in the mansion's library while the storm rages outside.",
@@ -392,7 +396,7 @@ def seed_database(force_reseed=False):
             location_id=location2.id,
             characters=characters_story2
         )
-        
+
         scene3 = Scene(
             uuid=generate_uuid(),
             description="On the bridge of the Starship Explorer, the crew prepares for their first jump to hyperspace.",
@@ -400,7 +404,7 @@ def seed_database(force_reseed=False):
             location_id=location3.id,
             characters=characters_story3
         )
-        
+
         scene4 = Scene(
             uuid=generate_uuid(),
             description="In a sunlit clearing of the Whispering Woods, Willow discovers she can communicate with the forest spirits.",
@@ -408,18 +412,19 @@ def seed_database(force_reseed=False):
             location_id=location4.id,
             characters=characters_story4
         )
-        
+
         db.add_all([scene1, scene2, scene3, scene4])
         db.commit()
-        
+
         print("Database seeded successfully!")
-        
+
     except Exception as e:
         db.rollback()
         print(f"Error seeding database: {e}")
         raise
     finally:
         db.close()
+
 
 if __name__ == "__main__":
     seed_database(True)
