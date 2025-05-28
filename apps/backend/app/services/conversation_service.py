@@ -386,7 +386,6 @@ class ConversationService:
     @observe(name="generate_conversation_topics")
     async def generate_conversation_topics(self, db: Session, character: Character, scene: Scene, messages: Optional[List[Dict[str, Any]]] = None) -> ConversationTopicsResponse:
         """Generate conversation topics for a character in a specific scene"""
-        logger.info(f"Generating conversation topics for character {character.name} in scene {scene.uuid}")
         
         try:
             # Get player character info
@@ -464,8 +463,63 @@ class ConversationService:
                     last_message_analysis = f"\nLAST MESSAGE ANALYSIS:\n{last_role}: \"{last_content}\""
    
             
-            system_prompt = f"""You are a conversation topic generator for a narrative text adventure game that creates natural, flowing conversation topics based on the most recent interaction.
-            PRIMARY GOAL: Generate 3 conversation topics that naturally flow from the LAST MESSAGE above. These should feel like organic responses that {character.name} would naturally think to explore.
+            # Determine if this is a first interaction or continuation
+            is_first_interaction = not all_messages or len(all_messages) == 0
+            
+            if is_first_interaction:
+                system_prompt = f"""You are a conversation topic generator for a narrative text adventure game that creates natural conversation starters for a player meeting a character.
+                PRIMARY GOAL: Generate 3 conversation starter topics that the player can use to initiate their first interaction with {character.name}. These should feel natural and appropriate for their current relationship level and the situation.
+
+FIRST INTERACTION STRATEGY:
+1. **Relationship-Appropriate**: Consider the current relationship level ({character.relationship_level}/100) when suggesting conversation starters
+2. **Context-Aware**: Use the current scene, location, and story context to suggest relevant topics
+3. **Character-Specific**: Topics should reflect what would naturally interest or engage {character.name}
+4. **Natural Greetings**: Include appropriate greeting styles based on relationship level and character personality
+5. **Scene Integration**: Use elements from the current scene to create natural conversation hooks
+
+RELATIONSHIP LEVEL GUIDELINES:
+- **Low (0-30)**: Formal introductions, polite observations about the environment, safe topics
+- **Medium (31-70)**: Friendly greetings, shared experiences, casual questions about their day/situation
+- **High (71-100)**: Warm greetings, personal check-ins, intimate or deeper conversation topics
+
+CONVERSATION STARTER TYPES:
+- **Greeting + Observation**: "Hello! This place seems quite [interesting/busy/peaceful]..."
+- **Situational Comment**: Reference something happening in the current scene or location
+- **Character Interest**: Ask about something related to their description or role
+- **Shared Context**: Reference the story situation you're both experiencing
+- **Polite Inquiry**: Ask how they're doing or feeling about the current situation
+
+Examples based on relationship level:
+- **Strangers (0-30)**: "Hello, I don't think we've met. I'm {player_name}."
+- **Acquaintances (31-70)**: "Hey there! How are you finding this place?"
+- **Friends (71-100)**: "Hi! I was hoping I'd run into you here."
+
+For each topic, provide:
+1. A short title (2-3 words maximum)
+2. A natural conversation starter message
+
+Return your response as a JSON array of objects with "title" and "message" fields:
+[
+  {{"title": "Greeting", "message": "Hello! I don't think we've properly met yet."}},
+  {{"title": "The Scene", "message": "This place is quite interesting, isn't it?"}},
+  {{"title": "Their Role", "message": "I've heard you're involved with [relevant topic]. How's that going?"}}
+]
+
+Keep titles very short and messages natural and conversational.
+
+Character Information:
+- Name: {character.name}
+- Description: {character.brief_description}
+- Relationship Level with {player_name}: {character.relationship_level}/100
+
+Current Situation:
+- Story: {scene.story.title}
+- Scene: {scene.description}
+- Location: {location_info}{previous_scene_context}
+"""
+            else:
+                system_prompt = f"""You are a conversation topic generator for a narrative text adventure game that creates natural, flowing conversation topics based on the most recent interaction.
+                PRIMARY GOAL: Generate 3 conversation topics that naturally flow from the LAST MESSAGE above. These should feel like organic responses that {character.name} would naturally think to explore.
 
 TOPIC GENERATION STRATEGY:
 1. **Last Message Priority**: Focus heavily on the most recent exchange - what was said, what wasn't said, and what emotions/subtext were present

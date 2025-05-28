@@ -6,7 +6,7 @@
       "cfg": 8,
       "sampler_name": "euler",
       "scheduler": "normal",
-      "denoise": 0.7,
+      "denoise": 0.8,
       "model": ["4", 0],
       "positive": ["16", 0],
       "negative": ["40", 0],

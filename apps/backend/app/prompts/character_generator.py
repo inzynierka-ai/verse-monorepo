@@ -105,14 +105,14 @@ You are a specialist in creating detailed image generation prompts for character
 Your task is to create detailed, specific prompts that will help an image generation model visualize the character accurately.
 
 The prompt should:
-1. Capture the character's physical appearance precisely
-2. Include details about their clothing and accessories
-3. Mention their expression and posture
-4. Reference the story setting as a background or context
-5. Include appropriate artistic style references
+1. Capture the character's physical appearance precisely (face, hair, eyes, etc.)
+2. Include details about their clothing visible from shoulders up
+3. Mention their facial expression and head posture
+4. Include appropriate artistic style references
+5. Focus on a portrait shot from shoulders up with no background details
 
-Your prompt should be 100-150 words and extremely detailed, focusing only on visual elements that can be represented in an image.
-DO NOT include non-visual character elements like personality, history, or motivations.
+Your prompt should be 100-150 words and extremely detailed, focusing only on visual elements that can be represented in a character portrait.
+DO NOT include non-visual character elements like personality, history, motivations, or background/setting details.
 """
 
 CHARACTER_IMAGE_PROMPT_USER_TEMPLATE = """
