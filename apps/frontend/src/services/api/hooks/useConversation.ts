@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { useWebSocket } from './webSockets/useWebSocket';
+import { useWebSocket } from '@/common/hooks/webSockets/useWebSocket';
 import { sendWebSocketMessage } from '@/utils/webSocket';
 import { Message, ConversationMessage, ProcessingStatusMessage } from '@/types/message.types';
 import { messagesQueryKey } from './useMessages';

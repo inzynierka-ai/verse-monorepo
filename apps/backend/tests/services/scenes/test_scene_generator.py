@@ -4,8 +4,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import logging
 
 from sqlalchemy.orm import Session
-from app.services.scene_generator import SceneGeneratorAgent
-from app.services.llm import LLMService
+from app.services.scenes import SceneGeneratorAgent
+from app.services.platform import LLMService
 from app.schemas.scene_generator import SceneGenerationResult
 from app.models.scene import Scene
 from app.models.story import Story

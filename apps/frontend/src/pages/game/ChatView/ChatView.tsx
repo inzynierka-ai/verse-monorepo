@@ -6,8 +6,8 @@ import Markdown from 'react-markdown';
 
 import Input from '@/common/components/Input/Input';
 import Button from '@/common/components/Button/Button';
-import { useConversation } from '@/common/hooks/useConversation';
-import { useMessages } from '@/common/hooks/useMessages';
+import { useConversation } from '@/services/api/hooks/useConversation';
+import { useMessages } from '@/services/api/hooks/useMessages';
 import ConversationTopics from './ConversationTopics/ConversationTopics';
 import CharacterDetailsModal from './CharacterDetailsModal/CharacterDetailsModal';
 import ProcessingIndicator from './ProcessingIndicator/ProcessingIndicator';

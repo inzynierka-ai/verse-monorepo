@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, patch, PropertyMock
 from sqlalchemy.orm import Session
 from typing import List, Dict
 
-from app.services.scene_service import SceneService
+from app.services.scenes import SceneService
 from app.models.scene import Scene
 from app.models.message import Message
 
