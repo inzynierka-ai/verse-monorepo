@@ -1,0 +1,592 @@
+<!doctype html>
+<html lang="pl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Verse — Budowanie aplikacji opartych na AI</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="theme.css" />
+  </head>
+  <body>
+    <div class="deck">
+      <div class="track" id="track">
+
+        <!-- 1. Title -->
+        <section class="title-slide">
+          <div class="title-wrap">
+            <div class="eyebrow">PRACA INŻYNIERSKA · AI W PRAKTYCE</div>
+            <h1>Verse</h1>
+            <h2 class="subtitle">Budowanie aplikacji opartych na AI</h2>
+            <p class="byline">Tekstowa gra przygodowa napędzana AI i co mówi nam<br/>o architekturze współczesnych aplikacji LLM.</p>
+            <div class="title-footer">
+              <span>Jakub Ciepły</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- 2. What is Verse -->
+        <section>
+          <h2>Czym jest Verse?</h2>
+          <div class="two-col">
+            <div>
+              <p class="lead">Nieskończona, oparta na postaciach tekstowa przygodówka napędzana LLM.</p>
+              <ul class="bullets">
+                <li>Gracz definiuje świat (statek kosmiczny, średniowiecze, szkoła...)</li>
+                <li>AI generuje <b>sceny</b>, <b>lokacje</b>, <b>NPC</b>, <b>obrazy</b></li>
+                <li>NPC <b>pamiętają</b> wcześniejsze rozmowy</li>
+                <li>Relacje <b>ewoluują</b> w oparciu o dialog</li>
+              </ul>
+            </div>
+            <div class="card">
+              <div class="stack-label">STACK TECHNOLOGICZNY</div>
+              <ul class="stack">
+                <li><b>FastAPI</b> · backend w Pythonie</li>
+                <li><b>React + Vite</b> · frontend</li>
+                <li><b>PostgreSQL + pgvector</b> · baza danych i vector store</li>
+                <li><b>OpenAI / OpenRouter</b> · LLM</li>
+                <li><b>ComfyUI</b> · generowanie obrazów</li>
+                <li><b>Langfuse</b> · obserwowalność</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <!-- 3. Why this talk -->
+        <section>
+          <h2>Co omówimy</h2>
+          <div class="pill-grid">
+            <div class="pill"><div class="pill-num">01</div><div><b>Wywołania LLM</b><br/>atom</div></div>
+            <div class="pill"><div class="pill-num">02</div><div><b>Workflow</b><br/>przewidywalne pipeline'y</div></div>
+            <div class="pill"><div class="pill-num">03</div><div><b>Agenty</b><br/>autonomiczne pętle narzędzi</div></div>
+            <div class="pill"><div class="pill-num">04</div><div><b>Wybór modelu</b><br/>koszt i szybkość</div></div>
+            <div class="pill"><div class="pill-num">05</div><div><b>Prompt engineering</b><br/>i cache'owanie</div></div>
+            <div class="pill"><div class="pill-num">06</div><div><b>RAG</b><br/>pamięć dla LLM</div></div>
+            <div class="pill"><div class="pill-num">07</div><div><b>Obserwowalność</b><br/>Langfuse w praktyce</div></div>
+          </div>
+        </section>
+
+        <!-- 4. High-level architecture -->
+        <section>
+          <h2>Obraz z lotu ptaka</h2>
+          <p class="muted">Większość aplikacji AI to te same prymitywy ułożone inaczej.</p>
+          <pre class="mermaid">
+flowchart LR
+  U[User] --> FE[Frontend]
+  FE <--> BE[Backend API]
+  BE --> ORCH["Orchestrator (workflow / agent)"]
+  ORCH --> LLM[LLM Provider]
+  ORCH --> IMG[Image Model]
+  ORCH --> VDB[(Vector DB)]
+  ORCH --> DB[(Relational DB)]
+  ORCH -.trace.-> OBS["Observability (Langfuse)"]
+  LLM -.trace.-> OBS
+  classDef svc fill:#132033,stroke:#00c6ff,stroke-width:1.5px,color:#ecf0f1
+  classDef data fill:#1a2230,stroke:#76f7bf,stroke-width:1.5px,color:#ecf0f1
+  class BE,ORCH,LLM,IMG svc
+  class VDB,DB,OBS data
+          </pre>
+        </section>
+
+        <!-- 5. LLM call - the atom -->
+        <section>
+          <h2>Atom: wywołanie LLM</h2>
+          <div class="two-col">
+            <div>
+              <p class="lead">Każda aplikacja AI jest z tego zbudowana.</p>
+              <ul class="bullets small">
+                <li><b>Wiadomość systemowa</b> — rola, zasady, format</li>
+                <li><b>Wiadomość użytkownika</b> — właściwe zapytanie</li>
+                <li><b>Model, temperature, max_tokens</b></li>
+                <li><b>Narzędzia</b> (opcjonalnie) — schematy funkcji</li>
+                <li>Wyjście: tekst, ustrukturyzowany JSON lub <i>wywołanie narzędzia</i></li>
+              </ul>
+            </div>
+            <pre><code class="language-python" data-trim>response = await client.chat.completions.create(
+  model="gpt-4.1-mini",
+  messages=[
+    {"role": "system",
+     "content": "You are a character designer..."},
+    {"role": "user",
+     "content": "Story: cyberpunk... Describe: a hacker"}
+  ],
+  temperature=0.7,
+  tools=[generate_location, generate_character],
+)</code></pre>
+          </div>
+        </section>
+
+        <!-- 6. Two shapes: workflow vs agent -->
+        <section>
+          <h2>Dwa kształty systemów AI</h2>
+          <div class="two-col compare">
+            <div class="card accent">
+              <div class="card-title">Workflow</div>
+              <p><b>Stały pipeline</b> wywołań LLM. Projektujesz każdy krok.</p>
+              <ul class="bullets small">
+                <li>Przewidywalny, testowalny, tani w debugowaniu</li>
+                <li>Dobry gdy znasz kroki z góry</li>
+                <li>W Verse: <b>generowanie postaci i lokacji</b></li>
+              </ul>
+            </div>
+            <div class="card accent-b">
+              <div class="card-title">Agent</div>
+              <p><b>Pętla</b> LLM wybierająca kolejne narzędzie do wywołania, aż do zakończenia.</p>
+              <ul class="bullets small">
+                <li>Elastyczny, radzi sobie z otwartymi zadaniami</li>
+                <li>Trudniejszy do przewidzenia, debugowania i ograniczenia kosztów</li>
+                <li>W Verse: <b>generowanie scen</b></li>
+              </ul>
+            </div>
+          </div>
+          <p class="footnote">Trend w branży: przesunięcie <i>w stronę</i> agentów — ale płacisz za to złożonością.</p>
+        </section>
+
+        <!-- 7. Workflow example - character generation -->
+        <section>
+          <h2>Workflow: generowanie postaci</h2>
+          <p class="muted">Każdy krok to małe, ukierunkowane wywołanie LLM.</p>
+          <pre class="mermaid">
+sequenceDiagram
+    participant CG as CharacterGenerator
+    participant LLM
+    participant IMG as ComfyUI
+    participant DB
+    CG->>LLM: 1. describe_character (narrative)
+    LLM-->>CG: prose description
+    CG->>LLM: 2. create_character_json (structure)
+    LLM-->>CG: validated JSON
+    CG->>LLM: 3. generate_image_prompt
+    LLM-->>CG: image prompt
+    CG->>IMG: 4. generate_image
+    IMG-->>CG: image URL
+    CG->>DB: 5. save character
+          </pre>
+          <p class="footnote">Pięć deterministycznych kroków. Każdy można stroić, podmieniać lub cache'ować niezależnie.</p>
+        </section>
+
+        <!-- 8. Agent example - scene generation -->
+        <section>
+          <h2>Agent: generowanie sceny</h2>
+          <p class="muted">LLM wybiera kolejne wywołanie narzędzia — w kółko — aż do finalizacji.</p>
+          <pre class="mermaid">
+flowchart LR
+  S(("start")) --> P["Planning"]
+  P -- "tool" --> L["generate_location"]
+  P -- "tool" --> C["generate_character"]
+  L --> P
+  C --> P
+  P -- "tool" --> F["finalize_scene"]
+  F --> E(("end"))
+  classDef plan fill:#1a2a4a,stroke:#00c6ff,color:#ecf0f1
+  classDef tool fill:#18322a,stroke:#76f7bf,color:#ecf0f1
+  classDef terminal fill:#0d1117,stroke:#9aa7b5,color:#ecf0f1
+  class P plan
+  class L,C,F tool
+  class S,E terminal
+          </pre>
+          <div class="two-col tight">
+            <div>
+              <b>Narzędzia udostępnione LLM:</b>
+              <ul class="bullets small">
+                <li><code>generate_location</code></li>
+                <li><code>generate_character</code></li>
+                <li><code>finalize_scene</code></li>
+              </ul>
+            </div>
+            <div>
+              <b>Zabezpieczenia:</b>
+              <ul class="bullets small">
+                <li><code>max_steps = 10</code></li>
+                <li>Walidacja przed finalizacją</li>
+                <li>Stan po naszej stronie, nie po stronie LLM</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <!-- 9. The agent loop, in code -->
+        <section>
+          <h2>Pętla agenta bez tajemnic</h2>
+          <pre><code class="language-python" data-trim>while not scene_complete and step &lt; MAX_STEPS:
+    response = await llm.generate_response(
+        input_text=user_prompt,
+        instructions=system_prompt,
+        tools=self.tools,            # location, character, finalize
+        model=ModelName.GPT41,
+    )
+    calls = extract_function_calls(response)
+
+    for call in calls:
+        if call.name == "generate_location":
+            await handle_location(call.arguments)   # → workflow
+        elif call.name == "generate_character":
+            await handle_character(call.arguments)  # → workflow
+        elif call.name == "finalize_scene":
+            scene_complete = True
+
+    user_prompt = render_state(self.state)   # feed back the new state
+</code></pre>
+          <p class="footnote">Agent to po prostu <b>pętla while</b> + <b>narzędzia</b> + <b>stan</b>.</p>
+        </section>
+
+        <!-- 10. Combining: agent calls workflows -->
+        <section>
+          <h2>Połączenie: to, co najlepsze z obu światów</h2>
+          <pre class="mermaid">
+flowchart TD
+  A["SceneGenerator (AGENT)"] -->|"tool"| B["LocationGenerator (workflow)"]
+  A -->|"tool"| C["CharacterGenerator (workflow)"]
+  A -->|"tool"| F["finalize_scene"]
+  B --> D["5 LLM calls + image"]
+  C --> E["5 LLM calls + image"]
+  classDef agent fill:#1a2a4a,stroke:#00c6ff,color:#ecf0f1
+  classDef wf fill:#18322a,stroke:#76f7bf,color:#ecf0f1
+  class A agent
+  class B,C wf
+          </pre>
+          <p class="muted">Użyj agenta tam, gdzie liczy się <b>elastyczność</b>. Użyj workflow tam, gdzie liczy się <b>determinizm</b>. Zagnieżdżaj je.</p>
+        </section>
+
+        <!-- 11. Model choice -->
+        <section>
+          <h2>Wybór modelu: nie sięgaj od razu po największy</h2>
+          <p class="lead">Dopasuj model do <b>trudności kroku</b>, nie do ważności aplikacji.</p>
+          <table class="model-table">
+            <thead>
+              <tr><th>Zadanie</th><th>Użyty model</th><th>Dlaczego</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Agent sceny (planowanie + użycie narzędzi)</td>
+                <td><code>gpt-4.1</code></td>
+                <td>Wymaga rozumowania i wyboru narzędzi</td>
+              </tr>
+              <tr>
+                <td>Rozmowa z NPC</td>
+                <td><code>gpt-4.1</code></td>
+                <td>Spójność głosu, długi kontekst</td>
+              </tr>
+              <tr>
+                <td>Ekstrakcja JSON postaci</td>
+                <td><code>gpt-4.1-mini</code></td>
+                <td>Ustrukturyzowane, dobrze zdefiniowane zadanie</td>
+              </tr>
+              <tr>
+                <td>Szkic postaci z opisu</td>
+                <td><code>gemini-2.0-flash-lite</code></td>
+                <td>Malutkie, szablonowe zadanie — szybko i tanio</td>
+              </tr>
+            </tbody>
+          </table>
+          <p class="footnote">Zasada: <b>różnica kosztów 5–10×</b> między poziomami. Schodź niżej, gdzie tylko się da.</p>
+        </section>
+
+        <!-- 12. Prompt engineering -->
+        <section>
+          <h2>Prompt engineering</h2>
+          <div class="two-col">
+            <div>
+              <ul class="bullets small">
+                <li><b>Najpierw rola</b> — "Jesteś generatorem scen..."</li>
+                <li><b>Sekcje w tagach</b> — <code>&lt;persistence&gt;</code>, <code>&lt;planning&gt;</code>, <code>&lt;tool_usage&gt;</code></li>
+                <li><b>Jawny format</b> — "Zwróć wyłącznie poprawny JSON"</li>
+                <li><b>Konkretne ograniczenia</b> — "1-3 postacie", "250–300 słów"</li>
+                <li><b>Negatywne reguły</b> — "NIGDY nie modyfikuj postaci gracza"</li>
+              </ul>
+            </div>
+            <pre class="prompt-snippet"><code>&lt;persistence&gt;
+Keep going until the scene is
+complete. Only terminate when you
+have a location, 1-3 characters,
+and a description.
+&lt;/persistence&gt;
+
+&lt;planning&gt;
+Plan before each action. Think
+about how this scene connects to
+previous scenes...
+&lt;/planning&gt;</code></pre>
+          </div>
+        </section>
+
+        <!-- 13. Prompt caching -->
+        <section>
+          <h2>Cache promptów: darmowy zysk na latencji i koszcie</h2>
+          <p class="lead">Dostawcy cache'ują <b>prefiks</b> twojego promptu. Jeśli pasuje między zapytaniami, dostajesz ≈ 50–90% zniżki na te tokeny i niższą latencję.</p>
+          <pre class="mermaid">
+flowchart LR
+  A["STATIC prefix — system prompt · tools · few-shot"] --> B["SEMI-STATIC — story · character info"] --> C["DYNAMIC — latest user message"]
+  A -.cacheable.-> CACHE[("provider cache")]
+  classDef static fill:#18322a,stroke:#76f7bf,color:#ecf0f1
+  classDef semi fill:#1a2a4a,stroke:#00c6ff,color:#ecf0f1
+  classDef dyn fill:#2a1a3a,stroke:#c77dff,color:#ecf0f1
+  class A static
+  class B semi
+  class C dyn
+          </pre>
+          <ul class="bullets small">
+            <li>Umieszczaj <b>stałą</b> zawartość na początku (system prompt, schematy narzędzi)</li>
+            <li>Potem <b>wolno zmieniający się</b> kontekst (świat, postać)</li>
+            <li><b>Zmienną</b> turę użytkownika daj <i>na końcu</i></li>
+            <li>Nie wrzucaj kluczy ani znaczników czasu do prefiksu</li>
+          </ul>
+        </section>
+
+        <!-- 14. Why RAG -->
+        <section>
+          <h2>Dlaczego NPC potrzebują RAG</h2>
+          <div class="two-col">
+            <div>
+              <p class="lead">Problem:</p>
+              <p>NPC w scenie #7 powinien pamiętać, co wydarzyło się z graczem w scenie #2.</p>
+              <p>Naiwne podejście: wrzuć <i>wszystko</i> do promptu. Szybko się wywraca — koszt i okno kontekstu.</p>
+            </div>
+            <div>
+              <p class="lead accent-color">Rozwiązanie: RAG</p>
+              <p><b>Retrieval-Augmented Generation.</b></p>
+              <p>Pobierz tylko <i>istotne</i> wspomnienia i wstrzyknij je do promptu w momencie odpowiedzi.</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- 15. Embeddings visualized -->
+        <section class="image-slide">
+          <h2>Czym jest embedding?</h2>
+          <p class="muted">Wektor (~1536 floatów) uchwytujący znaczenie. Podobne teksty → bliskie wektory.</p>
+          <div class="image-frame">
+            <img src="embeddings.png" alt="Wizualizacja przestrzeni embeddingów: słowa pogrupowane według podobieństwa semantycznego" />
+          </div>
+          <p class="footnote">Trzy semantyczne sąsiedztwa w przestrzeni wektorowej: średniowiecze · sci-fi · dzicz.</p>
+        </section>
+
+        <!-- 16. RAG pipeline -->
+        <section>
+          <h2>Vector DB i wyszukiwanie semantyczne</h2>
+          <pre class="mermaid">
+flowchart LR
+  subgraph W["WRITE · when scene ends"]
+    M1["Messages"] --> CH["Overlapping 3-msg chunks"]
+    CH --> E1["Embedding (text-embedding-3-small)"]
+    E1 --> V1[("pgvector")]
+  end
+  subgraph R["READ · before NPC responds"]
+    Q["Latest user message"] --> E2["Embedding"]
+    E2 --> S{"Cosine similarity"}
+    V1 --> S
+    S --> TOP["Top-3 memories"]
+    TOP --> P["Inject into prompt"]
+  end
+  classDef w fill:#132033,stroke:#00c6ff,color:#ecf0f1
+  classDef r fill:#18322a,stroke:#76f7bf,color:#ecf0f1
+          </pre>
+          <p class="footnote">Retrieval żyje w Postgresie przez <code>pgvector</code> — nie potrzeba oddzielnej bazy wektorowej.</p>
+        </section>
+
+        <!-- 17. Observability intro -->
+        <section>
+          <h2>Nie da się poprawić tego, czego nie widać</h2>
+          <p class="lead">Aplikacje LLM są <b>niedeterministyczne</b>. Ten sam prompt może zawieść dwa razy na dziesięć — i musisz wiedzieć, które dwa, dlaczego i ile to kosztowało.</p>
+          <div class="pill-grid tight">
+            <div class="pill"><div class="pill-num">$</div><div><b>Koszt</b><br/>tokeny na trace</div></div>
+            <div class="pill"><div class="pill-num">⏱</div><div><b>Latencja</b><br/>gdzie spędzany jest czas</div></div>
+            <div class="pill"><div class="pill-num">✗</div><div><b>Awarie</b><br/>moderacja, błędy, retry</div></div>
+            <div class="pill"><div class="pill-num">A/B</div><div><b>Jakość</b><br/>porównuj prompty i modele</div></div>
+          </div>
+        </section>
+
+        <!-- 18. Langfuse in Verse -->
+        <section>
+          <h2>Langfuse: jeden dekorator, pełny trace</h2>
+          <pre><code class="language-python" data-trim>@observe(name="generate_completion", as_type="generation")
+async def generate_completion(self, messages, model, temperature, ...):
+    langfuse_context.update_current_trace(metadata={
+        "model": model.model_id,
+        "provider": model.provider.value,
+        "temperature": temperature,
+    })
+    response = await client.chat.completions.create(...)
+    langfuse_context.update_current_observation(usage=response.usage)
+    return response.choices[0].message.content</code></pre>
+          <p class="muted">Zagnieżdżone wywołania <code>@observe</code> budują drzewo. <code>generate_scene</code> → <code>agent_loop</code> → <code>generate_location</code> → <code>generate_completion</code>.</p>
+        </section>
+
+        <!-- 19. What Langfuse captures -->
+        <section>
+          <h2>Co właściwie zawiera trace</h2>
+          <div class="two-col">
+            <div class="card">
+              <div class="card-title">Per wywołanie LLM</div>
+              <ul class="bullets small">
+                <li>Model i dostawca</li>
+                <li>Wiadomości wejściowe i system prompt</li>
+                <li>Tekst wyjściowy / wywołania narzędzi</li>
+                <li>Tokeny: prompt / completion / razem</li>
+                <li>Czas trwania</li>
+                <li>Błędy, ostrzeżenia (np. moderacja)</li>
+              </ul>
+            </div>
+            <div class="card">
+              <div class="card-title">Per sesja / trace</div>
+              <ul class="bullets small">
+                <li>ID użytkownika / sesji</li>
+                <li>Pełne zagnieżdżone drzewo wywołań</li>
+                <li>Zagregowany koszt</li>
+                <li>Własne metadane (krok, violated_categories, ...)</li>
+                <li>Oceny (ręczne lub LLM-as-judge)</li>
+              </ul>
+            </div>
+          </div>
+          <p class="footnote">Efekt: jeden bug typu "zła scena" → widok trace'a → dokładne wywołanie narzędzia → dokładny prompt, który to wywołał.</p>
+        </section>
+
+        <!-- 20. Takeaways -->
+        <section>
+          <h2>Wnioski</h2>
+          <ol class="takeaways">
+            <li><b>Zaczynaj od atomu.</b> Aplikacja AI to wywołania LLM złożone kodem.</li>
+            <li><b>Najpierw workflow.</b> Po agentów sięgaj dopiero, gdy problem jest naprawdę otwarty.</li>
+            <li><b>Agent = pętla + narzędzia + stan.</b> Zabezpieczenia trzymaj po <i>swojej</i> stronie: max steps, walidacja, typowany stan.</li>
+            <li><b>Daj LLM pamięć przez RAG.</b> Embeddingi + vector DB &gt; upychanie kontekstu.</li>
+            <li><b>Instrumentuj wszystko.</b> Langfuse (lub odpowiednik) od pierwszego dnia.</li>
+            <li><b>Dobieraj modele per zadanie.</b> 80% wywołań prawdopodobnie nie potrzebuje flagowca.</li>
+            <li><b>Struktura promptów</b> — i taka, która pozwala na <b>cache</b>.</li>
+          </ol>
+        </section>
+
+        <!-- 21. Closing -->
+        <section class="closing-slide">
+          <div class="title-wrap">
+            <h1 class="closing">Dziękuję.</h1>
+            <p class="byline">Pytania, kontra, pomysły — wszystko mile widziane.</p>
+            <div class="title-footer">
+              <span>https://github.com/inzynierka-ai/verse-monorepo</span>
+            </div>
+          </div>
+        </section>
+
+      </div>
+      <div class="hud">
+        <span id="counter">1 / 1</span>
+      </div>
+      <div class="progress"><div class="bar" id="bar"></div></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-python.min.js"></script>
+    <script type="module">
+      import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+
+      // Syntax-highlight code blocks before navigation kicks in.
+      if (window.Prism) Prism.highlightAll();
+
+      // Use a system font for mermaid so text measurement (box sizing) matches
+      // the glyphs used at render time. Web fonts load lazily; mixing them
+      // with mermaid text measurement is what caused the cropping.
+      const MERMAID_FONT = '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif';
+      mermaid.initialize({
+        startOnLoad: false,
+        theme: 'base',
+        securityLevel: 'loose',
+        // htmlLabels:true so <br/> in labels renders as line breaks. Works
+        // reliably here because every slide is in layout (just translated
+        // offscreen), so mermaid can measure foreignObject content normally.
+        flowchart: { htmlLabels: true, useMaxWidth: true, curve: 'basis' },
+        themeVariables: {
+          darkMode: true,
+          background: '#0d1117',
+          primaryColor: '#132033',
+          primaryTextColor: '#ecf0f1',
+          primaryBorderColor: '#00c6ff',
+          lineColor: '#4a6074',
+          secondaryColor: '#18322a',
+          tertiaryColor: '#1a2a4a',
+          fontFamily: MERMAID_FONT,
+          fontSize: '16px',
+        },
+      });
+
+      // Pre-render every mermaid block to inline SVG.
+      const blocks = document.querySelectorAll('pre.mermaid');
+      await Promise.all(
+        Array.from(blocks).map(async (block, i) => {
+          const source = block.textContent.trim();
+          try {
+            const { svg } = await mermaid.render(`mmd-${i}`, source);
+            block.innerHTML = svg;
+          } catch (err) {
+            console.error('Mermaid render error:', err);
+            block.innerHTML = `<div style="color:#ff5252">Mermaid error: ${err.message}</div>`;
+          }
+        })
+      );
+
+      // Minimal slide navigation.
+      const track = document.getElementById('track');
+      const slides = Array.from(track.querySelectorAll('section'));
+      const counter = document.getElementById('counter');
+      const bar = document.getElementById('bar');
+
+      let idx = 0;
+      function parseHash() {
+        const m = /^#(\d+)$/.exec(location.hash);
+        if (m) {
+          const n = parseInt(m[1], 10) - 1;
+          if (n >= 0 && n < slides.length) return n;
+        }
+        return 0;
+      }
+
+      function go(n, { push = true } = {}) {
+        idx = Math.max(0, Math.min(slides.length - 1, n));
+        track.style.transform = `translate3d(${-idx * 100}vw, 0, 0)`;
+        counter.textContent = `${idx + 1} / ${slides.length}`;
+        bar.style.width = `${((idx + 1) / slides.length) * 100}%`;
+        if (push) history.replaceState(null, '', `#${idx + 1}`);
+      }
+
+      window.addEventListener('keydown', (e) => {
+        if (e.metaKey || e.ctrlKey || e.altKey) return;
+        switch (e.key) {
+          case 'ArrowRight':
+          case 'PageDown':
+          case ' ':
+            go(idx + 1); e.preventDefault(); break;
+          case 'ArrowLeft':
+          case 'PageUp':
+            go(idx - 1); e.preventDefault(); break;
+          case 'Home':
+            go(0); e.preventDefault(); break;
+          case 'End':
+            go(slides.length - 1); e.preventDefault(); break;
+          case 'f':
+          case 'F':
+            if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+            else document.exitFullscreen();
+            break;
+        }
+      });
+
+      window.addEventListener('hashchange', () => go(parseHash(), { push: false }));
+
+      // Click right half of screen to advance, left half to go back.
+      document.addEventListener('click', (e) => {
+        if (e.target.closest('a, button, pre, code, input, textarea')) return;
+        if (e.clientX > window.innerWidth / 2) go(idx + 1);
+        else go(idx - 1);
+      });
+
+      // Simple swipe support.
+      let touchStartX = 0;
+      window.addEventListener('touchstart', (e) => { touchStartX = e.touches[0].clientX; }, { passive: true });
+      window.addEventListener('touchend', (e) => {
+        const dx = e.changedTouches[0].clientX - touchStartX;
+        if (Math.abs(dx) > 50) go(idx + (dx < 0 ? 1 : -1));
+      }, { passive: true });
+
+      go(parseHash(), { push: false });
+    </script>
+  </body>
+</html>

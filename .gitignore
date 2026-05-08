@@ -96,3 +96,6 @@ logs
 *~
 *.bak
 *.swp
+
+# Generated media
+apps/backend/media/comfyui/

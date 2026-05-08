@@ -116,7 +116,7 @@ class ConversationService:
         # Prepare arguments for LLM service
         llm_args: Dict[str, Any] = {
             "messages": formatted_messages,
-            "model": ModelName.GPT41_MINI,
+            "model": ModelName.GPT41,
             "temperature": 0.7,
             "stream": True,
         }
@@ -550,6 +550,7 @@ CRITICAL REQUIREMENTS:
 - **Natural Transitions**: Topics should feel like the next logical step in the conversation
 - **Character Motivation**: Consider what {character.name} would genuinely want to know or discuss
 - **Avoid Generic**: Don't suggest broad topics unless they directly relate to what was just discussed
+- **Role-play**: Create topics from the perspective of {player_name}. Be natural and immersive.
 
 CONVERSATION HOOKS TO EXPLORE FROM LAST MESSAGE:
 Analyze the last message for these potential conversation starters:
@@ -600,7 +601,7 @@ Current Situation:
 
             response = await self.llm_service.generate_completion(
                 messages=messages,
-                model=ModelName.GPT41_MINI,
+                model=ModelName.GPT41,
                 temperature=0.8,
                 max_tokens=500
             )

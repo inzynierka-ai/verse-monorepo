@@ -302,13 +302,13 @@ class SceneGeneratorAgent:
         4. Advance their personal storyline or goals
         </player_perspective>
 
-        <heros_journey_framework>
+        <heros_journey>
         The Hero's Journey is a model for the player's transformative adventure, typically in three main stages:
         1.  **Departure**: The hero leaves their ordinary world. Key elements: Call to Adventure, Refusal, Supernatural Aid, Crossing First Threshold, Belly of the Whale (symbolic death/rebirth). Focus on moving from known to unknown.
         2.  **Initiation**: The hero undergoes trials and gains new understanding/abilities. Key elements: Road of Trials, Meeting allies/mentors, facing temptations, Atonement, Apotheosis (transformation), The Ultimate Boon. Focus on character development through challenges.
         3.  **Return**: The hero brings their boon/knowledge back. Key elements: Refusal to Return, Magic Flight, Rescue, Crossing Return Threshold, Master of Two Worlds, Freedom to Live. Focus on reintegration and sharing wisdom.
         Your goal is to generate scenes that align with these stages, progressing the player's journey and transformation.
-        </heros_journey_framework>
+        </heros_journey>
         
         <planning>
         Plan before each action. Think about what elements would create an interesting scene. Consider:
@@ -316,6 +316,14 @@ class SceneGeneratorAgent:
         2. What character interactions would be compelling for the player
         3. How this scene fits into the player's overall Hero's Journey. Based on previous_scenes and story context, infer the current approximate phase (Departure, Initiation, Return) and align the scene accordingly. If the story is new, focus on 'Departure'. If well-developed, lean 'Initiation'. If nearing resolution of a major arc, consider 'Return'.
         </planning>
+
+        <dialogue_progression>
+        Pay close attention to the dialogue and summary of the PREVIOUS scene:
+        1. If characters agreed on an action (e.g., travel to another place, start a task elsewhere, seek information somewhere new), the next scene MUST reflect that commitment by selecting or generating an appropriate new location.
+        2. Avoid generating consecutive scenes in the exact same location with the same set of characters unless the dialogue explicitly states they are intentionally staying put.
+        3. Each new scene should demonstrate clear narrative progress — a change in setting, the introduction of new characters, or a tangible advancement of the plot or relationships.
+        4. Use the generate_location tool to move the story when travel or setting change is implied. Use the generate_character tool to bring in new NPCs that can facilitate the next step of the plan.
+        </dialogue_progression>
         """
 
         try:

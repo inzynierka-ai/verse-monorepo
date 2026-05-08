@@ -33,7 +33,7 @@ const CharacterDetailsModal = ({ character, isOpen, onClose }: CharacterDetailsM
 
           <div className={styles.characterInfo}>
             <h2>{character.name}</h2>
-            <p className={styles.description}>{character.description || character.brief_description}</p>
+            <p className={styles.description}>{character.brief_description}</p>
           </div>
         </div>
       </div>

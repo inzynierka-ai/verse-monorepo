@@ -48,6 +48,18 @@
   font-weight: 600;
   margin-bottom: 0.5rem;
   color: $light-text;
+
+  /* Ensure all titles take up the same vertical space so that the
+     image in each card starts at the same height regardless of
+     title length. We also clamp long titles to two lines to avoid
+     overflow. */
+  line-height: 1.4;
+  min-height: calc(1.25rem * 1.4 * 2); // height for two lines
+
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
 }
 
 .storyDescription {

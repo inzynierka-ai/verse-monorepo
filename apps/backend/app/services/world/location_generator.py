@@ -100,7 +100,7 @@ class LocationGenerator:
 
         response = await self.llm_service.generate_completion(
             messages=messages,
-            model=ModelName.GPT41_MINI,
+            model=ModelName.GPT41,
             temperature=0.7,
             stream=False,
             metadata={

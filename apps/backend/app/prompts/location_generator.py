@@ -50,6 +50,9 @@ Story Description: {story_description}
 Story Rules:
 {story_rules}
 
+Draft of the location to be created:
+{description}
+
 Create a single location that would exist in this story. For the location, provide a rich, detailed description.
 """
 

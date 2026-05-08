@@ -68,6 +68,7 @@ Create a structured JSON representation of character based on the detailed narra
 Return only valid JSON and nothing else.
 
 IMPORTANT: All JSON keys MUST use snake_case formatting (e.g., personality_traits, connected_locations).
+Remember to escape all double quotes in the JSON values. (e.g. "Hello, \"world\"")
 
 The JSON should be an single character object, following this structure:
 ```json
